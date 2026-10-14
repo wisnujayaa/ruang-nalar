@@ -267,3 +267,5 @@ alter function public.gen_join_code() set search_path = public;
 revoke execute on all functions in schema public from public, anon;
 grant execute on function public.gen_join_code(), public.is_class_owner(uuid), public.is_class_member(uuid), public.in_class(uuid),
   public.teaches(uuid, text), public.shares_class(uuid), public.join_class(text) to authenticated;
+-- Fungsi trigger tidak perlu dipanggil langsung lewat API
+revoke execute on function public.guard_pin(), public.handle_new_user(), public.touch_thread() from authenticated, anon, public;

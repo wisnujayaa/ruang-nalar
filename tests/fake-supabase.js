@@ -1,0 +1,66 @@
+/* Supabase palsu di memori (tanpa RLS) untuk menguji alur UI mode Supabase. Dibagi antar tab via localStorage. */
+(function () {
+  const K = 'FAKE_SB';
+  const load = () => JSON.parse(localStorage.getItem(K) || '{"users":[],"profiles":[],"progress":[],"classes":[],"class_members":[],"assignments":[],"forum_threads":[],"forum_posts":[],"messages":[]}');
+  const save = (d) => localStorage.setItem(K, JSON.stringify(d));
+  const uuid = () => 'u' + Math.random().toString(16).slice(2, 10) + Date.now().toString(16);
+  let session = JSON.parse(sessionStorage.getItem('FAKE_SESSION') || 'null');
+  const listeners = [];
+  const setSession = (s) => { session = s; sessionStorage.setItem('FAKE_SESSION', JSON.stringify(s)); listeners.forEach(f => f(s ? 'SIGNED_IN' : 'SIGNED_OUT', s)); };
+  const me = () => session && session.user.id;
+  function enrich(table, row, sel, db) {
+    const r = Object.assign({}, row);
+    if (/profiles\(display_name\)/.test(sel)) { const key = table === 'class_members' ? 'user_id' : 'author_id'; const p = db.profiles.find(p => p.id === row[key]); const alias = /author:profiles/.test(sel) ? 'author' : 'profiles'; r[alias] = p ? { display_name: p.display_name } : null; }
+    if (/forum_posts\(count\)/.test(sel)) r.forum_posts = [{ count: db.forum_posts.filter(p => p.thread_id === row.id).length }];
+    return r;
+  }
+  function Q(table) {
+    const st = { op: 'select', filters: [], sel: '*', single: false, maybe: false, order: [], limit: null, payload: null, ret: false };
+    const q = {
+      select(s) { if (st.op === 'select') st.sel = s || '*'; else st.ret = true; return q; },
+      eq(c, v) { st.filters.push(r => r[c] === v); return q; },
+      in(c, vs) { st.filters.push(r => vs.includes(r[c])); return q; },
+      order(c, o) { st.order.push([c, !o || o.ascending !== false]); return q; },
+      limit(n) { st.limit = n; return q; },
+      single() { st.single = true; return q; }, maybeSingle() { st.maybe = true; return q; },
+      insert(o) { st.op = 'insert'; st.payload = o; return q; }, upsert(o) { st.op = 'upsert'; st.payload = o; return q; },
+      update(o) { st.op = 'update'; st.payload = o; return q; }, delete() { st.op = 'delete'; return q; },
+      then(res, rej) { return Promise.resolve().then(run).then(res, rej); }
+    };
+    function run() {
+      const db = load(); const T = db[table]; const now = new Date().toISOString();
+      if (st.op === 'insert') {
+        const row = Object.assign({ id: uuid(), created_at: now }, st.payload);
+        if (table === 'classes') row.join_code = Math.random().toString(36).slice(2, 8).toUpperCase().replace(/[01IO]/g, 'X');
+        if (table === 'forum_threads') Object.assign(row, { author_id: me(), pinned: false, solved: false, last_activity: now, body: row.body || '' });
+        if (table === 'forum_posts') { row.author_id = me(); const t = db.forum_threads.find(t => t.id === row.thread_id); if (t) t.last_activity = now; }
+        if (table === 'messages') { row.from_user = me(); row.read_at = null; }
+        if (table === 'assignments') row.created_by = me();
+        T.push(row); save(db); return { data: st.single || st.ret ? row : null, error: null };
+      }
+      if (st.op === 'upsert') { const i = T.findIndex(r => r.user_id === st.payload.user_id && r.course_id === st.payload.course_id); if (i >= 0) T[i] = Object.assign(T[i], st.payload); else T.push(st.payload); save(db); return { data: null, error: null }; }
+      let rows = T.filter(r => st.filters.every(f => f(r)));
+      if (st.op === 'update') { rows.forEach(r => Object.assign(r, st.payload)); save(db); return { data: null, error: null }; }
+      if (st.op === 'delete') { db[table] = T.filter(r => !rows.includes(r)); if (table === 'forum_threads') db.forum_posts = db.forum_posts.filter(p => !rows.some(r => r.id === p.thread_id)); save(db); return { data: null, error: null }; }
+      for (const [c, asc] of st.order.slice().reverse()) rows.sort((a, b) => (a[c] > b[c] ? 1 : a[c] < b[c] ? -1 : 0) * (asc ? 1 : -1));
+      if (st.limit) rows = rows.slice(0, st.limit);
+      rows = rows.map(r => enrich(table, r, st.sel, db));
+      if (st.single) return rows[0] ? { data: rows[0], error: null } : { data: null, error: { message: 'not found' } };
+      if (st.maybe) return { data: rows[0] || null, error: null };
+      return { data: rows, error: null };
+    }
+    return q;
+  }
+  window.supabase = { createClient: () => ({
+    from: Q,
+    rpc: async (fn, a) => { if (fn !== 'join_class') return { error: { message: 'no fn' } }; const db = load(); const c = db.classes.find(c => c.join_code === String(a.p_code).trim().toUpperCase()); if (!c) return { data: null, error: { message: 'Kode kelas tidak ditemukan' } }; if (!db.class_members.some(m => m.class_id === c.id && m.user_id === me())) db.class_members.push({ class_id: c.id, user_id: me(), joined_at: new Date().toISOString() }); save(db); return { data: c.id, error: null }; },
+    auth: {
+      getSession: async () => ({ data: { session } }),
+      onAuthStateChange: (f) => { listeners.push(f); return { data: { subscription: { unsubscribe() {} } } }; },
+      signUp: async ({ email, password, options }) => { const db = load(); if (db.users.some(u => u.email === email)) return { error: { message: 'User already registered' } }; const u = { id: uuid(), email, password, user_metadata: options.data }; db.users.push(u); db.profiles.push({ id: u.id, display_name: options.data.display_name }); save(db); setSession({ user: u }); return { data: { session: { user: u } }, error: null }; },
+      signInWithPassword: async ({ email, password }) => { const u = load().users.find(u => u.email === email && u.password === password); if (!u) return { error: { message: 'Invalid login credentials' } }; setSession({ user: u }); return { data: {}, error: null }; },
+      signOut: async () => setSession(null),
+      resetPasswordForEmail: async () => ({ data: {}, error: null })
+    }
+  }) };
+})();

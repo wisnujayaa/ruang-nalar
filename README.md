@@ -85,6 +85,7 @@ Penjelasan alur data: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ```bash
 npm test             # verifikasi semua kunci jawaban (Node, tanpa dependensi)
 npm run test:ui      # uji asap antarmuka dengan Playwright (jalankan `npm run serve` dulu)
+npm run test:flow    # alur guru & siswa mode Supabase (Supabase palsu di memori)
 PGURL=postgres://... npm run test:rls   # uji kebijakan keamanan di Postgres LOKAL kosong
 ```
 

@@ -212,7 +212,7 @@
   };
   /* Ambil progres dari server lalu gabungkan dengan yang ada di perangkat */
   sync.pull = async function () {
-    if (!sync.online || !A.course) { sync.status = sync.online ? sync.status : 'lokal'; emit(); return; }
+    if (!sync.online || !A.course) { sync.status = sync.online ? 'tersinkron' : 'lokal'; emit(); return; }
     const course = A.course;
     try {
       const remote = await BB().progress.load(course);

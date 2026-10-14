@@ -1,4 +1,4 @@
-// Uji asap (smoke test) antarmuka dalam mode tanpa server. Jalankan: npm run test:ui (butuh server di :8765)
+// Uji asap (smoke test) antarmuka dalam mode tanpa server (config.js diabaikan). Jalankan: npm run test:ui (butuh server di :8765)
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 let pw; try { pw = require('playwright'); } catch (e) { pw = require(process.env.PLAYWRIGHT_PATH); }
@@ -12,6 +12,8 @@ async function mk(w, h) {
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
+  // Paksa mode tanpa server, apa pun isi config.js
+  await page.route(/\/config\.js$/, r => r.fulfill({ contentType: 'application/javascript', body: 'window.NALAR_CONFIG = {};' }));
   return { ctx, page };
 }
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
