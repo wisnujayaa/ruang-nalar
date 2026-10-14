@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+*.log
+test-results/
+# config.js sengaja DI-commit (hanya berisi URL & anon key publik).
+# Jika ingin konfigurasi pribadi, buat config.local.js dan muat manual.
+config.local.js

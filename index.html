@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ruang Nalar</title>
+<meta name="description" content="Platform belajar sumber terbuka: materi interaktif, latihan bertingkat, review berjarak, kelas, dan forum diskusi.">
+<meta name="theme-color" content="#3442E8">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<a class="skip" href="#view">Langsung ke isi</a>
+<header class="top">
+  <div class="wrapx">
+    <button class="brand" data-go="home" aria-label="Ke beranda"><svg viewBox="0 0 46 18" aria-hidden="true"><line x1="1" y1="9" x2="45" y2="9"/><line x1="12" y1="9" x2="34" y2="9" class="s"/><circle cx="12" cy="9" r="4.2" class="h"/><circle cx="34" cy="9" r="4.2" class="f"/></svg><span class="site" id="site-name">Ruang Nalar</span></button>
+    <button class="course-chip" id="course-chip" data-go="course" hidden></button>
+    <span class="sync" id="sync"><i></i><span id="sync-t"></span></span>
+    <span class="spacer"></span>
+    <span id="streak" hidden></span>
+    <nav class="tabs" aria-label="Navigasi utama">
+      <a href="#" data-go="home"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z" fill="none"/></svg>Beranda</a>
+      <a href="#" data-go="course"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="18" r="2" fill="none"/><circle cx="19" cy="6" r="2" fill="none"/><path d="M7 18h6a4 4 0 000-8h-2a4 4 0 010-8h6" fill="none"/></svg>Belajar</a>
+      <a href="#" data-go="review"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 11-3-6.2" fill="none"/><path d="M20 4v5h-5" fill="none"/></svg>Review</a>
+      <a href="#" data-go="kelas"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none"/><path d="M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5" fill="none"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .7 3.2 2.6 3.6 5.5" fill="none"/></svg>Kelas</a>
+      <a href="#" data-go="me"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6" fill="none"/></svg>Akun</a>
+    </nav>
+  </div>
+</header>
+<main class="wrapx" id="view" tabindex="-1"><p class="muted">Memuat…</p></main>
+<noscript><p class="wrapx">Situs ini membutuhkan JavaScript.</p></noscript>
+
+<!-- Konfigurasi (Supabase opsional) -->
+<script src="config.js"></script>
+<script src="vendor/supabase.js"></script>
+<!-- Inti platform -->
+<script src="js/math.js"></script>
+<script src="courses/index.js"></script>
+<script src="js/registry.js"></script>
+<script src="js/backend.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/platform.js"></script>
+<script>
+  (function () { var c = window.NALAR_CONFIG || {}; if (c.siteName) { document.getElementById('site-name').textContent = c.siteName; document.title = c.siteName; } })();
+</script>
+</body>
+</html>
