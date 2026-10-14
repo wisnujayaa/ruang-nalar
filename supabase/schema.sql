@@ -261,3 +261,9 @@ grant update (read_at) on public.messages to authenticated;
 revoke update on public.profiles from authenticated;
 grant update (display_name) on public.profiles to authenticated;
 revoke all on all tables in schema public from anon;
+
+-- Pengerasan: fungsi hanya bisa dipanggil pengguna yang sudah masuk
+alter function public.gen_join_code() set search_path = public;
+revoke execute on all functions in schema public from public, anon;
+grant execute on function public.gen_join_code(), public.is_class_owner(uuid), public.is_class_member(uuid), public.in_class(uuid),
+  public.teaches(uuid, text), public.shares_class(uuid), public.join_class(text) to authenticated;
