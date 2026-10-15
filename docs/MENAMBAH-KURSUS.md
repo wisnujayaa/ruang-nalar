@@ -37,7 +37,7 @@ Sebuah kursus adalah satu folder di `courses/` berisi file JavaScript biasa yang
      files: ['course.js'] }
    ```
    `files` dimuat berurutan, jadi kursus besar boleh dipecah (lihat `pertidaksamaan`: konten, bank soal, generator, widget).
-   Tambahkan `soon: true` untuk menampilkan kartu "Segera hadir".
+   Tambahkan `soon: true` untuk menampilkan kartu "Segera hadir" (kartu pengumuman, belum bisa dibuka), atau `hidden: true` agar kursus tidak tampil di katalog tetapi tetap bisa dibuka lewat tautan `#kursus=<id>`.
 3. Jalankan `npm run serve`, buka kursusmu, lalu `npm test` (tambahkan pengecekan kunci soalmu di `tests/verify-keys.js`).
 
 ## Field kursus

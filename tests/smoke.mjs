@@ -21,7 +21,7 @@ const { page } = await mk(390, 800);
 await page.goto(URL);
 await page.waitForSelector('.catalog');
 const cards = await page.$$eval('.ccard', els => els.length);
-if (cards < 3) fail('katalog kurang dari 3 kartu');
+if (cards < 1) fail('katalog kosong');
 console.log('Beranda: ' + cards + ' kartu kursus');
 // buka kursus pertidaksamaan
 await page.click('.ccard[data-course="pertidaksamaan"]');
@@ -104,7 +104,7 @@ await page.waitForFunction(() => !document.querySelector('.loading'));
 if ((await page.$$('.klas-card')).length) fail('kelas lokal tidak terhapus'); else console.log('Kelola kelas lokal (ganti nama, hapus) OK');
 // kursus templat
 await page.click('.tabs a[data-go="home"]');
-await page.click('.ccard[data-course="contoh-kursus"]');
+await page.evaluate(() => BU.go('course', { course: 'contoh-kursus' }));
 await page.waitForSelector('.path .sec');
 await page.click('[data-go="lesson"][data-sec="1"]');
 await page.click('.toc-d summary').catch(() => {});

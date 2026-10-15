@@ -9,7 +9,7 @@
   const fmtDate = (t, time) => t ? new Date(t).toLocaleString('id-ID', time ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }) : '–';
   const ago = (t) => { const d = Date.now() - t; if (d < 60000) return 'baru saja'; if (d < 3600000) return Math.round(d / 60000) + ' menit lalu'; if (d < DAY) return Math.round(d / 3600000) + ' jam lalu'; if (d < 7 * DAY) return Math.round(d / DAY) + ' hari lalu'; return fmtDate(t); };
   const courseTitle = (id) => (NR.meta(id) || {}).title || id;
-  const openCourses = () => NR.list().filter(c => !c.soon);
+  const openCourses = () => NR.list().filter(c => !c.soon && !c.hidden);
   const P = G.BP = { classes: null, cache: {} };
   const page = (title, eyebrow, body, opt) => '<section class="page' + (opt && opt.wide ? ' wide' : '') + '">' + (opt && opt.noBack ? '<h1>' + title + '</h1>' : '<header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div>' + (eyebrow ? '<p class="eyebrow">' + eyebrow + '</p>' : '') + '<h1>' + title + '</h1></div></header>') + body + '</section>';
   const loading = '<div class="loading"><span class="spin"></span><p class="muted">Memuat…</p></div>';
@@ -96,7 +96,7 @@
       h += '<button class="cta" data-go="course" data-course="' + esc(last.id) + '"><span class="eyebrow">Lanjutkan belajar</span><span class="cta-t">' + esc(last.title) + '</span><span class="cta-d">' + done + ' bagian selesai · ' + S.attempts.length + ' soal dijawab' + (S.updated ? ' · terakhir ' + ago(S.updated) : '') + '</span><span class="cta-glyph glyph-t" aria-hidden="true">' + esc(last.glyph || '') + '</span></button>';
     }
     h += '<div id="home-tasks"></div>';
-    h += '<h2 class="h1like">Kursus</h2><div class="catalog">' + NR.list().map(courseCard).join('') + '</div>';
+    h += '<h2 class="h1like">Kursus</h2><div class="catalog">' + NR.list().filter(c => !c.hidden).map(courseCard).join('') + '</div>';
     h += '<p class="foot muted small">' + esc(siteName()) + ' · sumber terbuka. Ingin membuat kursus sendiri? <button class="linkbtn small" data-go="studio">Buka Studio kursus</button></p></section>';
     view().innerHTML = h;
     const nt = $('.note-txt'); if (nt) nt.textContent = notes[0].text;

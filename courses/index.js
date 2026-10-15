@@ -22,8 +22,9 @@ window.NALAR_COURSES = [
     blurb: 'Kursus mini yang menunjukkan semua jenis blok dan soal. Salin foldernya untuk membuat kursus baru.',
     glyph: '{ }',
     color: 'accent',
+    hidden: true,   // tidak tampil di katalog; tetap bisa dibuka lewat #kursus=contoh-kursus
     files: ['course.js']
   },
-  { id: 'fungsi-kuadrat', title: 'Fungsi kuadrat', subject: 'Matematika', level: 'SMA kelas X', blurb: 'Segera hadir.', glyph: 'x²', soon: true },
-  { id: 'statistika', title: 'Statistika dasar', subject: 'Matematika', level: 'SMA kelas X', blurb: 'Segera hadir.', glyph: 'σ', soon: true }
+  /* Kursus yang sedang disiapkan bisa ditampilkan sebagai kartu "Segera hadir" (tidak bisa dibuka):
+     { id: 'fungsi-kuadrat', title: 'Fungsi kuadrat', subject: 'Matematika', blurb: 'Segera hadir.', glyph: 'x²', soon: true } */
 ];

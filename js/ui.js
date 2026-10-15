@@ -67,7 +67,7 @@
     $$('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.go === tabOf(v) ? 'page' : 'false'));
     document.body.dataset.view = v;
     if (COURSE_VIEWS.has(v) && (!A.course || nav.cur.course && nav.cur.course !== A.course)) {
-      const want = nav.cur.course || A.set.lastCourse || (G.NR.list().find(c => !c.soon) || {}).id;
+      const want = nav.cur.course || A.set.lastCourse || (G.NR.list().find(c => !c.soon && !c.hidden) || {}).id;
       if (!want) { nav.cur = { v: 'home' }; return render(); }
       if (loadingCourse) return;
       loadingCourse = true; view().innerHTML = '<div class="loading"><span class="spin"></span><p class="muted">Memuat kursus…</p></div>';
