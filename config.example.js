@@ -7,6 +7,8 @@ window.NALAR_CONFIG = {
   siteName: 'Ruang Nalar',
   // Nomor WA untuk tombol "Kirim lewat WhatsApp" setelah melapor (opsional, TERLIHAT PUBLIK). Contoh: '62812xxxxxxx'
   reportWhatsApp: '',
+  // Repositori kode situs (untuk tautan "Buka di GitHub" di Studio). Kosongkan bila tidak ingin ditampilkan.
+  repoUrl: '',
   tagline: 'Belajar sedikit tiap hari, paham sampai ke akarnya.',
   supabaseUrl: '',      // contoh: 'https://abcdefgh.supabase.co'
   supabaseAnonKey: ''   // Project Settings → API → anon public key

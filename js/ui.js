@@ -725,28 +725,8 @@
   };
 
   /* ---------- statistik / saya / dashboard ---------- */
-  function statsHTML(S, opt) {
-    opt = opt || {};
-    const st = A.stats(S); const t = Date.now();
-    let week = 0; const days = [];
-    for (let i = 13; i >= 0; i--) { const d = A.today(t - i * 86400000); const m = Math.round((S.daily[d] || 0) / 60000); days.push([d, m]); if (i < 7) week += m; }
-    const mx = Math.max(10, ...days.map(d => d[1]));
-    let h = '<div class="kpis"><div><b>' + streakOf(S) + '</b><span>hari beruntun</span></div><div><b>' + week + '</b><span>menit 7 hari</span></div><div><b>' + st.tot + '</b><span>soal dijawab</span></div><div><b>' + Math.round(st.acc * 100) + '%</b><span>akurasi</span></div></div>';
-    h += '<div class="card"><h2>Menit belajar, 14 hari</h2><svg class="bars" viewBox="0 0 560 150" role="img" aria-label="Grafik menit belajar per hari">' + days.map((d, i) => { const hh = d[1] / mx * 100; return '<rect x="' + (i * 40 + 8) + '" y="' + (112 - hh) + '" width="24" height="' + Math.max(hh, 1) + '" rx="4" class="' + (d[1] >= (A.set.goal || 20) ? 'b-goal' : 'b') + '"/><text x="' + (i * 40 + 20) + '" y="132" class="bl">' + d[0].slice(8) + '</text>' + (d[1] ? '<text x="' + (i * 40 + 20) + '" y="' + (106 - hh) + '" class="bv">' + d[1] + '</text>' : ''); }).join('') + '<line x1="0" x2="560" y1="' + (112 - (A.set.goal || 20) / mx * 100) + '" y2="' + (112 - (A.set.goal || 20) / mx * 100) + '" class="goal-l"/></svg><p class="muted small">Garis putus-putus: target ' + (A.set.goal || 20) + ' menit.</p></div>';
-    h += '<div class="card"><h2>Peta penguasaan</h2><p class="muted small">Per konsep, dari jawaban terakhir (yang terbaru lebih berbobot).</p><div class="heat">' + Object.keys(C.CONCEPTS).map(k => { const c = st.conc[k]; const cls = !c ? 'h0' : c.n < 3 ? 'h1' : c.m >= 0.8 ? 'h4' : c.m >= 0.55 ? 'h3' : 'h2'; return '<div class="hc ' + cls + '" title="' + esc(C.CONCEPTS[k]) + '"><span>' + esc(C.CONCEPTS[k]) + '</span><b>' + (c ? Math.round(c.m * 100) + '%' : '–') + '</b><small>' + (c ? c.n + ' soal' : 'belum') + '</small></div>'; }).join('') + '</div><p class="legend"><i class="h0"></i>belum <i class="h1"></i>data sedikit <i class="h2"></i>lemah <i class="h3"></i>sedang <i class="h4"></i>kuat</p></div>';
-    const tr = Object.entries(st.traps).filter(([k, v]) => v.hits && C.TRAPS[k]).sort((a, b) => b[1].hits - a[1].hits).slice(0, 6);
-    h += '<div class="card"><h2>Statistik jebakan</h2>' + (tr.length ? '<ul class="trapbars">' + tr.map(([k, v]) => '<li><span>' + esc(C.TRAPS[k].name) + '</span><i style="width:' + Math.min(100, v.hits * 12) + '%"></i><b>' + v.hits + '×</b></li>').join('') + '</ul>' : '<p class="muted">Belum ada jebakan yang tercatat.</p>') + '</div>';
-    const cw = st.confWrong.slice(-8).reverse();
-    h += '<div class="card"><h2>Salah padahal yakin</h2><p class="muted small">' + (opt.mentor ? 'Paling layak dibahas berdua: di sinilah salah paham tersembunyi.' : 'Soal-soal ini paling berharga untuk dipelajari ulang.') + '</p>' + (cw.length ? '<ul class="cwlist">' + cw.map(a => { const it = A.item(a.i); return it ? '<li>' + rich(it.q.replace(/<[^>]+>/g, '').slice(0, 120)) + ' <span class="muted small">' + new Date(a.t).toLocaleDateString('id-ID') + '</span></li>' : ''; }).join('') + '</ul>' : '<p class="muted">Belum ada.</p>') + '</div>';
-    h += '<div class="card"><h2>Progres bagian</h2><ul class="secprog">' + C.SECTIONS.map(s => { const st2 = (S.sections || {})[s.id] || {}; const L = C.LESSONS[s.id].length; return '<li><span>' + s.id + '. ' + esc(s.short) + '</span><i><em style="width:' + (st2.done ? 100 : Math.round((st2.step || 0) / L * 100)) + '%"></em></i><b>' + (st2.done ? 'selesai' : st2.step ? 'langkah ' + (st2.step + 1) + '/' + L : '–') + '</b></li>'; }).join('') + '</ul></div>';
-    if (opt.mentor) {
-      const ex = Object.entries(S.exits || {}); if (ex.length) h += '<div class="card"><h2>Penjelasan di tiket keluar</h2>' + ex.map(([k, v]) => '<blockquote><p class="eyebrow">Bagian ' + k.slice(1) + ' · ' + v.pts + ' poin kunci dicentang</p>' + esc(v.text) + '</blockquote>').join('') + '</div>';
-      const dm = Object.entries(S.dumps || {}); if (dm.length) h += '<div class="card"><h2>Brain dump</h2>' + dm.map(([k, v]) => '<blockquote><p class="eyebrow">Bagian ' + k.slice(1) + ' · ' + v.got + ' poin</p>' + esc(v.text) + '</blockquote>').join('') + '</div>';
-      const rec = S.attempts.slice(-12).reverse();
-      h += '<div class="card"><h2>Aktivitas terakhir</h2><ul class="rec">' + rec.map(a => '<li class="' + (a.ok ? 'ok' : 'bad') + '">' + (a.ok ? '✓' : '✗') + ' <span>' + esc(a.s ? secMeta(a.s).short : (a.p || 'prasyarat')) + ' · L' + a.l + '</span> <span class="muted small">' + new Date(a.t).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) + ' · ' + ['', 'menebak', 'agak yakin', 'yakin'][a.c] + '</span></li>').join('') + '</ul></div>';
-    }
-    return h;
-  }
+  /* Dashboard statistik ada di js/stats.js */
+  function statsHTML(S, opt) { return G.NalarStats ? G.NalarStats.html(S, opt) : ''; }
   function streakOf(S) { const save = A.S; A.S = S; const s = A.streak(); A.S = save; return s; }
   V.stats = function () {
     const meta = G.NR.meta(A.course) || {};

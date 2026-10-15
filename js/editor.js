@@ -54,7 +54,15 @@
     }
     h += '<div class="card nudge"><p><b>Buat kursus tanpa menulis kode.</b> Susun bagian materi, contoh bertahap, soal 6 tipe, flashcard, dan jebakan umum. Semua fitur platform (review berjarak, buku kesalahan, kelas, tugas, laporan guru) langsung berlaku untuk kursusmu.</p>' + btn('new', ic('plus') + ' Buat kursus baru', '', 'btn primary') + '</div>';
     if (b.mode === 'local') h += '<p class="muted small">Mode tanpa server: kursus hanya tersimpan di browser ini.</p>';
-    h += '<div id="st-list">' + '<div class="loading"><span class="spin"></span></div>' + '</div></section>';
+    h += '<div id="st-list">' + '<div class="loading"><span class="spin"></span></div>' + '</div>';
+    /* Kursus berkas (folder courses/) tidak bisa diedit di Studio: isinya berupa kode, termasuk widget & generator soal */
+    const files = NR.list().filter(c => !c.db && !c.soon);
+    if (files.length && b.isAdmin) {
+      const repo = String((G.NALAR_CONFIG || {}).repoUrl || '').replace(/\/$/, '');
+      h += '<h2 class="h1like">Kursus berkas (kode)</h2><div class="card"><p class="muted small">Kursus ini ditulis sebagai kode di folder <code>courses/</code>, karena memakai widget interaktif dan generator soal buatan sendiri yang tidak bisa dibuat lewat formulir. Mengeditnya lewat GitHub: ubah file, lalu Netlify memperbarui situs otomatis dalam ~1 menit. Panduan: <code>docs/MENAMBAH-KURSUS.md</code>.</p><ul class="file-courses">' +
+        files.map(c => '<li><b>' + escA(c.title) + '</b> <span class="muted small mono">courses/' + escA(c.id) + '/</span>' + (c.hidden ? ' <span class="chip">tersembunyi</span>' : '') + (repo ? ' <a class="btn small" target="_blank" rel="noopener" href="' + escA(repo) + '/tree/main/courses/' + encodeURIComponent(c.id) + '">Buka di GitHub</a>' : '') + '</li>').join('') + '</ul></div>';
+    }
+    h += '</section>';
     view().innerHTML = h;
     NR.refreshRemote().then(list => {
       const box = $('#st-list'); if (!box) return;
