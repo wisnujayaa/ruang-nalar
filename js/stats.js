@@ -141,7 +141,7 @@
     const CONF = ['Menebak', 'Agak yakin', 'Yakin'];
     h += '<div class="st-two">';
     h += '<div class="card"><h2>Seberapa jujur rasa yakin?</h2><p class="muted small">Idealnya batang makin panjang dari "Menebak" ke "Yakin".</p>' + hbars(D.conf.map(c => ({ label: CONF[c.c - 1], v: c.acc, sub: c.n + ' soal' }))) + '</div>';
-    if (D.lv.length) h += '<div class="card"><h2>Akurasi per level</h2><p class="muted small">Wajar menurun di level tinggi. Yang penting, level yang sedang dikerjakan stabil di atas 70%.</p>' + hbars(D.lv.map(x => ({ label: 'L' + x.l + ' ' + ((U.LV && U.LV[x.l]) || ''), v: x.acc, sub: x.n + ' soal' })), { mark: 0.7 }) + '</div>';
+    if (D.lv.length) h += '<div class="card"><h2>Akurasi per level</h2><p class="muted small">Wajar menurun di level tinggi. Yang penting, level yang sedang dikerjakan stabil di atas 70%.</p>' + hbars(D.lv.map(x => ({ label: 'L' + (+x.l || 0) + ' ' + ((U.LV && U.LV[x.l]) || ''), v: x.acc, sub: x.n + ' soal' })), { mark: 0.7 }) + '</div>';
     h += '</div>';
 
     const M = D.mem;
@@ -165,7 +165,7 @@
       const ex = Object.entries(S.exits || {}); if (ex.length) h += '<div class="card"><h2>Penjelasan di tiket keluar</h2>' + ex.map(([k, v]) => '<blockquote><p class="eyebrow">Bagian ' + k.slice(1) + ' · ' + v.pts + ' poin kunci dicentang</p>' + esc(v.text) + '</blockquote>').join('') + '</div>';
       const dm = Object.entries(S.dumps || {}); if (dm.length) h += '<div class="card"><h2>Brain dump</h2>' + dm.map(([k, v]) => '<blockquote><p class="eyebrow">Bagian ' + k.slice(1) + ' · ' + v.got + ' poin</p>' + esc(v.text) + '</blockquote>').join('') + '</div>';
       const rec = D.at.slice(-12).reverse();
-      if (rec.length) h += '<div class="card"><h2>Aktivitas terakhir</h2><ul class="rec">' + rec.map(a => '<li class="' + (a.ok ? 'ok' : 'bad') + '">' + (a.ok ? '✓' : '✗') + ' <span>' + esc(a.s ? U.secMeta(a.s).short : (a.p || 'prasyarat')) + ' · L' + a.l + '</span> <span class="muted small">' + new Date(a.t).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) + ' · ' + ['', 'menebak', 'agak yakin', 'yakin'][a.c || 2] + '</span></li>').join('') + '</ul></div>';
+      if (rec.length) h += '<div class="card"><h2>Aktivitas terakhir</h2><ul class="rec">' + rec.map(a => '<li class="' + (a.ok ? 'ok' : 'bad') + '">' + (a.ok ? '✓' : '✗') + ' <span>' + esc(a.s ? U.secMeta(a.s).short : (a.p || 'prasyarat')) + ' · L' + (+a.l || 0) + '</span> <span class="muted small">' + new Date(a.t).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) + ' · ' + ['', 'menebak', 'agak yakin', 'yakin'][a.c || 2] + '</span></li>').join('') + '</ul></div>';
     }
     return h;
   }

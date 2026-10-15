@@ -6,11 +6,12 @@
   "license": "MIT",
   "scripts": {
     "serve": "python3 -m http.server 8765",
-    "test": "node tests/verify-keys.js && node tests/verify-safe.js && node tests/verify-expr.js && node --no-warnings --experimental-strip-types tests/verify-notify.mjs",
+    "test": "node tests/verify-keys.js && node tests/verify-safe.js && node tests/verify-expr.js && node tests/verify-core.js && node --no-warnings --experimental-strip-types tests/verify-notify.mjs",
     "test:ui": "node tests/smoke.mjs",
     "test:rls": "bash tests/run-rls.sh",
     "test:flow": "node tests/supabase-flow.mjs",
-    "test:editor": "node tests/editor-flow.mjs"
+    "test:editor": "node tests/editor-flow.mjs",
+    "test:csp": "node tests/csp.mjs"
   },
   "devDependencies": {
     "playwright": "^1.47.0"

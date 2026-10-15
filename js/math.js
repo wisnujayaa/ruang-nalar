@@ -267,7 +267,7 @@
   };
   const REL = new Set(['≤', '≥', '≠', '<', '>', '=', '⇒', '⇔', '→', '∈', '∉', '≈', '⊂']);
   const BIN = new Set(['∪', '∩', '±', '∓', '·', '×', '÷', '+', '−']);
-  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }   // aman untuk teks maupun atribut
   function tex(src) {
     let i = 0;
     const wrapSym = (ch) => REL.has(ch) ? '<span class="mr">' + esc(ch) + '</span>' : BIN.has(ch) ? '<span class="mb">' + esc(ch) + '</span>' : esc(ch);

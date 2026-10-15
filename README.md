@@ -52,7 +52,7 @@ Harus lewat server lokal (bukan membuka `index.html` langsung), karena kursus di
 
 ## Aktifkan akun, kelas online, dan forum (Supabase, gratis)
 
-Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql`, `supabase/courses.sql`, `supabase/roles.sql`, `supabase/course-access.sql`, lalu `supabase/reports.sql` di SQL Editor → jadikan akunmu admin → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
+Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql`, `supabase/courses.sql`, `supabase/roles.sql`, `supabase/course-access.sql`, `supabase/reports.sql`, lalu `supabase/hardening.sql` di SQL Editor → jadikan akunmu admin → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
 
 ## Menambah kursus
 

@@ -14,6 +14,48 @@
       sections: {}, mistakes: {}, dumps: {}, daily: {}, exits: {}, predicts: {}, unlock: {}, exDone: {}, notesRead: {} };
   }
   A.fresh = fresh;
+
+  /* ---------- pembersih state ----------
+     Progres bisa datang dari luar: server (perangkat lain), kode progres, atau progres siswa yang dibuka guru.
+     Semua field dipaksa ke tipe & batas yang benar supaya (1) data rusak tidak membuat aplikasi macet, dan
+     (2) progres yang sengaja direkayasa tidak bisa menyisipkan HTML/skrip ke layar orang lain. */
+  const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  const num = (v, d, lo, hi) => { let n = typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' ? +v : NaN); if (!isFinite(n)) n = d; if (lo != null && n < lo) n = lo; if (hi != null && n > hi) n = hi; return n; };
+  const int = (v, d, lo, hi) => Math.round(num(v, d, lo, hi));
+  const bit = (v) => v ? 1 : 0;
+  const KEY = /^[A-Za-z0-9_:.\-]{1,80}$/;
+  const key = (v) => typeof v === 'string' && KEY.test(v) ? v : null;
+  const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+  const T_MAX = 4102444800000;   // tahun 2100
+  const mapOf = (m, fn, maxKeys) => { const o = {}; if (!isObj(m)) return o; let k = 0; for (const [kk, v] of Object.entries(m)) { if (!key(kk) || k++ >= (maxKeys || 5000)) continue; const r = fn(v, kk); if (r != null) o[kk] = r; } return o; };
+  const sched = (v) => isObj(v) ? { iv: num(v.iv, 0, 0, 3650), ef: num(v.ef, 2.4, 1.3, 3), n: int(v.n, 0, 0, 1e4), lapses: int(v.lapses, 0, 0, 1e4), due: num(v.due, 0, 0, T_MAX), last: num(v.last, 0, 0, T_MAX) } : null;
+  A.sanitize = function (raw) {
+    const j = isObj(raw) ? raw : {}; const o = fresh();
+    o.attempts = (Array.isArray(j.attempts) ? j.attempts : []).slice(-1400).map(a => {
+      if (!isObj(a) || !key(a.i)) return null;
+      const r = { t: num(a.t, 0, 0, T_MAX), i: a.i, s: int(a.s, 0, 0, 999), l: int(a.l, 0, 0, 9), ok: bit(a.ok), c: int(a.c, 2, 1, 3), ms: num(a.ms, 0, 0, 30 * MIN), k: (Array.isArray(a.k) ? a.k : []).map(key).filter(Boolean).slice(0, 12), src: key(a.src) || 'latihan' };
+      if (key(a.tp)) r.tp = a.tp; if (key(a.th)) r.th = a.th; if (key(a.p)) r.p = a.p;
+      return r.t ? r : null;
+    }).filter(Boolean);
+    o.items = mapOf(j.items, sched); o.cards = mapOf(j.cards, sched);
+    o.prereq = mapOf(j.prereq, v => isObj(v) && ['lulus', 'latih'].includes(v.st) ? { st: v.st, t: num(v.t, 0, 0, T_MAX) } : null, 500);
+    o.diag = isObj(j.diag) ? { done: bit(j.diag.done), t: num(j.diag.t, 0, 0, T_MAX), res: mapOf(j.diag.res, v => isObj(v) ? { ok: int(v.ok, 0, 0, 999), n: int(v.n, 0, 0, 999) } : null, 500) } : o.diag;
+    o.intro = bit(j.intro);
+    o.sections = mapOf(j.sections, v => isObj(v) ? { step: int(v.step, 0, 0, 999), done: bit(v.done), visited: mapOf(v.visited, () => 1, 999) } : null, 999);
+    o.mistakes = mapOf(j.mistakes, v => isObj(v) && key(v.i) ? { t: num(v.t, 0, 0, T_MAX), i: v.i, g: key(v.g), sd: v.sd == null ? null : int(v.sd, 0, 0, 2 ** 32), a: str(v.a, 120), tr: key(v.tr), y: bit(v.y), fx: bit(v.fx), s: int(v.s, 0, 0, 999) } : null, 400);
+    o.dumps = mapOf(j.dumps, v => isObj(v) ? { t: num(v.t, 0, 0, T_MAX), text: str(v.text, 2000), got: int(v.got, 0, 0, 999) } : null, 200);
+    o.exits = mapOf(j.exits, v => isObj(v) ? { t: num(v.t, 0, 0, T_MAX), text: str(v.text, 1200), pts: int(v.pts, 0, 0, 999) } : null, 200);
+    o.daily = {}; if (isObj(j.daily)) for (const [d, v] of Object.entries(j.daily)) if (/^\d{4}-\d{2}-\d{2}$/.test(d)) o.daily[d] = num(v, 0, 0, DAY);
+    o.predicts = mapOf(j.predicts, v => int(v, 0, 0, 99), 2000);
+    o.exDone = mapOf(j.exDone, v => isObj(v) ? mapOf(v, () => 1, 99) : null, 2000);
+    o.unlock = mapOf(j.unlock, v => v ? 1 : null, 999);
+    o.notesRead = mapOf(j.notesRead, v => v ? 1 : null, 2000);
+    o.nick = str(j.nick, 40); o.nickT = num(j.nickT, 0, 0, T_MAX);
+    o.created = num(j.created, now(), 0, T_MAX); if (j.updated != null) o.updated = num(j.updated, 0, 0, T_MAX);
+    return o;
+  };
+  /* Teks JSON/objek dari luar → state bersih; null bila tidak terbaca */
+  A.parseState = function (remote) { try { const j = typeof remote === 'string' ? JSON.parse(remote) : remote; return isObj(j) ? A.sanitize(j) : null; } catch (e) { return null; } };
   /* ---------- simpan lokal ---------- */
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
@@ -21,7 +63,7 @@
     try {
       let raw = lsGet(keyOf(id));
       if (!raw && id === 'pertidaksamaan') raw = lsGet('batas-state-v1'); // migrasi dari versi lama
-      const j = JSON.parse(raw || 'null'); if (j && j.v === 1) return Object.assign(fresh(), j);
+      const j = JSON.parse(raw || 'null'); if (j && j.v === 1) return A.sanitize(j);
     } catch (e) { }
     return fresh();
   }
@@ -51,19 +93,22 @@
     lastTick = t;
   };
   A.minutesToday = () => Math.round((A.S.daily[A.today()] || 0) / MIN);
+  /* Hari beruntun: hari aktif = belajar ≥ 3 menit atau menjawab ≥ 1 soal. Streak tetap hidup sampai hari ini berakhir.
+     Kumpulan hari aktif dihitung sekali (bukan per hari × per jawaban), lalu mundur per tanggal kalender
+     (setDate, jam 12 siang) supaya aman dari pergeseran jam musim panas. */
   A.streak = function () {
-    let s = 0; const t = now();
-    const active = (d) => (A.S.daily[d] || 0) >= 3 * MIN || A.S.attempts.some(a => A.today(a.t) === d);
-    if (!active(A.today(t))) { // streak tetap hidup sampai hari ini berakhir
-      for (let i = 1; i < 400; i++) { if (active(A.today(t - i * DAY))) s++; else break; }
-      return s;
-    }
-    for (let i = 0; i < 400; i++) { if (active(A.today(t - i * DAY))) s++; else break; }
+    const days = new Set();
+    for (const [d, v] of Object.entries(A.S.daily || {})) if (v >= 3 * MIN) days.add(d);
+    for (const a of A.S.attempts) days.add(A.today(a.t));
+    const d = new Date(now()); d.setHours(12, 0, 0, 0);
+    if (!days.has(A.today(d.getTime()))) d.setDate(d.getDate() - 1);
+    let s = 0; while (s < 5000 && days.has(A.today(d.getTime()))) { s++; d.setDate(d.getDate() - 1); }
     return s;
   };
 
   /* ---------- jadwal ulang berjarak (ala SM-2, disederhanakan) ----------
      grade: 0 lupa/salah, 1 susah/menebak, 2 ingat, 3 mudah/yakin */
+  const IV_MAX = 365;   // jarak review terpanjang (hari)
   A.schedule = function (map, key, grade, extra) {
     const t = now();
     const s = map[key] || { iv: 0, ef: 2.4, n: 0, lapses: 0, due: t, last: 0 };
@@ -72,7 +117,7 @@
       if (grade === 1) { s.iv = Math.max(1, s.iv * 1.2); s.ef = Math.max(1.3, s.ef - 0.15); }
       else if (grade === 2) { s.iv = s.n === 0 ? 1 : s.n === 1 ? 3 : Math.round(s.iv * s.ef); }
       else { s.iv = s.n === 0 ? 2 : s.n === 1 ? 5 : Math.round(s.iv * s.ef * 1.3); s.ef = Math.min(3, s.ef + 0.15); }
-      s.n++; s.due = t + s.iv * DAY;
+      s.iv = Math.min(IV_MAX, Math.max(1, s.iv)); s.n++; s.due = t + s.iv * DAY;
     }
     s.last = t; map[key] = s; return s;
   };
@@ -155,7 +200,8 @@
   A.exportCode = function () { const j = JSON.stringify(A.S); return 'BATAS1.' + btoa(unescape(encodeURIComponent(j))); };
   A.decodeCode = function (code) {
     code = String(code || '').trim(); if (!code.startsWith('BATAS1.')) throw new Error('Kode tidak dikenali. Kode diawali dengan BATAS1.');
-    const j = JSON.parse(decodeURIComponent(escape(atob(code.slice(7))))); if (!j || j.v !== 1) throw new Error('Isi kode rusak.'); return Object.assign(fresh(), j);
+    let j; try { j = JSON.parse(decodeURIComponent(escape(atob(code.slice(7).replace(/\s+/g, ''))))); } catch (e) { throw new Error('Kode rusak atau terpotong. Salin ulang seluruh kode.'); }
+    if (!j || j.v !== 1) throw new Error('Isi kode rusak.'); return A.sanitize(j);
   };
 
   /* ---------- gabung dua state (HP + laptop) ---------- */
@@ -167,6 +213,7 @@
     o.cards = byLast(a.cards, b.cards, s => s.last || 0);
     o.prereq = byLast(a.prereq, b.prereq, s => s.t || 0);
     o.mistakes = byLast(a.mistakes, b.mistakes, s => s.t || 0);
+    { const ks = Object.keys(o.mistakes); if (ks.length > 160) ks.sort((x, y) => (o.mistakes[x].t || 0) - (o.mistakes[y].t || 0)).slice(0, ks.length - 160).forEach(k => delete o.mistakes[k]); }
     o.dumps = byLast(a.dumps, b.dumps, s => s.t || 0);
     o.exits = byLast(a.exits, b.exits, s => s.t || 0);
     o.predicts = Object.assign({}, b.predicts, a.predicts);
@@ -217,7 +264,8 @@
     try {
       const remote = await BB().progress.load(course);
       if (course !== A.course) return;
-      if (remote) { A.S = A.merge(A.S, Object.assign(fresh(), typeof remote === 'string' ? JSON.parse(remote) : remote)); A.flush(); }
+      const r = remote ? A.parseState(remote) : null;
+      if (r) { A.S = A.merge(A.S, r); A.flush(); }
       sync.status = 'tersinkron'; emit(); sync.queue();
     } catch (e) { sync.status = 'gagal'; emit(); }
   };
@@ -228,7 +276,7 @@
     if (b.notes && b.notes.watch) b.notes.watch(list => { sync.notes = list || []; emit(); });
     if (b.progress && b.progress.watch) b.progress.watch((course, remote) => {
       if (course !== A.course || !remote) return;
-      try { const r = Object.assign(fresh(), typeof remote === 'string' ? JSON.parse(remote) : remote); const m = A.merge(A.S, r); if (m.attempts.length !== A.S.attempts.length || (m.updated || 0) > (A.S.updated || 0)) { A.S = m; A.flush(); emit(); } } catch (e) { }
+      try { const r = A.parseState(remote); if (!r) return; const m = A.merge(A.S, r); if (m.attempts.length !== A.S.attempts.length || (m.updated || 0) > (A.S.updated || 0)) { A.S = m; A.flush(); emit(); } } catch (e) { }
     });
     emit(); sync.pull();
   };

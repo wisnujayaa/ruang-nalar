@@ -255,7 +255,8 @@
         canCreate: true, usesCode: true, manual: false,
         async mine() { const r = chk(await sb.from('classes').select('id,name,course_id,owner_id,join_code,created_at').order('created_at')); return r.map(c => ({ id: c.id, name: c.name, course: c.course_id, ownerId: c.owner_id, isOwner: c.owner_id === B.user.id, code: c.join_code })); },
         async create(c) { const r = chk(await sb.from('classes').insert({ name: c.name, course_id: c.course, owner_id: B.user.id }).select().single()); return { id: r.id, code: r.join_code }; },
-        async join(code) { return chk(await sb.rpc('join_class', { p_code: code })); },
+        /* Kode salah → server mengembalikan NULL (bukan error) supaya percobaan tercatat untuk batas anti-tebak */
+        async join(code) { const id = chk(await sb.rpc('join_class', { p_code: code })); if (!id) throw err('Kode kelas tidak ditemukan. Periksa lagi hurufnya (huruf O dan angka 0, huruf I dan angka 1 tidak dipakai).', 'notfound'); return id; },
         async remove(id) { chk(await sb.from('classes').delete().eq('id', id)); },
         async update(id, patch) { const p = {}; if (patch.name) p.name = String(patch.name).slice(0, 60); if (patch.course) p.course_id = patch.course; chk(await sb.from('classes').update(p).eq('id', id)); },
         /* Kode baru: tautan/kode lama tidak berlaku lagi (anggota yang sudah masuk tetap) */

@@ -1,0 +1,16 @@
+# Header keamanan untuk Netlify (berlaku untuk semua halaman).
+# - Content-Security-Policy: hanya skrip dari situs ini sendiri yang boleh jalan (tanpa skrip inline / eval),
+#   koneksi hanya ke Supabase, iframe hanya dari layanan embed yang diizinkan widget.
+#   Jika kamu memindahkan situs ke proyek Supabase lain, *.supabase.co tetap cocok.
+# - frame-ancestors 'none' + X-Frame-Options: situs tidak bisa dibungkus iframe orang lain (anti-clickjacking).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://www.desmos.com https://www.geogebra.org https://phet.colorado.edu; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+
+# Dokumen internal & tes tidak perlu diakses publik lewat situs (tetap ada di GitHub)
+/supabase/*
+  X-Robots-Tag: noindex

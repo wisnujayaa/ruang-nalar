@@ -19,6 +19,8 @@
   const stateFor = (course) => A.course === course ? A.S : A.readState(course);
   const readNotes = () => { A.set.readNotes = A.set.readNotes || {}; return A.set.readNotes; };
 
+  /* Progres anggota kelas selalu dibersihkan dulu: datanya ditulis oleh siswa, jadi tidak boleh dipercaya begitu saja */
+  async function memberProg(c) { return (await bb().classes.memberProgress(c.id, c.course)).map(p => Object.assign({}, p, { state: p.state ? A.parseState(p.state) : null })); }
   async function myClasses(force) {
     if (needLogin()) return [];
     if (!P.classes || force) { P.classes = await bb().classes.mine(); await ensureMeta(P.classes.map(c => c.course)); }
@@ -217,7 +219,7 @@
     view().innerHTML = page('Kelas', '', h, { noBack: true });
     const jf = $('#joinf'); if (jf) jf.addEventListener('submit', async (e) => {
       e.preventDefault(); const code = $('#jcode').value.trim().toUpperCase(); if (code.length < 4) { $('#jerr').textContent = 'Tulis kode kelasnya.'; return; }
-      try { const cid = await b.classes.join(code); await myClasses(true); try { history.replaceState(null, '', location.pathname + location.search); } catch (er) { } go('klas', { id: cid }); }
+      try { const cid = await b.classes.join(code); await myClasses(true); try { history.replaceState(history.state, '', location.pathname + location.search); } catch (er) { } go('klas', { id: cid }); }
       catch (err) { $('#jerr').textContent = /tidak ditemukan|not found|invalid/i.test(err.message) ? 'Kode tidak ditemukan. Periksa lagi hurufnya.' : err.message; }
     });
     const cf = $('#cform'); if (cf) cf.addEventListener('submit', async (e) => {
@@ -291,7 +293,7 @@
     if (c.isOwner) h += asgForm(c);
     if (!list.length) h += '<div class="card empty"><p>' + ic('task') + ' Belum ada tugas.' + (c.isOwner ? ' Buat tugas pertama di atas: statusnya akan terisi otomatis dari progres siswa.' : '') + '</p></div>';
     let prog = null, mem = null;
-    if (c.isOwner && list.length) { [prog, mem] = await Promise.all([bb().classes.memberProgress(c.id, c.course), bb().classes.members(c.id)]); }
+    if (c.isOwner && list.length) { [prog, mem] = await Promise.all([memberProg(c), bb().classes.members(c.id)]); }
     h += '<div class="asgs">' + list.map((a, k) => {
       let x = '<article class="card asg"><div class="asg-h"><div><h3 class="t"></h3><p class="small ' + (a.due && Date.now() > a.due ? 'bad' : 'muted') + '">' + ic('clock') + ' ' + esc(dueTxt(a)) + '</p></div>';
       if (!c.isOwner) { const s = statusOf(a, stateFor(c.course)); x += chipSt(s) + '</div>'; }
@@ -409,9 +411,9 @@
       $$('.mem li', body).forEach((li, k) => { const n = members[k].name || 'Anggota'; $('.nm', li).textContent = n + (members[k].id === myId() ? ' (kamu)' : ''); $('.av', li).textContent = n.slice(0, 1).toUpperCase(); });
       return;
     }
-    const prog = await b.classes.memberProgress(c.id, c.course);
+    const prog = await memberProg(c);
     P.cache.prog = prog; P.cache.members = members;
-    const mem = members.map(m => { const pr = prog.find(x => x.id === m.id); const st = pr && pr.state ? Object.assign(A.fresh(), pr.state) : null; return Object.assign({ m, st, u: pr && pr.u }, st ? summ(st) : { done: 0, n7: 0, acc7: null, min7: 0, last: 0, weak: null, cw: 0, stats: null }); });
+    const mem = members.map(m => { const pr = prog.find(x => x.id === m.id); const st = pr && pr.state ? A.parseState(pr.state) : null; return Object.assign({ m, st, u: pr && pr.u }, st ? summ(st) : { done: 0, n7: 0, acc7: null, min7: 0, last: 0, weak: null, cw: 0, stats: null }); });
     const act = mem.filter(m => m.n7 > 0).length; const accs = mem.filter(m => m.acc7 != null); const avgAcc = accs.length ? accs.reduce((a, m) => a + m.acc7, 0) / accs.length : null;
     let h = '<div class="kpis"><div><b>' + mem.length + '</b><span>siswa</span></div><div><b>' + act + '</b><span>aktif 7 hari</span></div><div><b>' + mem.reduce((a, m) => a + m.n7, 0) + '</b><span>soal 7 hari</span></div><div><b>' + (avgAcc == null ? '–' : Math.round(avgAcc * 100) + '%') + '</b><span>rata-rata akurasi</span></div></div>';
     if (b.classes.manual) h += manageMembers(c, members);
@@ -453,7 +455,7 @@
   V.student = function (p) {
     const c = P.cur; const pr = (P.cache.prog || []).find(x => x.id === p.id); const m = (P.cache.members || []).find(x => x.id === p.id) || {};
     if (!c || !pr) { go('kelas', {}, { replace: true }); return; }
-    const S = Object.assign(A.fresh(), pr.state);
+    const S = A.parseState(pr.state) || A.fresh();
     let h = statsHTML(S, { mentor: true });
     if (bb().mode !== 'local' && !String(p.id).startsWith('L:')) h += '<div class="card"><h2>Kirim pesan</h2><p class="muted small">Muncul di beranda siswa. Bingkai sebagai bantuan, bukan pengawasan.</p><textarea id="note-t" rows="3" maxlength="600" placeholder="Misalnya: Mantap progresnya! Besok coba latihan L3 Bagian 5 ya."></textarea>' + linkSelect('note-l', c.course) + '<p class="err" role="alert" id="note-e"></p><button class="btn primary" data-pact="note-send" data-id="' + esc(p.id) + '">' + ic('send') + ' Kirim</button><div id="nhist"></div></div>';
     view().innerHTML = page('<span class="sn"></span>', 'Laporan siswa · ' + esc(c.name), h, { wide: true });

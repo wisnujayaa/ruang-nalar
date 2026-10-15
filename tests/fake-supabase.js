@@ -67,7 +67,7 @@
       const db0 = load(); const myRole = (db0.profiles.find(p => p.id === me()) || {}).role;
       if (fn === 'admin_list_users') { if (myRole !== 'admin') return { data: null, error: { message: 'Hanya admin' } }; return { data: db0.profiles.map(p => ({ id: p.id, display_name: p.display_name, email: (db0.users.find(u => u.id === p.id) || {}).email, role: p.role, created_at: new Date().toISOString() })), error: null }; }
       if (fn === 'admin_set_role') { if (myRole !== 'admin') return { data: null, error: { message: 'Hanya admin' } }; const p = db0.profiles.find(x => x.id === a.p_user); p.role = a.p_role; save(db0); return { data: null, error: null }; }
-      if (fn !== 'join_class') return { error: { message: 'no fn' } }; const db = load(); const c = db.classes.find(c => c.join_code === String(a.p_code).trim().toUpperCase()); if (!c) return { data: null, error: { message: 'Kode kelas tidak ditemukan' } }; if (!db.class_members.some(m => m.class_id === c.id && m.user_id === me())) db.class_members.push({ class_id: c.id, user_id: me(), joined_at: new Date().toISOString() }); save(db); return { data: c.id, error: null }; },
+      if (fn !== 'join_class') return { error: { message: 'no fn' } }; const db = load(); const c = db.classes.find(c => c.join_code === String(a.p_code).trim().toUpperCase()); if (!c) return { data: null, error: null }; if (!db.class_members.some(m => m.class_id === c.id && m.user_id === me())) db.class_members.push({ class_id: c.id, user_id: me(), joined_at: new Date().toISOString() }); save(db); return { data: c.id, error: null }; },
     auth: {
       getSession: async () => ({ data: { session } }),
       onAuthStateChange: (f) => { listeners.push(f); return { data: { subscription: { unsubscribe() {} } } }; },

@@ -51,7 +51,8 @@ await T.click('.ed-bar [data-eact="save"]'); await T.waitForFunction(() => /Ters
 const gcid = await T.evaluate(() => BE.id); console.log('kursus guru disimpan (draf):', gcid);
 await T.evaluate(() => BU.go('kelas')); await T.waitForSelector('#newc'); await T.click('#newc summary'); await T.fill('#cname', 'Kelas kursus guru'); await T.selectOption('#ccourse', gcid); await T.click('#cform button[type=submit]');
 await T.waitForSelector('.codebox .code'); const code2 = await T.$eval('.codebox .code', e => e.textContent);
-await S.evaluate(() => BU.go('kelas')); await S.waitForSelector('#jcode'); await S.fill('#jcode', code2); await S.click('#joinf button[type=submit]'); await S.waitForSelector('.asgs, .empty');
+await S.evaluate(() => BU.go('kelas')); await S.waitForSelector('#jcode'); await S.fill('#jcode', 'ZZZZZZ'); await S.click('#joinf button[type=submit]'); await S.waitForFunction(() => /tidak ditemukan/.test(document.querySelector('#jerr, #joinf + .err, .err[role=alert]')?.textContent || document.body.textContent)); console.log('kode salah → pesan jelas OK');
+await S.fill('#jcode', code2); await S.click('#joinf button[type=submit]'); await S.waitForSelector('.asgs, .empty');
 // Kursus masih draf: anggota kelas pun belum bisa membuka
 await S.evaluate((id) => BU.go('course', { course: id }), gcid); await S.waitForSelector('.locked'); console.log('kursus draf terkunci untuk siswa OK');
 // Guru melihat peringatan di halaman kelas, lalu membuka kursus untuk anggota kelas (khusus kelas)

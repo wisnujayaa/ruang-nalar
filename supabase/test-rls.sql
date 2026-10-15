@@ -29,7 +29,7 @@ grant select on kode to authenticated;
 -- Siswa bergabung
 select pg_temp.as_user(:S1); select public.join_class((select join_code from kode)) is not null as s1_join; reset role;
 select pg_temp.as_user(:S2); select public.join_class(lower((select join_code from kode))) is not null as s2_join_huruf_kecil; reset role;
-select pg_temp.as_user(:X); select pg_temp.expect_fail($q$select public.join_class('ZZZZZZ')$q$, 'kode salah'); reset role;
+select pg_temp.as_user(:X); do $$ begin if public.join_class('ZZZZZZ') is not null then raise exception 'GAGAL: kode salah harus menghasilkan NULL'; end if; end $$; reset role;
 
 -- Progres
 select pg_temp.as_user(:S1); insert into public.progress (user_id, course_id, state) values (:S1, 'pertidaksamaan', '{"v":1}'); insert into public.progress (user_id, course_id, state) values (:S1, 'kimia', '{"v":1}'); reset role;
