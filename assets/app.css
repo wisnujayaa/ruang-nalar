@@ -704,3 +704,29 @@ details.card[open]>summary{margin-bottom:6px}
 .ed-sum{min-width:0;flex-basis:120px}
 @media (max-width:560px){.ed-sec-h{flex-wrap:wrap}.ed-sec-h .num{margin-top:0}.ed-sec-h .ed-tools{order:-1;margin-left:auto}.ed-grow{flex-basis:100%}.ed-blk-h .ed-tools{width:100%;justify-content:flex-end}.ed-opt{flex-wrap:wrap}.ed-opt input:not([type=radio]){min-width:0}}
 .ed-tabs{flex-wrap:wrap}
+.chip.role-admin{background:var(--flip-soft);color:var(--flip)} .chip.role-teacher{background:var(--sol-soft);color:var(--sol)}
+.adm select{width:auto;min-height:36px;padding:4px 8px}
+/* pustaka widget */
+.wl-plot .wl-grid{stroke:var(--line);stroke-width:1}
+.wl-plot .wl-axis{stroke:var(--ink-2);stroke-width:1.5}
+.wl-plot .wl-tick{fill:var(--muted);font-size:12px;text-anchor:middle;font-family:var(--f-mono)}
+.wl-plot .wl-curve{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round}
+.wl-plot .wl-shade{fill:var(--sol-soft);opacity:.75}
+.wl-plot .wl-sol{stroke:var(--sol);stroke-width:6;stroke-linecap:round}
+.wl-sliders{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:8px}
+.wl-sl{display:flex;flex-direction:column;gap:2px;font-size:.92rem}
+.wl-sl i{font-family:var(--f-math);font-size:1.1rem}
+.wl-sl input{width:100%;accent-color:var(--accent)}
+.wl-embed{position:relative;width:100%;border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.wl-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.wl-in{width:100%}
+.ed-vars{display:grid;gap:6px;margin:6px 0}
+.ed-var{display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr)) auto;gap:6px;align-items:center}
+.ed-var-h{font-size:.74rem;color:var(--muted);font-weight:700;text-transform:uppercase}
+.ed-var input{min-height:38px;padding:6px 8px}
+.ed-numf{display:inline-block;width:calc(50% - 8px);margin-right:8px;vertical-align:top}
+@media (max-width:560px){.ed-numf{width:100%;margin-right:0}}
+.ed-wprev{margin-top:10px}
+.ed-var input[type=number]{-moz-appearance:textfield;appearance:textfield;padding:6px 4px;text-align:center;font-family:var(--f-mono);font-size:.9rem}
+.ed-var input::-webkit-inner-spin-button,.ed-var input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+@media (max-width:480px){.ed-var{grid-template-columns:36px repeat(4,minmax(0,1fr)) 34px;gap:4px}.ed-var .btn{padding:4px;min-width:0}}

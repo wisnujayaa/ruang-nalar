@@ -4,6 +4,7 @@
 \set S  '''aaaaaaaa-0000-0000-0000-000000000002'''
 \set X  '''aaaaaaaa-0000-0000-0000-000000000003'''
 insert into auth.users (id, email, raw_user_meta_data) values (:G, 'g@x.id', '{"display_name":"Guru"}'), (:S, 's@x.id', '{}'), (:X, 'x@x.id', '{}');
+update public.profiles set role = 'teacher' where id = :G;  -- butuh roles.sql
 create or replace function pg_temp.as_user(u uuid) returns void language plpgsql as $$
 begin perform set_config('request.jwt.claim.sub', u::text, false); execute 'set role authenticated'; end $$;
 create or replace function pg_temp.expect_fail(q text, why text) returns void language plpgsql as $$

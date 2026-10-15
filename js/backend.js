@@ -25,6 +25,7 @@
   function LocalBackend() {
     const K = { cls: 'nalar-local-classes', stu: 'nalar-local-students', asg: 'nalar-local-assign', thr: 'nalar-local-threads', pst: 'nalar-local-posts', me: 'nalar-local-me', crs: 'nalar-local-courses' };
     const me = ls.get(K.me, null) || (() => { const m = { id: 'local', name: 'Kamu' }; ls.set(K.me, m); return m; })();
+    me.role = 'admin';   // satu pengguna di browser ini = pemilik penuh
     const B = {
       mode: 'local', online: false, isAdmin: true, user: me,
       async init() { return B; },
@@ -84,7 +85,7 @@
           [db, user] = await Promise.all([G.claude.use('db'), G.claude.use('user')]);
           const id = user ? await user.id() : null;
           B.isAdmin = user ? await user.isOwner() : false;
-          if (db && id) { const nm = user ? (await user.me()).name : ''; B.user = { id, name: nm || 'Kamu' }; B.online = true; }
+          if (db && id) { const nm = user ? (await user.me()).name : ''; B.user = { id, name: nm || 'Kamu', role: B.isAdmin ? 'admin' : 'student' }; B.online = true; }
         } catch (e) { B.online = false; }
         return B;
       },
@@ -204,6 +205,10 @@
         async signOut() { await sb.auth.signOut(); await setUser(null); },
         async resetPassword(email) { chk(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('#')[0] })); }
       },
+      admin: {
+        async listUsers() { return chk(await sb.rpc('admin_list_users')).map(u => ({ id: u.id, name: u.display_name, email: u.email, role: u.role, created: Date.parse(u.created_at) })); },
+        async setRole(id, role) { chk(await sb.rpc('admin_set_role', { p_user: id, p_role: role })); }
+      },
       async setName(n) { if (!B.user) return; chk(await sb.from('profiles').update({ display_name: n }).eq('id', B.user.id)); B.user.name = n; },
       progress: {
         async load(course) { const r = chk(await sb.from('progress').select('state').eq('user_id', B.user.id).eq('course_id', course).maybeSingle()); return r ? r.state : null; },
@@ -245,7 +250,7 @@
         async markRead(id) { await sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', id); }
       },
       courses: {
-        get canEdit() { return !!B.user; },
+        get canEdit() { return !!B.user && ['teacher', 'admin'].includes(B.user.role); },
         async list() {
           let q = sb.from('courses').select('id,title,subject,level,blurb,glyph,color,visibility,owner_id,updated_at').order('updated_at', { ascending: false }).limit(200);
           q = B.user ? q.or('visibility.eq.public,owner_id.eq.' + B.user.id) : q.eq('visibility', 'public');
@@ -266,10 +271,14 @@
       try { const r = chk(await sb.from('messages').select('id,body,link,created_at,read_at').eq('to_user', B.user.id).order('created_at', { ascending: false }).limit(20)); noteCb(r.reverse().map(m => ({ id: m.id, t: Date.parse(m.created_at), text: m.body, link: m.link, read: !!m.read_at }))); } catch (e) { }
     }
     async function setUser(u) {
-      if (!u) { B.user = null; B.online = false; return; }
-      let name = (u.user_metadata && u.user_metadata.display_name) || (u.email || '').split('@')[0];
-      try { const p = chk(await sb.from('profiles').select('display_name').eq('id', u.id).maybeSingle()); if (p) name = p.display_name; } catch (e) { }
-      B.user = { id: u.id, name, email: u.email }; B.online = true; pollNotes();
+      if (!u) { B.user = null; B.online = false; B.isAdmin = false; return; }
+      let name = (u.user_metadata && u.user_metadata.display_name) || (u.email || '').split('@')[0], role = 'student';
+      try {
+        let r = await sb.from('profiles').select('display_name, role').eq('id', u.id).maybeSingle();
+        if (r.error) r = await sb.from('profiles').select('display_name').eq('id', u.id).maybeSingle();   // skema lama tanpa kolom role
+        if (r.data) { name = r.data.display_name; role = r.data.role || 'student'; }
+      } catch (e) { }
+      B.user = { id: u.id, name, email: u.email, role }; B.isAdmin = role === 'admin'; B.online = true; pollNotes();
     }
     return B;
   }

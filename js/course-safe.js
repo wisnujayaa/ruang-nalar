@@ -36,7 +36,7 @@
   const ID = /^[a-z0-9-]{1,40}$/;
   const plain = (v, max) => str(v, max).replace(/[\u0000-\u001f]/g, ' ').trim();   // untuk field yang dirender lewat esc()
   const MODES = ['sekolah', 'utbk', 'mandiri', 'olimpiade'];
-  const BLOCKS = ['text', 'example', 'q', 'traps', 'retrieval', 'recap', 'practice', 'res', 'exit'];
+  const BLOCKS = ['text', 'example', 'q', 'traps', 'retrieval', 'recap', 'practice', 'res', 'exit', 'widget'];
   const TYPES = ['mc', 'num', 'interval', 'tf', 'err', 'order'];
   const RES_TYPES = ['artikel', 'video', 'alat', 'buku'];
   const safeUrl = (u) => /^https:\/\/[^\s"'<>`\\]+$/i.test(String(u || '')) ? String(u) : null;
@@ -104,6 +104,14 @@
           case 'q': return o.BANK[b.id] ? { k: 'q', tag: tag || 'Coba dulu', title: t, id: b.id } : null;
           case 'traps': { const ids = (b.ids || []).filter(id => o.TRAPS[id]); return ids.length ? { k: 'traps', ids } : null; }
           case 'recap': return { k: 'recap', title: t || 'Rangkuman', items: (b.items || []).slice(0, 12).map(x => S.text(x, 500)).filter(Boolean) };
+          case 'widget': {
+            const NW = G.NalarWidgets; const params = NW && NW.sanitize(b.w, b.params); if (!params) return null;
+            const o2 = { k: 'widget', tag: tag || 'Eksperimen', title: t, id: 'lib', lib: b.w, params };
+            const pr = b.predict; if (pr && String(pr.q || '').trim() && Array.isArray(pr.opts) && pr.opts.filter(x => String(x).trim()).length >= 2) {
+              const opts = pr.opts.map(x => S.text(x, 300)).filter(Boolean).slice(0, 5); o2.predict = { q: S.text(pr.q, 500), opts, ans: Math.max(0, Math.min(opts.length - 1, Math.round(+pr.ans) || 0)), after: plain(pr.after, 400) };
+            }
+            return o2;
+          }
           case 'exit': return { k: 'exit', prompt: plain(b.prompt, 300) || 'Jelaskan inti bagian ini dengan kata-katamu sendiri.', points: (b.points || []).slice(0, 6).map(x => plain(x, 200)).filter(Boolean), qs: (b.qs || []).filter(id => o.BANK[id]).slice(0, 3) };
           default: return { k: b.k };   // retrieval, practice, res
         }
@@ -147,6 +155,13 @@
       if (!ex) out.push({ level: 'warn', msg: 'Bagian ' + s.id + ' tidak punya tiket keluar, sehingga bagian ini tidak pernah tercatat "selesai" (tugas "selesaikan bagian" tidak bisa dipakai).' });
       else if (!(ex.qs || []).filter(id => bank[id]).length) out.push({ level: 'warn', msg: 'Tiket keluar Bagian ' + s.id + ' belum memilih soal.' });
     });
+    Object.entries(raw.LESSONS || {}).forEach(([sec, L]) => (L || []).forEach(b => {
+      if (b.k !== 'widget') return; const NW = G.NalarWidgets; const nm = 'Widget di Bagian ' + sec;
+      if (!NW || !NW.defs[b.w]) { out.push({ level: 'error', msg: nm + ': jenis widget belum dipilih.' }); return; }
+      const p = NW.sanitize(b.w, b.params);
+      if (b.w === 'grafik') { try { G.NalarExpr.compile(p.expr, ['x'].concat(p.vars.map(v => v.name))); } catch (e) { out.push({ level: 'error', msg: nm + ' (grafik): ' + e.message }); } }
+      if (b.w === 'sematan' && !NW.embedUrl(p.url)) out.push({ level: 'error', msg: nm + ' (sematan): tautan belum didukung. Gunakan Desmos, GeoGebra, PhET, atau YouTube.' });
+    }));
     Object.entries(raw.RES || {}).forEach(([sec, list]) => (list || []).forEach(r => { if (!safeUrl(r.url)) out.push({ level: 'error', msg: 'Tautan sumber "' + String(r.title || r.url || '').slice(0, 40) + '" harus diawali https://' }); }));
     return out;
   };

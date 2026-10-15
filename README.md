@@ -22,7 +22,8 @@ Kursus pertama: **Pertidaksamaan** (SMA kelas X → UTBK → olimpiade/kuliah). 
 - Forum diskusi per kelas: utas, balasan, rumus `$…$`, sematkan, tandai terjawab, moderasi
 - Laporan per siswa dan per kelas: konsep terlemah, jebakan paling umum, salah-padahal-yakin, aktivitas terakhir
 - Pesan ke siswa / seluruh kelas, bisa ditautkan langsung ke materi atau latihan
-- **Studio kursus**: buat kursus sendiri lewat formulir (materi, contoh bertahap, 6 tipe soal dengan pratinjau, flashcard, jebakan), terbitkan sebagai draf/tautan/publik. Tanpa menulis kode
+- **Studio kursus** (khusus akun guru): buat kursus lewat formulir (materi, contoh bertahap, 6 tipe soal dengan pratinjau, flashcard, jebakan, widget grafik/garis bilangan/Desmos/GeoGebra/PhET/YouTube), terbitkan sebagai draf/tautan/publik. Tanpa menulis kode
+- **Peran akun**: siswa, guru, admin. Admin mengangkat guru dari halaman *Kelola pengguna*
 
 ## Tiga mode penyimpanan
 
@@ -51,7 +52,7 @@ Harus lewat server lokal (bukan membuka `index.html` langsung), karena kursus di
 
 ## Aktifkan akun, kelas online, dan forum (Supabase, gratis)
 
-Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql` lalu `supabase/courses.sql` di SQL Editor → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
+Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql`, `supabase/courses.sql`, lalu `supabase/roles.sql` di SQL Editor → jadikan akunmu admin → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
 
 ## Menambah kursus
 
@@ -71,6 +72,8 @@ js/
   ui.js                 halaman belajar: materi, soal, review, flashcard, statistik
   platform.js           beranda katalog, akun, kelas, tugas, forum, laporan
   editor.js             Studio kursus (editor tanpa kode)
+  widget-lib.js         pustaka widget untuk Studio (lihat docs/WIDGET.md)
+  expr.js               parser rumus aman untuk widget
   course-safe.js        pembersih & kompilasi kursus buatan guru
 courses/
   index.js              daftar kursus
@@ -78,7 +81,8 @@ courses/
   contoh-kursus/        templat kursus
 supabase/               skema database + uji keamanan
 tests/                  verifikasi kunci jawaban, uji UI, uji RLS
-docs/                   arsitektur, panduan kursus, panduan Supabase
+docs/                   arsitektur, panduan kursus, widget, Supabase
+tools/                  studio-to-file.js: pindahkan kursus Studio ke kode
 ```
 
 Penjelasan alur data: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

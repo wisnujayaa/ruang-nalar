@@ -10,7 +10,22 @@ Supabase menyediakan database Postgres + sistem login. Paket gratisnya cukup unt
 1. Buka **SQL Editor → New query**.
 2. Tempel seluruh isi `supabase/schema.sql`, klik **Run**.
    Skrip ini aman dijalankan ulang (memakai `if not exists` / `create or replace`).
-3. Jalankan juga `supabase/courses.sql` (tabel kursus buatan guru untuk Studio kursus).
+3. Jalankan juga `supabase/courses.sql` (tabel kursus buatan guru untuk Studio kursus), lalu `supabase/roles.sql` (peran siswa/guru/admin).
+4. Jadikan akunmu **admin** (setelah mendaftar di situs). Di SQL Editor:
+   ```sql
+   update public.profiles set role = 'admin'
+   where id = (select id from auth.users where email = 'email-kamu@contoh.com');
+   ```
+   Setelah itu admin bisa mengangkat guru lewat **Akun → Kelola pengguna** di situs, tanpa SQL lagi.
+
+### Peran akun
+| Peran | Bisa |
+|---|---|
+| Siswa (bawaan) | belajar, membuat/bergabung kelas, forum |
+| Guru | + membuat kursus di Studio |
+| Admin | + mengubah peran pengguna lain (minimal selalu ada satu admin) |
+
+Peran disimpan di `profiles.role` dan **tidak bisa diubah sendiri** oleh pengguna (hak kolom hanya `display_name`); perubahan hanya lewat fungsi `admin_set_role` yang memeriksa admin. Diuji di `supabase/test-rls-roles.sql`.
 
 Yang dibuat:
 

@@ -22,6 +22,17 @@ await p.click('[data-eact="tab"][data-t="materi"]'); await p.fill('[data-b="raw.
 await p.click('.ed-blk [data-eact="blk-open"]');
 await p.fill('[data-b="raw.LESSONS.1.0.md"]', 'Persamaan itu seperti **timbangan seimbang**.\n\n- Kurangi kedua ruas dengan bilangan yang sama\n- Bagi kedua ruas\n\nContoh: $2x+3=7$ maka $x=2$. Bahaya: ' + XSS);
 await p.click('[data-eact="md-prev"]'); await p.waitForSelector('.ed-prev .m');
+// Widget grafik dari pustaka
+await p.selectOption('#addk-1', 'widget'); await p.click('[data-eact="blk-add"][data-s="1"]');
+const wIdx = await p.evaluate(() => BE.raw.LESSONS[1].findIndex(b => b.k === 'widget'));
+await p.fill(`[data-b="raw.LESSONS.1.${wIdx}.params.expr"]`, 'a*x + b'); await p.fill(`[data-b="raw.LESSONS.1.${wIdx}.title"]`, 'Garis lurus');
+await p.click(`[data-eact="arr-del"][data-p="raw.LESSONS.1.${wIdx}.params.vars"][data-i="2"]`);
+await p.click(`[data-eact="w-try"][data-p="raw.LESSONS.1.${wIdx}"]`); await p.waitForSelector('.ed-wprev .wl-curve');
+const prevAns = await p.$eval('.ed-wprev .wl-ans', e => e.textContent); console.log('pratinjau widget grafik OK, arsir:', prevAns);
+// rumus salah memberi pesan jelas
+await p.fill(`[data-b="raw.LESSONS.1.${wIdx}.params.expr"]`, 'a*x + q'); await p.click(`[data-eact="w-try"][data-p="raw.LESSONS.1.${wIdx}"]`);
+const wErr = await p.$eval('.ed-wprev', e => e.textContent); if (!/Variabel "q"/.test(wErr)) fail('pesan rumus salah: ' + wErr); else console.log('rumus salah diberi pesan jelas');
+await p.fill(`[data-b="raw.LESSONS.1.${wIdx}.params.expr"]`, 'a*x + b');
 // Soal: pilihan ganda
 await p.click('[data-eact="tab"][data-t="soal"]');
 await p.selectOption('#addq', 'mc'); await p.click('[data-eact="q-add"]'); await p.waitForSelector('.ed-q [data-b$=".q"]');
@@ -58,6 +69,10 @@ console.log('kursus terbuka:', await p.$eval('.hello h1', e => e.textContent));
 await p.click('[data-go="lesson"][data-sec="1"]'); await p.waitForSelector('#blk');
 const firstBlk = await p.$eval('#blk', e => e.innerHTML);
 if (!/<b>timbangan seimbang<\/b>/.test(firstBlk) || !/<li>/.test(firstBlk) || !/class="m"/.test(firstBlk)) fail('materi tidak dirender dengan format');
+const wi = await p.evaluate(() => BC.LESSONS[1].findIndex(b => b.k === 'widget'));
+await p.evaluate((i) => BU.go('lesson', { sec: 1, i }), wi); await p.waitForSelector('#blk .wl-curve');
+await p.$eval('#blk input[type=range]', el => { el.value = '-2'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+console.log('siswa melihat widget grafik & menggeser slider:', await p.$eval('#blk .wl-ans', e => e.textContent));
 // latihan L1
 const L = await p.evaluate(() => BC.LESSONS[1].findIndex(b => b.k === 'practice'));
 await p.evaluate((i) => BU.go('lesson', { sec: 1, i }), L); await p.waitForSelector('[data-act="practice"][data-l="1"]');

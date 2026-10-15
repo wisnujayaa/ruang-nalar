@@ -4,10 +4,10 @@ Ada dua cara:
 
 | | **Studio kursus (tanpa kode)** | **Kursus berbasis file (kode)** |
 |---|---|---|
-| Untuk | Guru mana pun yang punya akun | Pengelola repo |
+| Untuk | Akun berperan guru/admin | Pengelola repo |
 | Tempat menulis | Formulir di web: **Akun → Studio kursus** | Folder `courses/<id>/` |
 | Disimpan di | Database (tabel `courses`) | Repo GitHub |
-| Fitur khusus | Teks, contoh bertahap, 6 tipe soal, flashcard, jebakan, sumber belajar | Semua itu **plus** widget interaktif & generator soal acak (butuh JavaScript) |
+| Fitur khusus | Teks, contoh bertahap, 6 tipe soal, flashcard, jebakan, sumber belajar, **widget dari pustaka** (grafik, garis bilangan, Desmos/GeoGebra/PhET/YouTube) | Semua itu **plus** widget kustom & generator soal acak (butuh JavaScript) |
 | Siapa yang bisa melihat | Draf / lewat tautan / publik (diatur di tab Terbitkan) | Semua pengunjung |
 
 ## Cara 1: Studio kursus (disarankan untuk guru)
@@ -19,6 +19,8 @@ Ada dua cara:
 6. Kursus langsung bisa dipilih saat membuat kelas, dan semua fitur (review berjarak, tugas berstatus otomatis, laporan guru) berlaku.
 
 Keamanan: semua teks dari Studio dibersihkan oleh `js/course-safe.js` sebelum ditampilkan. HTML mentah tidak pernah dirender, rumus dibersihkan, dan tautan wajib `https://`. Diuji oleh `tests/verify-safe.js`.
+
+Widget: lihat [WIDGET.md](WIDGET.md) untuk daftar widget pustaka, cara menambah widget baru, dan cara memindahkan kursus Studio ke kode.
 
 Kursus Studio bisa diekspor/impor sebagai JSON (tab Terbitkan), misalnya untuk cadangan atau memindahkannya ke situs lain.
 

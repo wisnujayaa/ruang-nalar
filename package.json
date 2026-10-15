@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "serve": "python3 -m http.server 8765",
-    "test": "node tests/verify-keys.js && node tests/verify-safe.js",
+    "test": "node tests/verify-keys.js && node tests/verify-safe.js && node tests/verify-expr.js",
     "test:ui": "node tests/smoke.mjs",
     "test:rls": "bash tests/run-rls.sh",
     "test:flow": "node tests/supabase-flow.mjs",

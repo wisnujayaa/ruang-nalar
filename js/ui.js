@@ -59,7 +59,7 @@
   }
   function back() { const p = nav.stack.pop() || { v: 'home' }; if (nav.active && nav.active.cleanup) nav.active.cleanup(); nav.active = null; nav.cur = p; render(); }
   const TAB = { home: 'home', course: 'course', map: 'course', intro: 'course', diag: 'course', prereq: 'course', lesson: 'course', summary: 'course', mixed: 'course', lintas: 'course', tryout: 'course', dump: 'course', traps: 'course',
-    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me' };
+    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me' };
   function tabOf(v) { return v === 'run' ? (nav.cur.tab === 'map' ? 'course' : nav.cur.tab || 'review') : TAB[v] || 'home'; }
   let loadingCourse = false;
   function render() {
@@ -495,7 +495,7 @@
     if (b.k === 'widget') {
       const key = sec + ':' + i; const pr = b.predict; const got = A.S.predicts[key];
       el.innerHTML = tagHead(b.tag || 'Eksperimen', b.title) + (pr ? '<div class="predict"><p class="eyebrow">Tebak dulu</p><p>' + rich(pr.q) + '</p><div class="popts">' + pr.opts.map((o, k) => '<button class="btn" data-act="predict" data-key="' + key + '" data-k="' + k + '"' + (got != null ? ' disabled' : '') + ' aria-pressed="' + (got === k) + '">' + rich(o) + '</button>').join('') + '</div><div class="pfb"></div></div>' : '') + '<div class="widget" ' + (pr && got == null ? 'hidden' : '') + '></div>';
-      const showW = () => { const w = $('.widget', el); w.hidden = false; if (!w.dataset.m) { w.dataset.m = 1; if (C.WIDGETS && C.WIDGETS.mount) C.WIDGETS.mount(b.id, w); else w.innerHTML = '<p class="muted">Widget tidak tersedia.</p>'; } if (pr) $('.pfb', el).innerHTML = '<p class="' + (A.S.predicts[key] === pr.ans ? 'ok' : 'flip') + '">' + (A.S.predicts[key] === pr.ans ? 'Tebakanmu tepat! ' : 'Jawabannya: <b>' + rich(pr.opts[pr.ans]) + '</b>. ') + esc(pr.after || '') + '</p>'; };
+      const showW = () => { const w = $('.widget', el); w.hidden = false; if (!w.dataset.m) { w.dataset.m = 1; if (b.lib && G.NalarWidgets) G.NalarWidgets.mount(b.lib, w, b.params); else if (C.WIDGETS && C.WIDGETS.mount) C.WIDGETS.mount(b.id, w); else w.innerHTML = '<p class="muted">Widget tidak tersedia.</p>'; } if (pr) $('.pfb', el).innerHTML = '<p class="' + (A.S.predicts[key] === pr.ans ? 'ok' : 'flip') + '">' + (A.S.predicts[key] === pr.ans ? 'Tebakanmu tepat! ' : 'Jawabannya: <b>' + rich(pr.opts[pr.ans]) + '</b>. ') + esc(pr.after || '') + '</p>'; };
       el.querySelector('.popts') && el.querySelector('.popts').addEventListener('click', e => { const bt = e.target.closest('button'); if (!bt) return; A.S.predicts[key] = +bt.dataset.k; A.save(); $$('.popts button', el).forEach(x => { x.disabled = true; x.setAttribute('aria-pressed', x === bt); }); showW(); });
       if (!pr || got != null) showW();
       return;

@@ -15,7 +15,9 @@ async function signup(p, name, email) {
   await p.fill('#l-name', name); await p.fill('#l-email', email); await p.fill('#l-pass', 'rahasia123'); await p.click('#lform button[type=submit]');
   await p.waitForFunction(n => document.querySelector('.hello h1') && document.querySelector('.hello h1').textContent.includes(n), name);
 }
-const T = await pg(); await signup(T, 'Bu Guru', 'guru@x.id'); console.log('guru daftar & masuk OK, sync:', await T.$eval('#sync', e => e.className));
+const T = await pg(); await signup(T, 'Bu Guru', 'guru@x.id');
+// Admin pertama dibuat manual (seperti SQL di docs/SUPABASE.md)
+await T.evaluate(() => { const d = JSON.parse(localStorage.getItem('FAKE_SB')); d.profiles[0].role = 'admin'; localStorage.setItem('FAKE_SB', JSON.stringify(d)); }); await T.reload(); await T.waitForSelector('.catalog'); console.log('guru daftar & masuk OK, sync:', await T.$eval('#sync', e => e.className));
 await T.click('.tabs a[data-go="kelas"]'); await T.waitForSelector('#newc'); await T.click('#newc summary'); await T.fill('#cname', 'X-3'); await T.click('#cform button[type=submit]');
 await T.waitForSelector('.codebox .code'); const code = await T.$eval('.codebox .code', e => e.textContent); console.log('kode kelas', code);
 await T.click('#asgf summary'); await T.selectOption('#a-kind', 'practice'); await T.selectOption('#a-sec', '1'); await T.selectOption('#a-lvl', '1'); await T.click('#aform button[type=submit]'); await T.waitForSelector('.asg'); console.log('tugas guru:', await T.$eval('.asg .chip', e => e.textContent));
@@ -32,6 +34,13 @@ await T.click('[data-act="back"]'); await T.click('[data-tab="anggota"]'); await
 await T.click('.ktbl .sn'); await T.waitForSelector('#note-t'); await T.fill('#note-t', 'Mantap Dika! Lanjut L2 ya.'); await T.selectOption('#note-l', 'k:pertidaksamaan|lesson:2'); await T.click('[data-pact="note-send"]'); await T.waitForSelector('#nhist .notes li'); console.log('pesan terkirim OK');
 await S.reload(); await S.waitForSelector('.catalog'); await S.waitForSelector('.note-k', { timeout: 5000 }); console.log('siswa terima pesan:', await S.$eval('.note-txt', e => e.textContent));
 await S.click('[data-pact="note-open"]'); await S.waitForSelector('.lesson'); console.log('tautan pesan membuka:', await S.$eval('.les-ht h1', e => e.textContent));
+// Siswa tidak bisa memakai Studio; admin mengangkatnya jadi guru lewat halaman admin
+await S.evaluate(() => BU.go('studio')); await S.waitForSelector('.page'); if (await S.$('[data-eact="new"]')) throw new Error('siswa bisa membuka Studio'); console.log('Studio tertutup untuk siswa OK');
+await T.evaluate(() => BU.go('admin')); await T.waitForSelector('[data-adm]');
+const dikaId = await T.evaluate(() => JSON.parse(localStorage.getItem('FAKE_SB')).profiles.find(p => p.display_name === 'Dika').id);
+await T.selectOption(`[data-adm="${dikaId}"]`, 'teacher'); await T.waitForFunction(() => /tersimpan/.test(document.querySelector('.adm-m.ok') ? document.querySelector('.adm-m.ok').textContent : ''));
+console.log('admin mengangkat Dika jadi guru OK');
+await S.reload(); await S.waitForSelector('.catalog'); await S.evaluate(() => BU.go('studio')); await S.waitForSelector('[data-eact="new"]'); console.log('Dika (guru) kini bisa membuka Studio');
 // Guru membuat kursus di Studio, memakainya untuk kelas baru; siswa bergabung dan membukanya
 await T.evaluate(() => BU.go('studio')); await T.click('[data-eact="new"]'); await T.waitForSelector('[data-b="meta.title"]');
 await T.fill('[data-b="meta.title"]', 'Kursus Guru');

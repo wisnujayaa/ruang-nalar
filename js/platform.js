@@ -131,10 +131,38 @@
     const modeTxt = { local: 'Mode tanpa server · data di browser ini', claude: 'Akun Claude', supabase: u ? 'Akun ' + (u.email || '') : 'Belum masuk' }[b.mode];
     let h = '<div class="card acct"><span class="av big">' + esc((name || '?').slice(0, 1).toUpperCase()) + '</span><div><h2 class="nm"></h2><p class="muted small">' + esc(modeTxt) + '</p></div></div>';
     h += '<div class="row wrap"><button class="btn" data-go="settings">Pengaturan</button>' + (b.mode === 'supabase' ? (u ? '<button class="btn ghost" data-pact="logout">' + ic('out') + ' Keluar</button>' : '<button class="btn primary" data-go="login">Masuk / daftar</button>') : '') + '</div>';
-    if (b.courses && (b.courses.canEdit || b.mode === 'supabase')) h += '<div class="card studio-cta"><div><h2>' + ic('book') + ' Studio kursus</h2><p class="muted small">Buat kursusmu sendiri lewat formulir: materi, contoh, soal, flashcard. Tanpa menulis kode.</p></div><button class="btn primary" data-go="studio">Buka Studio</button></div>';
+    const ROLE = { student: 'Siswa', teacher: 'Guru', admin: 'Admin' };
+    if (u && b.mode !== 'local') h = h.replace('</p></div></div>', ' · <span class="chip role-' + esc(u.role || 'student') + '">' + ROLE[u.role || 'student'] + '</span></p></div></div>');
+    if (b.admin && b.isAdmin) h += '<div class="card studio-cta"><div><h2>' + ic('users') + ' Kelola pengguna</h2><p class="muted small">Angkat akun menjadi guru supaya bisa membuat kursus, atau jadikan admin.</p></div><button class="btn" data-go="admin">Buka halaman admin</button></div>';
+    if (u && b.mode === 'supabase' && !(b.courses && b.courses.canEdit)) h += '<p class="muted small">Akunmu berperan <b>siswa</b>. Untuk membuat kursus di Studio, minta admin mengubah akunmu menjadi guru (sebutkan email <span class="mono">' + esc(u.email || '') + '</span>).</p>';
+    if (b.courses && b.courses.canEdit) h += '<div class="card studio-cta"><div><h2>' + ic('book') + ' Studio kursus</h2><p class="muted small">Buat kursusmu sendiri lewat formulir: materi, contoh, soal, flashcard. Tanpa menulis kode.</p></div><button class="btn primary" data-go="studio">Buka Studio</button></div>';
     h += '<h2 class="h1like">Progres per kursus</h2><div class="cprog">' + openCourses().map(c => { const S = stateFor(c.id); const st = A.stats(S); return '<div class="card"><p class="eyebrow">' + esc(c.subject || '') + '</p><h3>' + esc(c.title) + '</h3><div class="kpis small"><div><b>' + Object.values(S.sections || {}).filter(x => x.done).length + '</b><span>bagian selesai</span></div><div><b>' + st.tot + '</b><span>soal</span></div><div><b>' + (st.tot ? Math.round(st.acc * 100) + '%' : '–') + '</b><span>akurasi</span></div></div><div class="row"><button class="btn small" data-go="stats" data-course="' + esc(c.id) + '">Statistik lengkap</button><button class="btn small ghost" data-go="course" data-course="' + esc(c.id) + '">Buka kursus</button></div></div>'; }).join('') + '</div>';
     view().innerHTML = page(name ? esc(name) : 'Akun', '', h, { noBack: true });
     const nm = $('.acct .nm'); if (nm) nm.textContent = name || 'Tanpa nama';
+  };
+
+  /* ============ Admin: kelola peran pengguna ============ */
+  V.admin = function () {
+    const b = bb();
+    if (!b.admin || !b.isAdmin) { view().innerHTML = page('Admin', '', '<div class="card"><p>Halaman ini hanya untuk admin.</p></div>'); return; }
+    view().innerHTML = page('Kelola pengguna', 'Admin', '<div class="card"><p class="muted small"><b>Siswa</b>: belajar, gabung kelas, forum. <b>Guru</b>: + membuat kursus di Studio. <b>Admin</b>: + mengelola peran. Siapa pun bisa membuat kelas.</p><input id="adm-q" placeholder="Cari nama atau email…"></div><div id="adm-list">' + loading + '</div>', { wide: true });
+    const ROLE = [['student', 'Siswa'], ['teacher', 'Guru'], ['admin', 'Admin']];
+    const draw = (list) => {
+      const q = ($('#adm-q').value || '').toLowerCase(); const rows = list.filter(u => !q || (u.name + ' ' + u.email).toLowerCase().includes(q));
+      const box = $('#adm-list');
+      box.innerHTML = '<div class="card"><p class="muted small">' + list.length + ' pengguna · ' + list.filter(u => u.role === 'teacher').length + ' guru · ' + list.filter(u => u.role === 'admin').length + ' admin</p><div class="tblwrap"><table class="ktbl adm"><thead><tr><th>Nama</th><th>Email</th><th>Peran</th><th>Bergabung</th></tr></thead><tbody>' + rows.map(u => '<tr><td class="nm"></td><td class="em small"></td><td><select data-adm="' + esc(u.id) + '" aria-label="Peran">' + ROLE.map(r => '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + r[1] + '</option>').join('') + '</select> <span class="small adm-m"></span></td><td class="small">' + fmtDate(u.created) + '</td></tr>').join('') + '</tbody></table></div></div>';
+      $$('.adm tbody tr', box).forEach((tr, k) => { $('.nm', tr).textContent = rows[k].name + (rows[k].id === myId() ? ' (kamu)' : ''); $('.em', tr).textContent = rows[k].email; });
+    };
+    let users = [];
+    b.admin.listUsers().then(list => { users = list; draw(users); }).catch(e => { $('#adm-list').innerHTML = fail(e); });
+    $('#adm-q').addEventListener('input', () => draw(users));
+    $('#adm-list').addEventListener('change', async (e) => {
+      const s = e.target.closest('[data-adm]'); if (!s) return; const m = s.parentNode.querySelector('.adm-m'); const u = users.find(x => x.id === s.dataset.adm); const prev = u.role;
+      s.disabled = true; m.textContent = 'menyimpan…'; m.className = 'small adm-m muted';
+      try { await b.admin.setRole(u.id, s.value); u.role = s.value; m.textContent = '✓ tersimpan'; m.className = 'small adm-m ok'; if (u.id === myId()) { b.user.role = s.value; b.isAdmin = s.value === 'admin'; } }
+      catch (err) { s.value = prev; m.textContent = /admin/i.test(err.message) ? 'Minimal harus ada satu admin.' : err.message; m.className = 'small adm-m bad'; }
+      s.disabled = false;
+    });
   };
 
   V.login = function (p) {

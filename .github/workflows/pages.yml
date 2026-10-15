@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 20
       - name: Verifikasi kunci jawaban
-        run: node tests/verify-keys.js && node tests/verify-safe.js
+        run: node tests/verify-keys.js && node tests/verify-safe.js && node tests/verify-expr.js
 
   deploy:
     if: github.event_name != 'pull_request'

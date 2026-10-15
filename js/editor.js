@@ -10,7 +10,7 @@
   const escA = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const LV = U.LV;
   const TYPE = { mc: 'Pilihan ganda', num: 'Isian angka', interval: 'Isian interval', tf: 'Benar / salah', err: 'Cari langkah yang salah', order: 'Susun langkah (bukti)' };
-  const KIND = { text: 'Teks materi', example: 'Contoh bertahap', q: 'Soal "coba dulu"', traps: 'Awas jebakan', recap: 'Rangkuman mini', practice: 'Latihan bertingkat (otomatis)', retrieval: 'Pemanasan ingatan (otomatis)', res: 'Sumber belajar', exit: 'Tiket keluar' };
+  const KIND = { text: 'Teks materi', example: 'Contoh bertahap', q: 'Soal "coba dulu"', traps: 'Awas jebakan', recap: 'Rangkuman mini', practice: 'Latihan bertingkat (otomatis)', retrieval: 'Pemanasan ingatan (otomatis)', res: 'Sumber belajar', exit: 'Tiket keluar', widget: 'Widget interaktif' };
   const TAGS = ['Intuisi', 'Analogi', 'Materi', 'Kenapa begitu?', 'Catatan', 'Contoh'];
   const MODES = [['sekolah', 'Ulangan'], ['utbk', 'UTBK'], ['mandiri', 'Mandiri'], ['olimpiade', 'Olimpiade']];
   const E = G.BE = { id: null, meta: null, raw: null, dirty: false, tab: 'info', sec: null, open: {}, saving: false };
@@ -49,7 +49,7 @@
     const b = bb(); const can = b.courses && b.courses.canEdit;
     let h = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Untuk guru</p><h1>Studio kursus</h1></div></header>';
     if (!can) {
-      h += '<div class="card"><p>' + (b.mode === 'supabase' ? 'Masuk dulu untuk membuat kursus.' : b.mode === 'claude' ? 'Di versi Claude, hanya pemilik halaman yang bisa membuat kursus.' : 'Editor kursus belum tersedia.') + '</p>' + (b.mode === 'supabase' ? '<button class="btn primary" data-go="login">Masuk / daftar</button>' : '') + '</div></section>';
+      h += '<div class="card"><p>' + (b.mode === 'supabase' && b.user ? 'Studio hanya untuk akun <b>guru</b>. Akunmu saat ini berperan siswa. Minta admin situs mengubah akunmu menjadi guru di halaman admin.' : b.mode === 'supabase' ? 'Masuk dulu untuk membuat kursus.' : b.mode === 'claude' ? 'Di versi Claude, hanya pemilik halaman yang bisa membuat kursus.' : 'Editor kursus belum tersedia.') + '</p>' + (b.mode === 'supabase' && !b.user ? '<button class="btn primary" data-go="login">Masuk / daftar</button>' : '') + '</div></section>';
       view().innerHTML = h; return;
     }
     h += '<div class="card nudge"><p><b>Buat kursus tanpa menulis kode.</b> Susun bagian materi, contoh bertahap, soal 6 tipe, flashcard, dan jebakan umum. Semua fitur platform (review berjarak, buku kesalahan, kelas, tugas, laporan guru) langsung berlaku untuk kursusmu.</p>' + btn('new', ic('plus') + ' Buat kursus baru', '', 'btn primary') + '</div>';
@@ -128,6 +128,7 @@
     if (b.k === 'traps') return (b.ids || []).length + ' jebakan';
     if (b.k === 'recap') return (b.items || []).length + ' poin';
     if (b.k === 'exit') return (b.qs || []).length + ' soal · ' + (b.points || []).length + ' poin kunci';
+    if (b.k === 'widget') { const d = G.NalarWidgets.defs[b.w]; return (d ? d.name : '(pilih widget)') + (b.title ? ' — ' + b.title : ''); }
     return '';
   }
   function blockRow(s, b, bi) {
@@ -148,10 +149,36 @@
     }
     if (b.k === 'q') return qs.length ? field('Soal', sel(P + '.id', b.id || '', [['', '(pilih soal)']].concat(qs.map(q => [q.id, 'L' + q.lvl + ' · ' + plainPreview(q.q, 70)])))) + field('Label', inp(P + '.tag', b.tag || 'Coba dulu', '')) : '<p class="muted">Buat soal dulu di tab Soal untuk Bagian ' + s.id + '.</p>';
     if (b.k === 'traps') { const ts = Object.entries(E.raw.TRAPS); return ts.length ? '<div class="kmem">' + ts.map(([id, t]) => '<label><input type="checkbox" data-eact-chk="blk-trap" data-p="' + P + '" data-id="' + escA(id) + '"' + ((b.ids || []).includes(id) ? ' checked' : '') + '> <span>' + escA(t.name || id) + '</span></label>').join('') + '</div>' : '<p class="muted">Belum ada jebakan. Tambahkan di tab Kartu & jebakan.</p>'; }
+    if (b.k === 'widget') return widgetForm(b, P);
     if (b.k === 'recap') return field('Judul', inp(P + '.title', b.title, 'Rangkuman mini')) + field('Poin-poin (satu per baris)', ta(P + '.items', (b.items || []).join('\n'), 5, '', 'lines'));
     if (b.k === 'exit') return field('Pertanyaan penjelasan', inp(P + '.prompt', b.prompt, 'Jelaskan dengan kata-katamu sendiri…')) + field('Poin kunci jawaban (satu per baris)', ta(P + '.points', (b.points || []).join('\n'), 3, '', 'lines'), 'Siswa mencentang poin yang sudah ia tulis setelah membandingkan.') +
       '<p class="lbl">Soal tiket keluar (maksimal 3)</p>' + (qs.length ? '<div class="kmem">' + qs.map(q => '<label><input type="checkbox" data-eact-chk="exit-q" data-p="' + P + '" data-id="' + escA(q.id) + '"' + ((b.qs || []).includes(q.id) ? ' checked' : '') + '> <span>L' + q.lvl + ' · ' + escA(plainPreview(q.q, 60)) + '</span></label>').join('') + '</div>' : '<p class="muted small">Belum ada soal di bagian ini.</p>');
     return '';
+  }
+  /* ---------- blok widget: pilih dari pustaka, isi parameter ---------- */
+  const NW = () => G.NalarWidgets;
+  function wDefaults(w) { const d = NW().defs[w]; const o = {}; (d ? d.params : []).forEach(s => { o[s.key] = JSON.parse(JSON.stringify(s.def != null ? s.def : '')); }); return o; }
+  function widgetForm(b, P) {
+    const d = NW().defs[b.w]; b.params = b.params || {};
+    let h = '<div class="ed-2">' + field('Label', sel(P + '.tag', b.tag || 'Eksperimen', [['Eksperimen', 'Eksperimen'], ['Coba geser', 'Coba geser'], ['Visualisasi', 'Visualisasi']])) + field('Judul', inp(P + '.title', b.title, 'misal: Geser a, lihat parabola membuka')) + '</div>';
+    h += field('Jenis widget', '<select data-eact-sel="w-type" data-p="' + P + '">' + NW().list.map(x => '<option value="' + x.id + '"' + (b.w === x.id ? ' selected' : '') + '>' + escA(x.name) + '</option>').join('') + '</select>', d ? escA(d.desc) : '');
+    if (d) d.params.forEach(s => {
+      const pp = P + '.params.' + s.key; const v = b.params[s.key] != null ? b.params[s.key] : s.def;
+      if (s.type === 'text' || s.type === 'url') h += field(s.label, inp(pp, v, '', s.max ? ' maxlength="' + s.max + '"' : ''), s.help ? escA(s.help) : '');
+      else if (s.type === 'longtext') h += field(s.label, ta(pp, v, 3));
+      else if (s.type === 'num') h += '<div class="ed-numf">' + field(s.label, '<input type="number" step="any" data-b="' + pp + '" data-t="num" value="' + escA(v) + '">') + '</div>';
+      else if (s.type === 'select') h += field(s.label, sel(pp, v, s.opts));
+      else if (s.type === 'bool') h += '<label class="tog small"><input type="checkbox" data-b="' + pp + '" data-t="bool"' + (v ? ' checked' : '') + '> <span>' + escA(s.label) + '</span></label>';
+      else if (s.type === 'vars') {
+        const arr = b.params[s.key] = Array.isArray(b.params[s.key]) ? b.params[s.key] : JSON.parse(JSON.stringify(s.def || []));
+        h += '<p class="lbl">' + escA(s.label) + ' <span class="muted small">(nama satu huruf, bukan x atau e)</span></p><div class="ed-vars"><div class="ed-var ed-var-h"><span>Nama</span><span>Min</span><span>Maks</span><span>Langkah</span><span>Awal</span><span></span></div>' + arr.map((x, k) => '<div class="ed-var">' + inp(pp + '.' + k + '.name', x.name, 'a', ' maxlength="1"') + ['min', 'max', 'step', 'value'].map(f => '<input type="number" step="any" data-b="' + pp + '.' + k + '.' + f + '" data-t="num" value="' + escA(x[f]) + '" aria-label="' + f + '">').join('') + btn('arr-del', ic('trash'), ' data-p="' + pp + '" data-i="' + k + '" aria-label="Hapus slider"') + '</div>').join('') + '</div>' + (arr.length < 4 ? btn('arr-add', ic('plus') + ' Slider', ' data-p="' + pp + '" data-new="var"') : '');
+      }
+    });
+    const pr = b.predict;
+    h += '<label class="tog small"><input type="checkbox" data-eact-chk="w-predict" data-p="' + P + '"' + (pr ? ' checked' : '') + '> <span><b>Tebak dulu</b>: siswa menjawab prediksi sebelum widget terbuka</span></label>';
+    if (pr) h += field('Pertanyaan prediksi', inp(P + '.predict.q', pr.q, 'Kalau a dibuat negatif, parabolanya…')) + field('Pilihan (satu per baris)', ta(P + '.predict.opts', (pr.opts || []).join('\n'), 3, '', 'lines')) + '<div class="ed-2">' + field('Jawaban benar (nomor pilihan)', '<input type="number" min="1" max="5" data-b="' + P + '.predict.ansN" data-t="num" value="' + ((+pr.ans || 0) + 1) + '">') + field('Penjelasan setelah menebak', inp(P + '.predict.after', pr.after, '')) + '</div>';
+    h += '<div class="row">' + btn('w-try', 'Coba widget', ' data-p="' + P + '"') + '</div><div class="ed-wprev" id="wprev-' + P.replace(/\./g, '_') + '"></div>';
+    return h;
   }
   function resEditor(s) {
     const list = E.raw.RES[s.id] = E.raw.RES[s.id] || []; const P = 'raw.RES.' + s.id;
@@ -264,6 +291,7 @@
     if (el.dataset.t === 'arr') return;   // ditangani di 'change'
     if (el.type === 'radio' && !el.checked) return;
     setPath(E, el.dataset.b, coerce(el)); markDirty();
+    if (/\.predict\.ansN$/.test(el.dataset.b)) setPath(E, el.dataset.b.replace(/ansN$/, 'ans'), Math.max(0, (+el.value || 1) - 1));
     if (el.dataset.b === 'meta.title') { const t = $('.ed-title'); if (t) t.textContent = el.value || 'Kursus baru'; }
     if (el.dataset.previewInterval) updIntervalPreview(el);
   });
@@ -280,9 +308,11 @@
       if (c === 'exit-q' && arr.length > 3) { el.checked = false; return; }
       b[key] = arr; markDirty();
     }
+    if (el.dataset.eactSel === 'w-type') { const b = getPath(E, d.p); b.w = el.value; b.params = wDefaults(el.value); markDirty(); drawEditor(); return; }
+    if (c === 'w-predict') { const b = getPath(E, d.p); if (el.checked) b.predict = { q: '', opts: ['', ''], ans: 0, after: '' }; else delete b.predict; markDirty(); drawEditor(); return; }
     if (el.dataset.eactSel === 'q-type') { initType(E.raw.BANK[d.id], el.value); markDirty(); drawEditor(); }
   });
-  const NEW = { step: () => ({ t: '', hide: false }), res: () => ({ type: 'artikel', title: '', url: '', src: '' }), opt: () => ({ t: '', ok: false, why: '' }), stmt: () => ({ t: '', v: true, why: '' }), str: () => '', card: () => ({ id: Sf.newId('k'), sec: E.sec || (secs()[0] || {}).id || 1, kind: 'Konsep', f: '', b: '' }) };
+  const NEW = { step: () => ({ t: '', hide: false }), res: () => ({ type: 'artikel', title: '', url: '', src: '' }), opt: () => ({ t: '', ok: false, why: '' }), stmt: () => ({ t: '', v: true, why: '' }), str: () => '', var: () => ({ name: 'abcdfghkmnpqrs'.split('').find(ch => !((E._lastVars || []).includes(ch))) || 'k', min: -5, max: 5, step: 0.5, value: 1 }), card: () => ({ id: Sf.newId('k'), sec: E.sec || (secs()[0] || {}).id || 1, kind: 'Konsep', f: '', b: '' }) };
   document.addEventListener('click', async (e) => {
     const a = e.target.closest('[data-eact]'); if (!a) return;
     if (!E.raw && !['new', 'edit', 'del1', 'del2'].includes(a.dataset.eact)) return;
@@ -302,13 +332,14 @@
       case 'sec-down': move(S, +d.i, +d.i + 1); break;
       case 'sec-del1': $('#secdel-' + d.i).innerHTML = '<span class="bad small">Hapus bagian beserta soalnya?</span> ' + btn('sec-del2', 'Ya', ' data-i="' + d.i + '"', 'btn small danger'); return;
       case 'sec-del2': { const s = S[+d.i]; S.splice(+d.i, 1); delete E.raw.LESSONS[s.id]; delete E.raw.RES[s.id]; Object.values(E.raw.BANK).forEach(q => { if (+q.sec === s.id) delete E.raw.BANK[q.id]; }); E.raw.CARDS = E.raw.CARDS.filter(c => +c.sec !== s.id); break; }
-      case 'blk-add': { const k = $('#addk-' + d.s).value; const L = E.raw.LESSONS[d.s]; const b = { k }; if (k === 'text') Object.assign(b, { tag: 'Materi', title: '', md: '' }); if (k === 'example') Object.assign(b, { tag: 'Contoh', title: '', problem: '', steps: [{ t: '' }, { t: '', hide: true }] }); if (k === 'recap') Object.assign(b, { title: 'Rangkuman mini', items: [] }); if (k === 'exit') Object.assign(b, { prompt: '', points: [], qs: [] }); if (k === 'traps') b.ids = []; const ex = L.findIndex(x => x.k === 'exit'); const at = ex >= 0 && k !== 'exit' ? ex : L.length; L.splice(at, 0, b); E.open[d.s + ':' + at] = true; break; }
+      case 'blk-add': { const k = $('#addk-' + d.s).value; const L = E.raw.LESSONS[d.s]; const b = { k }; if (k === 'text') Object.assign(b, { tag: 'Materi', title: '', md: '' }); if (k === 'example') Object.assign(b, { tag: 'Contoh', title: '', problem: '', steps: [{ t: '' }, { t: '', hide: true }] }); if (k === 'recap') Object.assign(b, { title: 'Rangkuman mini', items: [] }); if (k === 'exit') Object.assign(b, { prompt: '', points: [], qs: [] }); if (k === 'traps') b.ids = []; if (k === 'widget') Object.assign(b, { w: 'grafik', tag: 'Eksperimen', title: '', params: wDefaults('grafik') }); const ex = L.findIndex(x => x.k === 'exit'); const at = ex >= 0 && k !== 'exit' ? ex : L.length; L.splice(at, 0, b); E.open[d.s + ':' + at] = true; break; }
       case 'blk-open': E.open[d.k] = !E.open[d.k]; drawEditor(); return;
       case 'blk-up': move(E.raw.LESSONS[d.s], +d.i, +d.i - 1); E.open = {}; break;
       case 'blk-down': move(E.raw.LESSONS[d.s], +d.i, +d.i + 1); E.open = {}; break;
       case 'blk-del': E.raw.LESSONS[d.s].splice(+d.i, 1); E.open = {}; break;
       case 'md-prev': { const b = getPath(E, d.p); const box = $('#prev-' + d.p.replace(/\./g, '_')); box.hidden = false; box.innerHTML = '<div class="prose">' + rich(Sf.md(b.md || '')) + '</div>'; return; }
-      case 'arr-add': { const arr = getPath(E, d.p) || []; arr.push(NEW[d.new]()); setPath(E, d.p, arr); break; }
+      case 'arr-add': { const arr = getPath(E, d.p) || []; if (d.new === 'var') E._lastVars = arr.map(v => v.name); arr.push(NEW[d.new]()); setPath(E, d.p, arr); break; }
+      case 'w-try': { const b = getPath(E, d.p); const box = $('#wprev-' + d.p.replace(/\./g, '_')); box.innerHTML = '<div class="widget"></div>'; G.NalarWidgets.mount(b.w, box.firstChild, b.params); return; }
       case 'arr-del': getPath(E, d.p).splice(+d.i, 1); break;
       case 'arr-up': move(getPath(E, d.p), +d.i, +d.i - 1); break;
       case 'qsec': E.sec = +d.s; break;
