@@ -742,3 +742,20 @@ details.card[open]>summary{margin-bottom:6px}
 .locked{text-align:center;max-width:520px;margin:2rem auto}
 .locked .lk-ic{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--accent-soft);color:var(--accent);margin-bottom:.5rem}
 .locked .row{justify-content:center}
+/* Laporan kendala */
+.fb-rep{margin:.6rem 0 0;font-size:.85rem}
+.fb-rep .linkbtn{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-weight:600}
+.fb-rep .linkbtn:hover{color:var(--accent)}
+.les-main>.fb-rep{text-align:center;margin-top:1rem}
+.rep-quote{margin:.6rem 0;padding:10px 14px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:8px}
+.rep-quote p{margin:.15rem 0}.rep-quote .rq{white-space:pre-wrap;max-height:8em;overflow:auto}
+.rep-tech{margin:.6rem 0}.rep-tech .rt{white-space:pre-wrap;word-break:break-word}
+.rep-list,#rep-in{display:grid;gap:10px}
+.rep .rep-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rep .rb{white-space:pre-wrap;margin:.5rem 0}
+.rep-adm{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:.5rem}
+.rep-adm input{flex:1 1 200px;min-width:0}
+.rep-ok{text-align:center}.rep-ok .row{justify-content:center}
+.lk-ic{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--accent-soft);color:var(--accent);margin-bottom:.5rem}
+.rep-ok .lk-ic{background:var(--ok-soft);color:var(--ok)}
+.help-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-top:1rem}

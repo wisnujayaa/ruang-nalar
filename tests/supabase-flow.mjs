@@ -74,5 +74,22 @@ await T.click('[data-tab="atur"]'); await T.waitForSelector('[data-pact="k-del1"
 await T.fill('#k-del-n', 'salah'); await T.click('[data-pact="k-del2"]'); if (!/tidak cocok/.test(await T.$eval('#k-del-e', e => e.textContent))) throw new Error('konfirmasi hapus');
 await T.fill('#k-del-n', 'Kelas Guru v2'); await T.click('[data-pact="k-del2"]'); await T.waitForSelector('#clist .clist, #clist .empty');
 const left = await T.$$eval('.klas-card .cn', l => l.map(x => x.textContent)); if (left.includes('Kelas Guru v2')) throw new Error('kelas tidak terhapus'); console.log('hapus kelas OK, sisa:', left.join(', '));
+// Siswa melaporkan soal yang salah dari halaman soal; admin melihatnya di kotak masuk
+await S.evaluate(() => BU.startRun(['b1'].concat(Object.keys(BC.BANK || {}).slice(0, 1)), { title: 'uji', tab: 'review' }));
+await S.waitForSelector('.q'); await S.evaluate(() => { const o = document.querySelector('.opt'); if (o) o.click(); });
+await S.click('[data-q="submit"]').catch(() => {}); await S.waitForTimeout(200);
+if (await S.$('.conf-b button')) { await S.click('.conf-b button[data-c="2"]').catch(() => {}); await S.click('[data-q="submit"]').catch(() => {}); }
+await S.waitForSelector('[data-rep="soal"]'); await S.click('[data-rep="soal"]'); await S.waitForSelector('#repf');
+if (!(await S.$eval('.rq', e => e.textContent)).length) throw new Error('teks soal tidak ikut');
+await S.fill('#rep-body', 'Kunci jawabannya kelihatannya salah'); await S.click('#repf button[type=submit]'); await S.waitForSelector('.rep-ok');
+await S.waitForFunction(() => (JSON.parse(localStorage.getItem('FAKE_SB')).invoked || []).some(x => x.name === 'notify-report'));
+const rep = await S.evaluate(() => JSON.parse(localStorage.getItem('FAKE_SB')).reports[0]); if (rep.kind !== 'soal' || !rep.context.qid) throw new Error('isi laporan: ' + JSON.stringify(rep));
+console.log('siswa melapor soal OK, notifikasi dipanggil, konteks:', rep.context.qid, rep.context.view);
+await S.waitForSelector('#rep-mine .rep'); console.log('siswa melihat "Laporanku" OK');
+await T.evaluate(() => BU.go('me')); await T.waitForSelector('#rep-new:not([hidden])'); await T.click('[data-go="laporan"]'); await T.waitForSelector('#rep-in .rep');
+await T.selectOption('#rep-in [data-rst]', 'selesai'); await T.fill('#rep-in [data-rnote]', 'Sudah diperbaiki, terima kasih!'); await T.click('#rep-in [data-rsave]');
+await T.waitForFunction(() => /tersimpan/.test(document.querySelector('#rep-in .rm').textContent));
+if ((await T.evaluate(() => JSON.parse(localStorage.getItem('FAKE_SB')).reports[0].status)) !== 'selesai') throw new Error('status laporan');
+console.log('admin menandai laporan selesai OK');
 await S.evaluate(() => BU.go('me')); await S.click('[data-pact="logout"]'); await S.waitForSelector('.nudge'); console.log('keluar OK');
 if (errs.length) { console.error('GAGAL, error konsol:', errs); process.exitCode = 1; } else console.log('Alur Supabase OK, tanpa error konsol.'); await b.close();

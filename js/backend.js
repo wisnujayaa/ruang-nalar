@@ -21,6 +21,19 @@
   const COURSE_FIELDS = ['title', 'subject', 'level', 'blurb', 'glyph', 'color', 'visibility'];
   const pickMeta = (m) => { const o = {}; COURSE_FIELDS.forEach(k => { if (m && m[k] != null) o[k] = String(m[k]); }); o.title = (o.title || 'Kursus tanpa judul').slice(0, 80); if (!VIS.includes(o.visibility)) o.visibility = 'draft'; if (!['accent', 'sol'].includes(o.color)) o.color = 'accent'; return o; };
   const courseMeta = (row, me) => ({ id: row.id, title: row.title, subject: row.subject || '', level: row.level || '', blurb: row.blurb || '', glyph: row.glyph || '', color: row.color || 'accent', visibility: row.visibility || 'draft', ownerId: row.owner_id || row.owner || null, mine: !!me && (row.owner_id || row.owner) === me, updated: row.updated_at ? Date.parse(row.updated_at) : (row.u || row.t || null), db: true });
+  /* Laporan kendala: jenis yang dikenal, pembersih isian, dan bentuk baris yang dipakai UI */
+  const REPORT_KINDS = ['bug', 'soal', 'materi', 'saran', 'lain'];
+  const REPORT_STATUS = ['baru', 'diproses', 'selesai'];
+  const uuid = () => (G.crypto && G.crypto.randomUUID) ? G.crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+  const cleanReport = (r) => {
+    const kind = REPORT_KINDS.includes(r && r.kind) ? r.kind : 'lain';
+    const body = String((r && r.body) || '').trim().slice(0, 2000);
+    if (body.length < 5) throw err('Ceritakan kendalanya minimal 5 karakter.');
+    let context = (r && r.context) || {}; let txt = JSON.stringify(context);
+    if (txt.length > 3800) { context = { note: 'konteks dipangkas', view: context.view, course: context.course, qid: context.qid }; txt = JSON.stringify(context); }
+    return { kind, body, contact: String((r && r.contact) || '').trim().slice(0, 120), context: JSON.parse(txt) };
+  };
+  const repRow = (x, who) => ({ id: x.id, kind: x.kind, body: x.body, contact: x.contact || '', context: x.context || {}, status: x.status || 'baru', note: x.admin_note || x.note || '', t: Date.parse(x.created_at) || x.t || null, userId: x.user_id || x.a || null, who: who || '' });
   const newCourseId = () => 'c-' + Math.random().toString(36).slice(2, 7) + now().toString(36).slice(-5);
 
   /* =========================== LOCAL =========================== */
@@ -73,6 +86,15 @@
         async save(id, m, content) { const all = ls.get(K.crs, []); let c = id && all.find(x => x.id === id); if (!c) { c = { id: newCourseId(), created_at: new Date().toISOString() }; all.push(c); } Object.assign(c, pickMeta(m), { content, updated_at: new Date().toISOString() }); ls.set(K.crs, all); return c.id; },
         async remove(id) { ls.set(K.crs, ls.get(K.crs, []).filter(c => c.id !== id)); },
         async setVisibility(id, v) { if (!VIS.includes(v)) throw err('Visibilitas tidak dikenal.'); const all = ls.get(K.crs, []); const c = all.find(x => x.id === id); if (c) { c.visibility = v; ls.set(K.crs, all); } }
+      },
+      reports: {
+        canNotify: false,
+        async send(r) { const all = ls.get('nalar-local-reports', []); const row = Object.assign({ id: uuid(), user_id: me.id, status: 'baru', admin_note: '', created_at: new Date().toISOString() }, cleanReport(r)); all.unshift(row); ls.set('nalar-local-reports', all.slice(0, 200)); return row.id; },
+        async mine() { return ls.get('nalar-local-reports', []).map(x => repRow(x, me.name)); },
+        async all() { return ls.get('nalar-local-reports', []).map(x => repRow(x, me.name)); },
+        async setStatus(id, status, note) { if (!REPORT_STATUS.includes(status)) throw err('Status tidak dikenal.'); const all = ls.get('nalar-local-reports', []); const x = all.find(r => r.id === id); if (x) { x.status = status; if (note != null) x.admin_note = String(note).slice(0, 1000); ls.set('nalar-local-reports', all); } },
+        async remove(id) { ls.set('nalar-local-reports', ls.get('nalar-local-reports', []).filter(r => r.id !== id)); },
+        async notify() { return null; }
       },
       async profiles(ids) { const st = B.students(); const o = {}; ids.forEach(i => { const s = st.find(x => x.id === i); o[i] = i === me.id ? me.name : s ? s.name : 'Anggota'; }); return o; }
     };
@@ -160,6 +182,15 @@
         async save(id, m, content) { id = id || newCourseId(); const s = JSON.stringify(content); if (s.length > 900000) throw err('Kursus terlalu besar untuk disimpan di mode ini.'); await db.doc('kursus/' + id).set(Object.assign(pickMeta(m), { owner: B.user.id, content: s, u: now() })); return id; },
         async remove(id) { await db.doc('kursus/' + id).delete(); },
         async setVisibility(id, v) { if (!VIS.includes(v)) throw err('Visibilitas tidak dikenal.'); await db.doc('kursus/' + id).update({ visibility: v, u: now() }); }
+      },
+      reports: {
+        canNotify: false,
+        async send(r) { const id = uuid(); await db.doc('laporan/' + id).set(Object.assign(cleanReport(r), { a: B.user ? B.user.id : null, status: 'baru', note: '', t: now() })); return id; },
+        async mine() { if (!db || !B.user) return []; const q = await db.collection('laporan').where('a', '==', B.user.id).limit(50).get(); return q.docs.map(d => repRow(Object.assign({ id: d.id }, d.data()), B.user.name)).sort((x, y) => y.t - x.t); },
+        async all() { if (!db) return []; const q = await db.collection('laporan').limit(300).get(); const list = q.docs.map(d => Object.assign({ id: d.id }, d.data())); const names = await B.profiles(list.map(x => x.a)); return list.map(x => repRow(x, names[x.a] || 'Pengguna')).sort((x, y) => y.t - x.t); },
+        async setStatus(id, status, note) { if (!REPORT_STATUS.includes(status)) throw err('Status tidak dikenal.'); const p = { status }; if (note != null) p.note = String(note).slice(0, 1000); await db.doc('laporan/' + id).update(p); },
+        async remove(id) { await db.doc('laporan/' + id).delete(); },
+        async notify() { return null; }
       },
       async profiles(ids, progDocs) {
         const out = {}; ids = Array.from(new Set(ids.filter(Boolean)));
@@ -282,6 +313,21 @@
         },
         async remove(id) { chk(await sb.from('courses').delete().eq('id', id)); },
         async setVisibility(id, v) { if (!VIS.includes(v)) throw err('Visibilitas tidak dikenal.'); chk(await sb.from('courses').update({ visibility: v, updated_at: new Date().toISOString() }).eq('id', id)); }
+      },
+      reports: {
+        canNotify: true,
+        /* id dibuat di browser: pengunjung tanpa akun tidak boleh membaca tabel, jadi tidak bisa memakai "insert … returning" */
+        async send(r) { const id = uuid(); chk(await sb.from('reports').insert(Object.assign({ id }, cleanReport(r)))); return id; },
+        async mine() { if (!B.user) return []; return chk(await sb.from('reports').select('*').eq('user_id', B.user.id).order('created_at', { ascending: false }).limit(50)).map(x => repRow(x, B.user.name)); },
+        async all() {
+          const rows = chk(await sb.from('reports').select('*').order('created_at', { ascending: false }).limit(300));
+          let users = []; try { users = await B.admin.listUsers(); } catch (e) { }
+          return rows.map(x => { const u = users.find(v => v.id === x.user_id); return repRow(x, x.user_id ? (u ? u.name + (u.email ? ' <' + u.email + '>' : '') : 'Pengguna') : 'Pengunjung (belum masuk)'); });
+        },
+        async setStatus(id, status, note) { if (!REPORT_STATUS.includes(status)) throw err('Status tidak dikenal.'); const p = { status }; if (note != null) p.admin_note = String(note).slice(0, 1000); chk(await sb.from('reports').update(p).eq('id', id)); },
+        async remove(id) { chk(await sb.from('reports').delete().eq('id', id)); },
+        /* Minta Edge Function mengirim email/WA ke admin. Gagal di sini tidak membatalkan laporan. */
+        async notify(id) { try { const r = await sb.functions.invoke('notify-report', { body: { id } }); return r.error ? null : r.data; } catch (e) { return null; } }
       },
       async profiles(ids) { const out = {}; ids = Array.from(new Set(ids.filter(Boolean))); if (!ids.length) return out; const r = chk(await sb.from('profiles').select('id,display_name').in('id', ids)); r.forEach(p => { out[p.id] = p.display_name; }); return out; }
     };

@@ -33,11 +33,12 @@
       (k.visibility === 'class' && db.classes.some(c => c.course_id === k.id && c.owner_id === k.owner_id && (c.owner_id === me() || db.class_members.some(m => m.class_id === c.id && m.user_id === me()))));
     const guard = (db, ownerId, cid) => !/^c-/.test(cid || '') || db.courses.some(k => k.id === cid && (k.owner_id === ownerId || ['unlisted', 'public'].includes(k.visibility)));
     function run() {
-      const db = load(); const T = db[table]; const now = new Date().toISOString();
+      const db = load(); const T = db[table] || (db[table] = []); const now = new Date().toISOString();
       if (table === 'classes' && (st.op === 'insert' || (st.op === 'update' && st.payload && 'course_id' in st.payload)) && !guard(db, st.op === 'insert' ? me() : (T.find(r => st.filters.every(f => f(r))) || {}).owner_id, st.payload.course_id))
         return { data: null, error: { message: 'Kursus ini terkunci dan tidak bisa dipakai di kelasmu.', code: 'P0001' } };
       if (st.op === 'insert') {
         const row = Object.assign({ id: uuid(), created_at: now }, st.payload);
+        if (table === 'reports') Object.assign(row, { user_id: me(), status: 'baru', admin_note: '', notified_at: null });
         if (table === 'classes') row.join_code = Math.random().toString(36).slice(2, 8).toUpperCase().replace(/[01IO]/g, 'X');
         if (table === 'forum_threads') Object.assign(row, { author_id: me(), pinned: false, solved: false, last_activity: now, body: row.body || '' });
         if (table === 'forum_posts') { row.author_id = me(); const t = db.forum_threads.find(t => t.id === row.thread_id); if (t) t.last_activity = now; }
@@ -47,7 +48,7 @@
         T.push(row); save(db); return { data: st.single || st.ret ? row : null, error: null };
       }
       if (st.op === 'upsert') { const i = T.findIndex(r => r.user_id === st.payload.user_id && r.course_id === st.payload.course_id); if (i >= 0) T[i] = Object.assign(T[i], st.payload); else T.push(st.payload); save(db); return { data: null, error: null }; }
-      let rows = T.filter(r => st.filters.every(f => f(r)) && (table !== 'courses' || st.op !== 'select' || canRead(db, r)));
+      let rows = T.filter(r => st.filters.every(f => f(r)) && (table !== 'courses' || st.op !== 'select' || canRead(db, r)) && (table !== 'reports' || r.user_id === me() || (db.profiles.find(p => p.id === me()) || {}).role === 'admin'));
       if (st.op === 'update') { rows.forEach(r => Object.assign(r, st.payload)); save(db); return { data: null, error: null }; }
       if (st.op === 'delete') { db[table] = T.filter(r => !rows.includes(r)); if (table === 'forum_threads') db.forum_posts = db.forum_posts.filter(p => !rows.some(r => r.id === p.thread_id)); save(db); return { data: null, error: null }; }
       for (const [c, asc] of st.order.slice().reverse()) rows.sort((a, b) => (a[c] > b[c] ? 1 : a[c] < b[c] ? -1 : 0) * (asc ? 1 : -1));
@@ -61,6 +62,7 @@
   }
   window.supabase = { createClient: () => ({
     from: Q,
+    functions: { invoke: async (name, o) => { const d = load(); (d.invoked = d.invoked || []).push({ name, body: o && o.body }); save(d); return { data: { ok: true, sent: true, channels: { email: 'tidak diatur' } }, error: null }; } },
     rpc: async (fn, a) => {
       const db0 = load(); const myRole = (db0.profiles.find(p => p.id === me()) || {}).role;
       if (fn === 'admin_list_users') { if (myRole !== 'admin') return { data: null, error: { message: 'Hanya admin' } }; return { data: db0.profiles.map(p => ({ id: p.id, display_name: p.display_name, email: (db0.users.find(u => u.id === p.id) || {}).email, role: p.role, created_at: new Date().toISOString() })), error: null }; }

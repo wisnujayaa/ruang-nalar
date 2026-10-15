@@ -5,6 +5,8 @@
    oleh Row Level Security di supabase/schema.sql. JANGAN pernah memasukkan kunci service_role. */
 window.NALAR_CONFIG = {
   siteName: 'Ruang Nalar',
+  // Nomor WA untuk tombol "Kirim lewat WhatsApp" setelah melapor (opsional, TERLIHAT PUBLIK). Contoh: '62812xxxxxxx'
+  reportWhatsApp: '',
   tagline: 'Belajar sedikit tiap hari, paham sampai ke akarnya.',
   supabaseUrl: '',      // contoh: 'https://abcdefgh.supabase.co'
   supabaseAnonKey: ''   // Project Settings → API → anon public key

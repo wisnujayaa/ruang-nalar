@@ -31,6 +31,7 @@
     plus: '<path d="M12 5v14M5 12h14" fill="none"/>', pin: '<path d="M9 3h6l-1 6 4 4H6l4-4zM12 13v8" fill="none"/>', task: '<rect x="4" y="4" width="16" height="16" rx="3" fill="none"/><path d="M8 12l3 3 5-6" fill="none"/>',
     out: '<path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10" fill="none"/>', grid: '<rect x="4" y="4" width="7" height="7" rx="1.5" fill="none"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="none"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="none"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="none"/>',
     copy: '<rect x="8" y="8" width="12" height="12" rx="2" fill="none"/><path d="M4 16V5a1 1 0 011-1h11" fill="none"/>', trash: '<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" fill="none"/>'
+    , flag: '<path d="M5 21V4h11l-2 4 2 4H5" fill="none"/>', trend: '<path d="M3 17l6-6 4 4 8-8" fill="none"/><path d="M15 7h6v6" fill="none"/>', target: '<circle cx="12" cy="12" r="8" fill="none"/><circle cx="12" cy="12" r="3" fill="none"/>'
   };
   const ic = (n, cls) => '<svg class="ic ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (IC[n] || '') + '</svg>';
 
@@ -104,7 +105,7 @@
     render();
   }
   const TAB = { home: 'home', course: 'course', map: 'course', intro: 'course', diag: 'course', prereq: 'course', lesson: 'course', summary: 'course', mixed: 'course', lintas: 'course', tryout: 'course', dump: 'course', traps: 'course',
-    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me' };
+    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me', lapor: 'me', laporan: 'me' };
   function tabOf(v) { return v === 'run' ? (nav.cur.tab === 'map' ? 'course' : nav.cur.tab || 'review') : TAB[v] || 'home'; }
   /* Kursus Studio yang tidak boleh kubuka (draf, khusus kelas, atau sudah dihapus) */
   function lockedHTML() {
@@ -303,6 +304,7 @@
       if (it.type === 'err') h += '<p><b>Langkah ' + (it.bad + 1) + ' yang salah.</b> ' + rich(it.why) + '</p>';
       if (it.type === 'order') h += (r.ok ? '' : '<p><b>Urutan yang benar:</b></p>') + (r.ok ? '' : '<ol class="ord-key">' + it.steps.map(x => '<li>' + rich(x) + '</li>').join('') + '</ol>') + ((it.extra || []).length ? '<p class="muted small"><b>Langkah pengecoh:</b> ' + it.extra.map(x => rich(x)).join(' · ') + '</p>' : '');
       if (it.sol && !opts.hideSol) h += '<details class="sol"' + (r.ok ? '' : ' open') + '><summary>Pembahasan</summary><div>' + rich(it.sol) + '</div></details>';
+      if (!opts.tryout) h += '<p class="fb-rep"><button type="button" class="linkbtn small" data-rep="soal" data-qid="' + esc(it.id) + '"' + (it.sec ? ' data-sec="' + it.sec + '"' : '') + '>' + ic('flag') + ' Soal, kunci, atau pembahasan ini salah? Laporkan</button></p>';
       h += '</div>';
       fb.innerHTML = h;
       if (it.type === 'err') { const lis = $$('.errsteps .opt', root); lis[it.bad] && lis[it.bad].classList.add('is-bad'); }
@@ -533,7 +535,7 @@
     h += '<div class="card blk" id="blk"></div>';
     const prev = i > 0 ? goBtn(i - 1, 'btn les-prev', '<span class="muted small">Sebelumnya</span><span>' + rich(blkName(L[i - 1])) + '</span>') : '<span></span>';
     const next = i < L.length - 1 ? goBtn(i + 1, 'btn primary les-next', '<span class="small">Lanjut</span><span>' + rich(blkName(L[i + 1])) + '</span>') : (sec === 0 ? '<button class="btn primary" data-act="intro-done">' + (hasDiag() ? 'Ke tes diagnostik' : 'Mulai belajar') + '</button>' : '<button class="btn primary" data-go="course">Ke peta belajar</button>');
-    h += '<nav class="les-nav">' + prev + next + '</nav></div></div></section>';
+    h += '<nav class="les-nav">' + prev + next + '</nav><p class="fb-rep"><button type="button" class="linkbtn small" data-rep="materi" data-sec="' + sec + '" data-i="' + i + '">' + ic('flag') + ' Ada yang salah atau membingungkan di materi ini? Laporkan</button></p></div></div></section>';
     view().innerHTML = h;
     renderBlock($('#blk'), blk, sec, i);
   }
@@ -773,7 +775,7 @@
   /* ======================== AKSI ======================== */
   document.addEventListener('click', async (e) => {
     const g = e.target.closest('[data-go]');
-    if (g && !g.disabled) { e.preventDefault(); A.tick(); const d = g.dataset; const v = d.go; const p = {}; if (d.sec) p.sec = +d.sec; if (d.id) p.id = d.id; if (d.course) p.course = d.course; if (d.tab) p.ktab = d.tab; if (v === 'lesson' && (!d.course || d.course === A.course)) p.i = A.secProgress(+d.sec).step; go(v, p); return; }
+    if (g && !g.disabled) { e.preventDefault(); A.tick(); const d = g.dataset; const v = d.go; const p = {}; if (d.sec) p.sec = +d.sec; if (d.id) p.id = d.id; if (d.course) p.course = d.course; if (d.tab) p.ktab = d.tab; if (d.f) p.f = d.f; if (v === 'lesson' && (!d.course || d.course === A.course)) p.i = A.secProgress(+d.sec).step; go(v, p); return; }
     const a = e.target.closest('[data-act]'); if (!a || a.disabled) return;
     const d = a.dataset; A.tick();
     switch (d.act) {

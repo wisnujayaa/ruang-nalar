@@ -10,7 +10,7 @@ Supabase menyediakan database Postgres + sistem login. Paket gratisnya cukup unt
 1. Buka **SQL Editor → New query**.
 2. Tempel seluruh isi `supabase/schema.sql`, klik **Run**.
    Skrip ini aman dijalankan ulang (memakai `if not exists` / `create or replace`).
-3. Jalankan juga `supabase/courses.sql` (tabel kursus buatan guru untuk Studio kursus), lalu `supabase/roles.sql` (peran siswa/guru/admin), lalu `supabase/course-access.sql` (akses kursus: draf / khusus kelas / tautan / publik).
+3. Jalankan juga `supabase/courses.sql` (tabel kursus buatan guru untuk Studio kursus), lalu `supabase/roles.sql` (peran siswa/guru/admin), lalu `supabase/course-access.sql` (akses kursus: draf / khusus kelas / tautan / publik), dan `supabase/reports.sql` (laporan kendala; notifikasi email/WA di [LAPORAN.md](LAPORAN.md)).
 4. Jadikan akunmu **admin** (setelah mendaftar di situs). Di SQL Editor:
    ```sql
    update public.profiles set role = 'admin'

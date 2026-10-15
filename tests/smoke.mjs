@@ -115,6 +115,12 @@ await page.waitForFunction(() => /Tersimpan/.test(document.querySelector('#k-nam
 await page.click('[data-pact="k-del1"]'); await page.fill('#k-del-n', 'Kelas Uji 2'); await page.click('[data-pact="k-del2"]'); await page.waitForSelector('#clist');
 await page.waitForFunction(() => !document.querySelector('.loading'));
 if ((await page.$$('.klas-card')).length) fail('kelas lokal tidak terhapus'); else console.log('Kelola kelas lokal (ganti nama, hapus) OK');
+// Laporan kendala (mode lokal): dari Akun, lalu terlihat di daftar laporan
+await page.click('.tabs a[data-go="me"]'); await page.click('[data-go="lapor"]'); await page.waitForSelector('#repf');
+await page.click('[data-rk="saran"]'); await page.fill('#rep-body', 'Tolong tambah mode gelap otomatis'); await page.click('#repf button[type=submit]');
+await page.waitForSelector('.rep-ok'); await page.waitForSelector('#rep-mine .rep');
+await page.evaluate(() => BU.go('laporan')); await page.waitForSelector('#rep-in .rep'); if (await overflow(page) > 1) fail('overflow di laporan');
+console.log('Laporan kendala lokal OK');
 // kursus templat
 await page.click('.tabs a[data-go="home"]');
 await page.evaluate(() => BU.go('course', { course: 'contoh-kursus' }));
