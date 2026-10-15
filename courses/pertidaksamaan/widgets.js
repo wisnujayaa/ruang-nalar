@@ -1,4 +1,4 @@
-/* Batas — widget interaktif (SVG murni) */
+/* Pertidaksamaan — interactive widgets (pure SVG) */
 (function (G) {
   'use strict';
   const B = G.BM, W = G.BC.WIDGETS = {};
@@ -17,7 +17,7 @@
     el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; el.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', x === b)); cb(b.dataset.v); });
   }
   const segVal = (root, id) => root.querySelector('#' + id + ' [aria-checked="true"]').dataset.v;
-  // kerangka grafik
+  // graph frame
   let cpN = 0;
   function frame(x0, x1, y0, y1, Wd, Ht, opt) {
     opt = opt || {};
@@ -57,7 +57,7 @@
     svg.addEventListener('pointercancel', () => { active = false; });
   }
 
-  /* ============ 0a. Uang jajan ============ */
+  /* ============ 0a. Pocket money ============ */
   W.jajan = function (el) {
     el.innerHTML = '<div class="w-row">' + slider('jj-n', 'Gelas es kopi', 0, 7, 1, 2) + '</div><svg class="w-svg" viewBox="0 0 600 150" id="jj-svg" role="img" aria-label="Batang pengeluaran dibandingkan uang jajan"></svg><p class="w-read" id="jj-r" aria-live="polite"></p>';
     const n = el.querySelector('#jj-n'), svg = el.querySelector('#jj-svg'), out = el.querySelector('#jj-r');
@@ -67,7 +67,7 @@
       let s = '<rect x="20" y="30" width="' + (Xp(spend) - 20) + '" height="34" rx="6" class="' + (spend <= cap ? 'w-fill-ok' : 'w-fill-bad') + '"/>';
       s += '<line x1="' + Xp(cap) + '" x2="' + Xp(cap) + '" y1="18" y2="76" class="w-limit"/><text x="' + Xp(cap) + '" y="14" class="w-tl" text-anchor="middle">batas Rp50.000</text>';
       s += '<text x="26" y="52" class="w-bt">' + rp(spend) + '</text>';
-      // garis bilangan bilangan bulat
+      // integer number line
       for (let i = 0; i <= 7; i++) { const x = 40 + i * 74; s += '<circle cx="' + x + '" cy="118" r="9" class="' + (12000 * i <= cap ? 'nl-dot' : 'nl-hole') + (i === k ? ' w-cur' : '') + '"/><text x="' + x + '" y="144" class="w-tl" text-anchor="middle">' + i + '</text>'; }
       s += '<text x="20" y="98" class="w-tl">banyak gelas yang aman: 12.000x ≤ 50.000</text>';
       svg.innerHTML = s;
@@ -76,7 +76,7 @@
     n.addEventListener('input', draw); draw();
   };
 
-  /* ============ 0b. Ojol ============ */
+  /* ============ 0b. Ride-hailing (ojol) ============ */
   W.ojol = function (el) {
     el.innerHTML = '<div class="w-row">' + slider('oj-d', 'Jarak (km)', 0, 14, 0.5, 3) + '</div><svg class="w-svg" viewBox="0 0 600 300" id="oj-svg" role="img" aria-label="Grafik biaya ojol A dan B"></svg><p class="w-read" id="oj-r" aria-live="polite"></p>';
     const d = el.querySelector('#oj-d'), svg = el.querySelector('#oj-svg'), out = el.querySelector('#oj-r');
@@ -99,7 +99,7 @@
     d.addEventListener('input', draw); draw();
   };
 
-  /* ============ 1a. Jungkat-jungkit ============ */
+  /* ============ 1a. Seesaw ============ */
   W.seesaw = function (el) {
     el.innerHTML = '<svg class="w-svg" viewBox="0 0 600 220" id="ss-svg" role="img" aria-label="Jungkat-jungkit dua ruas"></svg>' +
       '<div class="w-btns" id="ss-b"><button type="button" data-op="+3">+3</button><button type="button" data-op="-4">−4</button><button type="button" data-op="*2">×2</button><button type="button" data-op="*-1" class="w-neg">×(−1)</button><button type="button" data-op="/-2" class="w-neg">÷(−2)</button><button type="button" data-op="reset" class="w-ghost">Ulang</button></div>' +
@@ -131,7 +131,7 @@
     draw();
   };
 
-  /* ============ 1b. Pembuat interval ============ */
+  /* ============ 1b. Interval builder ============ */
   W.interval = function (el) {
     el.innerHTML = seg('iv-m', [['in', 'di antara'], ['out', 'di luar'], ['l', 'ke kiri'], ['r', 'ke kanan']], 'in') +
       '<svg class="w-svg w-drag" viewBox="0 0 600 90" id="iv-svg" role="img" aria-label="Seret titik ujung pada garis bilangan"></svg>' +
@@ -165,7 +165,7 @@
     draw();
   };
 
-  /* ============ 2. Uji titik ============ */
+  /* ============ 2. Test points ============ */
   W.ujititik = function (el) {
     const P = [{ t: '2x-1>5', f: x => 2 * x - 1, r: '>', k: 5, crit: 3 }, { t: '-3x+4\\le10', f: x => -3 * x + 4, r: '<=', k: 10, crit: -2 }, { t: '\\frac x2+1<3', f: x => x / 2 + 1, r: '<', k: 3, crit: 4 }];
     el.innerHTML = seg('ut-p', P.map((p, i) => [String(i), B.rich('$' + p.t + '$')]), '0') + '<div class="w-row">' + slider('ut-x', 'x', -8, 8, 0.5, 0) + '</div><svg class="w-svg" viewBox="0 0 600 80" id="ut-svg" role="img" aria-label="Garis bilangan uji titik"></svg><p class="w-read" id="ut-r" aria-live="polite"></p><label class="w-chk"><input type="checkbox" id="ut-show"> Tampilkan daerah penyelesaian</label>';
@@ -209,7 +209,7 @@
     ids.forEach(i => i.addEventListener('input', draw)); bindSeg(el, 'pb-r', draw); draw();
   };
 
-  /* ============ 4. Tabel tanda ============ */
+  /* ============ 4. Sign chart ============ */
   W.signchart = function (el) {
     el.innerHTML = '<div class="w-factors" id="sc-f"></div>' + seg('sc-r', [['<', '&lt; 0'], ['<=', '≤ 0'], ['>', '&gt; 0'], ['>=', '≥ 0']], '<') +
       '<svg class="w-svg" viewBox="0 0 600 250" id="sc-svg" role="img" aria-label="Sketsa grafik polinomial"></svg><div id="sc-tab" class="w-tab"></div><div id="sc-nl"></div>';
@@ -221,20 +221,20 @@
     function draw() {
       st.forEach((f, i) => { f.r = +el.querySelector('#sc-r' + i).value; f.p = +el.querySelector('#sc-p' + i).value; el.querySelector('#sc-r' + i + '-o').textContent = f.r; });
       let used = st.filter(f => f.p > 0);
-      // gabungkan akar sama
+      // merge repeated roots
       const m = {}; used.forEach(f => { m[f.r] = (m[f.r] || 0) + f.p; });
       const roots = Object.keys(m).map(Number).sort((a, b) => a - b);
       const rel = segVal(el, 'sc-r');
       const f = x => roots.reduce((acc, r) => acc * Math.pow(x - r, m[r]), 1);
       const S = roots.length ? B.solve(x => relFn(rel)(f(x), 0), roots) : [];
-      // grafik terskala (tanda saja)
+      // scaled graph (signs only)
       const F = frame(-6, 6, -6, 6, 600, 250, { sx: 1, sy: 2, lx: 1, ly: 100 });
       const deg = Math.max(1, roots.reduce((s, r) => s + m[r], 0));
       const g2 = x => { const v = f(x); return Math.sign(v) * 5.2 * Math.tanh(Math.pow(Math.abs(v), 1 / deg) / 2.4); };
       let g = F.g + '<g ' + F.clip + '><path d="' + pathOf(g2, F, 500) + '" class="w-curve"/></g>';
       roots.forEach(r => { g += '<circle cx="' + F.X(r) + '" cy="' + F.Y(0) + '" r="5" class="' + (m[r] % 2 ? 'w-pt' : 'w-pt2') + '"/>'; });
       svg.innerHTML = g;
-      // tabel tanda
+      // sign chart
       if (!roots.length) { el.querySelector('#sc-tab').innerHTML = '<p class="muted">Pilih minimal satu faktor.</p>'; el.querySelector('#sc-nl').innerHTML = ''; return; }
       const bounds = [-Infinity].concat(roots, [Infinity]);
       let t = '<div class="w-signrow">';
@@ -250,7 +250,7 @@
     fbox.addEventListener('input', draw); fbox.addEventListener('change', draw); bindSeg(el, 'sc-r', draw); draw();
   };
 
-  /* ============ 5. Kali silang ============ */
+  /* ============ 5. Cross-multiplying ============ */
   W.kalisilang = function (el) {
     el.innerHTML = '<div class="w-row">' + slider('ks-x', 'x', -6, 8, 0.1, 0) + '</div><svg class="w-svg" viewBox="0 0 600 300" id="ks-svg" role="img" aria-label="Grafik y=(x+1)/(x−2) dan y=1"></svg><div class="w-compare" id="ks-c" aria-live="polite"></div>';
     const xs = el.querySelector('#ks-x'), svg = el.querySelector('#ks-svg');
@@ -272,7 +272,7 @@
     xs.addEventListener('input', draw); draw();
   };
 
-  /* ============ 6. Akar vs garis ============ */
+  /* ============ 6. Root vs line ============ */
   W.akar = function (el) {
     el.innerHTML = '<p class="w-read">' + B.rich('$\\sqrt{x-a}\\;\\square\\;mx+n$') + '</p><div class="w-grid3">' + slider('ak-a', 'a', -4, 4, 1, 3) + slider('ak-m', 'm', -2, 2, 0.5, 0) + slider('ak-n', 'n', -3, 5, 0.5, 2) + '</div>' + seg('ak-r', [['<', '&lt;'], ['<=', '≤'], ['>', '&gt;'], ['>=', '≥']], '<') +
       '<svg class="w-svg" viewBox="0 0 600 300" id="ak-svg" role="img" aria-label="Grafik akar dan garis"></svg><div id="ak-nl"></div><p class="w-read" id="ak-o" aria-live="polite"></p>';
@@ -281,7 +281,7 @@
       const [a, m, n] = ids.map(i => +i.value); ids.forEach((i, k) => el.querySelector('#ak-' + 'amn'[k] + '-o').textContent = fmt(+i.value, 1));
       const rel = segVal(el, 'ak-r');
       const s = x => x - a >= -1e-12 ? Math.sqrt(Math.max(0, x - a)) : NaN, l = x => m * x + n;
-      // titik potong: x - a = (mx+n)^2
+      // intersection: x - a = (mx+n)^2
       const crit = [a]; const A2 = m * m, B2 = 2 * m * n - 1, C2 = n * n + a;
       if (Math.abs(A2) < 1e-12) { if (Math.abs(B2) > 1e-12) crit.push(-C2 / B2); } else { const D = B2 * B2 - 4 * A2 * C2; if (D >= 0) crit.push((-B2 - Math.sqrt(D)) / (2 * A2), (-B2 + Math.sqrt(D)) / (2 * A2)); }
       const S = B.solve(x => x - a >= -1e-12 && relFn(rel)(s(x), l(x)), crit.map(v => R(v, 9)));
@@ -297,7 +297,7 @@
     ids.forEach(i => i.addEventListener('input', draw)); bindSeg(el, 'ak-r', draw); draw();
   };
 
-  /* ============ 7. Mutlak = jarak ============ */
+  /* ============ 7. Absolute value = distance ============ */
   W.mutlak = function (el) {
     el.innerHTML = '<div class="w-grid3">' + slider('mt-a', 'pusat a', -5, 5, 1, -1) + slider('mt-r', 'batas r', -2, 6, 1, 3) + '</div>' + seg('mt-s', [['<', '&lt; r'], ['<=', '≤ r'], ['>', '&gt; r'], ['>=', '≥ r']], '<=') +
       '<svg class="w-svg" viewBox="0 0 600 120" id="mt-svg" role="img" aria-label="Jarak di garis bilangan"></svg><p class="w-read" id="mt-o" aria-live="polite"></p>';
@@ -318,7 +318,7 @@
     A.addEventListener('input', draw); Rr.addEventListener('input', draw); bindSeg(el, 'mt-s', draw); draw();
   };
 
-  /* ============ 8. Eksponen & log ============ */
+  /* ============ 8. Exponents & logs ============ */
   W.eksplog = function (el) {
     el.innerHTML = '<div class="w-grid3">' + slider('el-a', 'basis a', 0.2, 3, 0.1, 2) + slider('el-m', 'pangkat m', -3, 3, 0.5, -1) + slider('el-n', 'pangkat n', -3, 3, 0.5, 1.5) + '</div>' +
       '<svg class="w-svg" viewBox="0 0 600 300" id="el-svg" role="img" aria-label="Grafik y = a pangkat x"></svg><p class="w-read" id="el-o" aria-live="polite"></p>';
@@ -338,7 +338,7 @@
     ids.forEach(i => i.addEventListener('input', draw)); draw();
   };
 
-  /* ============ 9. SPtLDV ============ */
+  /* ============ 9. Systems of linear inequalities (SPtLDV) ============ */
   W.sptldv = function (el) {
     const L = [{ a: 1, b: 1, c: 4, lab: 'x + y' }, { a: 2, b: 1, c: 6, lab: '2x + y' }, { a: 1, b: 0, c: 0, lab: 'x' }, { a: 0, b: 1, c: 0, lab: 'y' }];
     const rel = ['<=', '<=', '>=', '>='];
@@ -346,7 +346,7 @@
       '<svg class="w-svg w-drag" viewBox="0 0 600 420" id="sp-svg" role="img" aria-label="Daerah penyelesaian sistem pertidaksamaan"></svg><p class="w-read" id="sp-o" aria-live="polite"></p>';
     const svg = el.querySelector('#sp-svg'); let P = { x: 1, y: 1 };
     const F = frame(-2, 8, -2, 7, 600, 420, { sx: 1, sy: 1, lx: 1, ly: 1 });
-    function clip(poly, a, b, c, r) { // simpan sisi yang memenuhi a x + b y r c (r: <=,>= ; strict diperlakukan sama untuk gambar)
+    function clip(poly, a, b, c, r) { // keep the side satisfying a x + b y r c (r: <=,>= ; strict treated the same for drawing)
       const inside = p => (r[0] === '<' ? a * p[0] + b * p[1] <= c + 1e-9 : a * p[0] + b * p[1] >= c - 1e-9);
       const out = [];
       for (let i = 0; i < poly.length; i++) {

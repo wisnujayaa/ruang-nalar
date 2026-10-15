@@ -1,7 +1,7 @@
-/* Batas — soal menyusun bukti (tipe 'order').
-   steps  : langkah dalam urutan yang BENAR (UI mengacaknya)
-   extra  : langkah pengecoh yang tidak boleh dipakai (penalaran keliru / melingkar)
-   alt    : urutan lain yang juga sah, berupa array indeks ke `steps` */
+/* Pertidaksamaan — proof-ordering questions (type 'order').
+   steps  : steps in the CORRECT order (the UI shuffles them)
+   extra  : distractor steps that must not be used (wrong / circular reasoning)
+   alt    : other valid orders, as index arrays into `steps` */
 (function (G) {
   'use strict';
   const C = G.BC = G.BC || {};

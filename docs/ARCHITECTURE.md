@@ -1,74 +1,83 @@
-# Arsitektur
+# Architecture
 
-## Prinsip
-- **Tanpa build step.** Setiap file JS adalah IIFE biasa yang menempel ke `window`. Mudah dibaca, mudah di-fork, jalan di hosting statis mana pun.
-- **Kursus = data.** Kode inti tidak tahu apa pun tentang pertidaksamaan; semua materi, soal, widget, dan jebakan ada di `courses/<id>/`.
-- **Satu antarmuka backend.** UI tidak pernah memanggil Supabase/Claude langsung, selalu lewat `window.BB`.
+## Principles
+- **No build step.** Every JS file is a plain IIFE attached to `window`. Easy to read, easy to fork, runs on any static host.
+- **Courses are data.** The core code knows nothing about inequalities; all lessons, questions, widgets, and traps live in `courses/<id>/`.
+- **One backend interface.** The UI never calls Supabase/Claude directly; it always goes through `window.BB`.
+- **Code in English, product in Indonesian.** Identifiers, comments, docs, and tests are English. User-facing text (UI strings, course content, emails, help articles) is Indonesian. Route names that appear in shared URLs (`#gabung=`, `#kursus=`, `#bantuan=`) and stored data keys are kept stable on purpose.
 
-## Namespace global
-| Nama | File | Isi |
+## Globals
+| Name | File | Contents |
 |---|---|---|
-| `BM` | `js/math.js` | himpunan interval `{a,b,ca,cb}`, `parseAnswer`, `solve`, `tex/rich` (mini-TeX), `numberLine` |
-| `NR` | `js/registry.js` | daftar & pemuat kursus |
-| `BC` | `js/registry.js` | **Proxy** ke objek kursus aktif. File kursus menulis `BC.BANK = …` dsb. |
-| `BB` | `js/backend.js` | backend aktif: lokal / Claude / Supabase |
-| `BA` | `js/core.js` | state progres kursus aktif (`BA.S`), rekam jawaban, jadwal review, statistik, sinkronisasi |
-| `BU` | `js/ui.js` | router & komponen UI yang dipakai `platform.js` |
-| `BP` | `js/platform.js` | cache halaman kelas |
-| `NalarStats` | `js/stats.js` | dasbor statistik (dihitung dari `BA.stats`) |
-| `NalarHelp` | `js/help.js` | artikel bantuan, pencarian tanpa aksen, tur kenalan |
-| `NalarReport` | `js/report.js` | laporan masalah dari pengguna |
+| `BM` | `js/math.js` | interval sets `{a,b,ca,cb}`, `parseAnswer`, `solve`, `tex/rich` (mini-TeX), `numberLine` |
+| `NR` | `js/registry.js` | course list & loader |
+| `BC` | `js/registry.js` | **Proxy** to the active course object. Course files write `BC.BANK = …` etc. |
+| `BB` | `js/backend.js` | active backend: local / Claude / Supabase |
+| `BA` | `js/core.js` | active course progress (`BA.S`), answer recording, review schedule, stats, sync |
+| `BU` | `js/ui.js` | router & UI components used by `platform.js` |
+| `BP` | `js/platform.js` | class page cache |
+| `NalarStats` | `js/stats.js` | stats dashboard (computed from `BA.stats`) |
+| `NalarHelp` | `js/help.js` | help articles, accent-insensitive search, guided tour |
+| `NalarReport` | `js/report.js` | user problem reports |
 
-## Kepercayaan data
-- **Progres tidak pernah dipercaya mentah.** Semua jalur masuk (localStorage, kode progres, `sync.pull`, progres siswa yang dibaca guru) melewati `BA.sanitize` / `BA.parseState`: setiap field dipaksa ke tipe & rentang yang benar, kunci dibatasi regex `[A-Za-z0-9_:.-]`, teks dipotong. Ditambah `esc()` yang meng-escape `& < > " '` dan CSP tanpa skrip inline, XSS tersimpan dari siswa ke guru tertutup berlapis.
-- **Reset lintas perangkat:** reset menulis `resetAt`; saat `BA.merge`, data dari sebelum `resetAt` dibuang, sehingga perangkat lain tidak "menghidupkan kembali" progres lama.
-- **Sinkronisasi berurutan:** `sync.push` dirantai satu per satu (promise chain) dan mencatat versi terakhir per kursus, sehingga dua penyimpanan cepat tidak saling menimpa tidak berurutan.
-- **SRS:** interval maksimum 365 hari; soal/kartu yang sudah dihapus dari kursus diabaikan saat menghitung jatuh tempo.
-- **Runtutan (streak):** dihitung dari himpunan hari aktif, mundur per tanggal kalender (aman terhadap pergantian jam musim panas).
+## Data trust
+- **Progress is never trusted raw.** Every way in (localStorage, progress codes, `sync.pull`, student progress read by a teacher) goes through `BA.sanitize` / `BA.parseState`: each field is coerced to the right type & range, keys are limited to `[A-Za-z0-9_:.-]`, and text is truncated. Together with `esc()` (which escapes `& < > " '`) and a CSP without inline scripts, stored XSS from a student to a teacher is blocked in several layers.
+- **Cross-device reset:** a reset writes `resetAt`; during `BA.merge`, data older than `resetAt` is dropped, so another device can't "resurrect" old progress.
+- **Ordered sync:** `sync.push` calls are chained (a promise chain) and the last pushed version is tracked per course, so two quick saves can't overwrite each other out of order.
+- **Spaced repetition:** the maximum interval is 365 days; questions/cards deleted from a course are ignored when computing what's due.
+- **Streak:** computed from the set of active days, stepping back one calendar date at a time (safe across daylight-saving changes).
 
-## Alur memuat kursus
-1. `NR.load(id)` membuat objek kosong, menjadikannya target `BC`, lalu memuat `courses/<id>/<file>` satu per satu dengan tag `<script>`.
-2. `NR.normalize` mengisi field opsional dengan nilai kosong.
-3. `BA.useCourse(id)` menyimpan progres kursus lama, membaca progres kursus baru dari `localStorage` (`nalar-state-v1:<id>`), lalu menarik versi server dan **menggabungkannya** (`BA.merge`: gabungan riwayat jawaban, nilai terbaru per kartu/soal).
+## Loading a course
+1. `NR.load(id)` creates an empty object, makes it the `BC` target, then loads `courses/<id>/<file>` one by one with `<script>` tags.
+2. `NR.normalize` fills optional fields with empty values.
+3. `BA.useCourse(id)` saves the old course's progress, reads the new one from `localStorage` (`nalar-state-v1:<id>`), then pulls the server version and **merges** them (`BA.merge`: union of answer history, newest value per card/question).
 
-Halaman yang butuh kursus (daftar `COURSE_VIEWS` di `ui.js`) otomatis memuat kursus terakhir bila belum ada yang aktif.
+Views that need a course (`COURSE_VIEWS` in `ui.js`) automatically load the last course when none is active.
 
-## Kursus buatan guru (Studio)
-- Disimpan di backend (`BB.courses`), id berbentuk `c-xxxxxxxxxx`. `NR.refreshRemote()` mengambil daftar kursus publik + milik sendiri; `NR.load('c-…')` mengambil isinya.
-- Isi kursus adalah data dari pengguna, jadi **selalu** melewati `NalarSafe.compile()` (`js/course-safe.js`): hanya blok & tipe soal yang aman, teks di-escape, rumus dibersihkan dari `< > &`, tautan wajib https. Hasilnya berformat sama dengan kursus berbasis file, sehingga `ui.js` tidak membedakan keduanya.
-- Editor (`js/editor.js`) mengedit data mentah `E.raw` lewat atribut `data-b="path"` pada input; perubahan struktur (tambah/hapus/pindah) menggambar ulang tab.
+## Teacher-made courses (Studio)
+- Stored in the backend (`BB.courses`) with ids like `c-xxxxxxxxxx`. `NR.refreshRemote()` fetches public courses plus your own; `NR.load('c-…')` fetches the content.
+- Course content is user data, so it **always** goes through `NalarSafe.compile()` (`js/course-safe.js`): only safe block & question types, escaped text, math stripped of `< > &`, https-only links. The output has the same format as file-based courses, so `ui.js` treats both the same.
+- The editor (`js/editor.js`) edits the raw data `E.raw` through `data-b="path"` attributes on inputs; structural changes (add/remove/move) re-render the tab.
+- Visibility: `draft` (owner only), `class` (members of the owner's classes that use the course), `unlisted` (by link), `public` (catalog). Enforced by RLS in `supabase/course-access.sql`.
 
-## Progres
-Satu dokumen JSON per (pengguna, kursus): riwayat jawaban (maks 1.400), jadwal review tiap soal & kartu, kesalahan, posisi materi, dll. Statistik (penguasaan konsep, jebakan) **tidak disimpan**, selalu dihitung ulang dari riwayat (`BA.stats`). Karena itu laporan guru dan status tugas cukup membaca dokumen progres siswa.
+## Progress
+One JSON document per (user, course): answer history (max 1,400), the review schedule for each question & card, mistakes, lesson position, etc. Statistics (concept mastery, traps) are **never stored**; they're recomputed from the history (`BA.stats`). That's why teacher reports and assignment status only need to read the student's progress document.
 
-## Status tugas
-`target` tugas berupa data, misalnya `{kind:'practice', sec:5, lvl:3}`. Fungsi `statusOf` di `platform.js` menghitung status dari progres siswa:
+## Assignment status
+An assignment `target` is data, e.g. `{kind:'practice', sec:5, lvl:3}`. `statusOf` in `platform.js` computes the status from the student's progress:
 
-| kind | selesai jika |
+| kind | done when |
 |---|---|
-| `lesson` | tiket keluar bagian itu diselesaikan |
-| `practice` | 4 dari 5 jawaban terakhir di bagian & level itu benar |
-| `prereq` | drill prasyarat lulus |
-| `diag` | tes diagnostik selesai |
-| `review` / `mixed` | jumlah soal dari sumber itu sejak tugas dibuat ≥ n |
-| `tryout` | ≥ 10 soal tryout dijawab sejak tugas dibuat |
+| `lesson` | the section's exit ticket is completed |
+| `practice` | 4 of the last 5 answers in that section & level are correct |
+| `prereq` | the prerequisite drill is passed |
+| `diag` | the diagnostic test is finished |
+| `review` / `mixed` | number of questions from that source since the assignment was created ≥ n |
+| `tryout` | ≥ 10 tryout questions answered since the assignment was created |
+
+## Accounts (Supabase mode)
+- **Google sign-in** via `auth.signInGoogle()`; the button appears automatically when `/auth/v1/settings` reports the Google provider as enabled.
+- **Email + password** with a **one-time code**: sign-up and password reset send a code (`{{ .Token }}` in the email templates), verified with `auth.verifyCode(email, code, 'signup' | 'recovery')`. Codes can't be consumed by email link scanners and code-only emails rarely land in spam. Old email links are still handled by `handleLanding` in `ui.js`.
+- The URL hash from email/OAuth redirects is kept until Supabase has read it, then cleaned before routing.
 
 ## Backend
-`backend.js` memilih adaptor saat dimuat; `ui.js` beralih ke adaptor Claude jika runtime Artifact muncul belakangan. Antarmukanya:
+`backend.js` picks an adapter on load; `ui.js` switches to the Claude adapter if the Artifact runtime appears later. The interface:
 
 ```
 init(), mode, online, user, isAdmin
-auth.{needsLogin, signUp, signIn, signOut, resetPassword}
+auth.{needsLogin, signUp, signIn, signOut, resetPassword, resend?, verifyCode?, updatePassword?, providers?, signInGoogle?}
 progress.{load, save, watch?}
 classes.{mine, create, join?, remove, leave?, members, memberProgress, kick, setMembers?, candidates?, canCreate, usesCode, manual}
 assign.{list, create, remove}
 forum.{threads, create, posts, reply, update, remove, removePost}
 notes.{watch, send, markRead?, history}
+courses.{…}, reports.{…}, admin.{listUsers, setRole}
 profiles(ids)
 ```
 
-Menambah backend lain (Firebase, server sendiri) cukup dengan mengimplementasikan antarmuka ini.
+Adding another backend (Firebase, your own server) only requires implementing this interface.
 
-## Keamanan
-- Semua teks buatan pengguna (nama, judul, isi forum) dimasukkan lewat `textContent` atau di-escape dulu sebelum rumus `$…$` dirender. Uji asap memastikan `<script>` di forum tidak dieksekusi.
-- Di mode Supabase, aturan akses ada di database (RLS), diuji oleh `supabase/test-rls.sql`.
+## Security
+- All user-written text (names, titles, forum posts) is inserted with `textContent` or escaped before `$…$` math is rendered. The smoke test checks that `<script>` in the forum never runs.
+- In Supabase mode the access rules live in the database (RLS), tested by `supabase/test-rls*.sql` via `npm run test:rls`.
+- `_headers` sets a strict CSP (no inline scripts, connections only to Supabase), `frame-ancestors 'none'`, and related headers; `npm run test:csp` applies it in a real browser.

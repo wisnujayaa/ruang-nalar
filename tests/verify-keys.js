@@ -1,9 +1,9 @@
-/* Verifikasi kunci jawaban kursus Pertidaksamaan + kursus contoh.
-   - Soal interval: kunci dibandingkan dengan predikat soal di ribuan titik.
-   - Soal isian angka: dihitung ulang dengan brute force.
-   - Generator: 400 seed per generator, kunci harus bisa di-parse ulang.
-   - Soal menyusun bukti: struktur valid.
-   Jalankan: npm test */
+/* Answer-key verification for the Pertidaksamaan course + the example course.
+   - Interval questions: the key is compared with the question's predicate at thousands of points.
+   - Numeric questions: recomputed by brute force.
+   - Generators: 400 seeds per generator; keys must parse back.
+   - Proof-ordering questions: valid structure.
+   Run: npm test */
 const path = require('path'); const ROOT = path.join(__dirname, '..');
 require(path.join(ROOT, 'js/math.js'));
 for (const f of ['content-a','content-b','bank','gen','cards','content-c','bank2','proofs','extras']) require(path.join(ROOT, 'courses/pertidaksamaan', f + '.js'));
@@ -11,7 +11,7 @@ const B=globalThis.BM, BANK=globalThis.BC.BANK; let bad=0, n=0;
 function check(id, setStr, pred){
   const set=B.parseSet(setStr); const pts=[];
   for(let x=-30;x<=30;x+=0.005) pts.push(+x.toFixed(4));
-  B.norm(set).forEach(p=>{[p.a,p.b].forEach(v=>{ if(isFinite(v)) { pts.push(v-1e-6, v+1e-6); if (Number.isInteger(v*2)) pts.push(v); } /* ujung pecahan seperti -1/3 tidak dicek persis karena galat pembulatan */});});
+  B.norm(set).forEach(p=>{[p.a,p.b].forEach(v=>{ if(isFinite(v)) { pts.push(v-1e-6, v+1e-6); if (Number.isInteger(v*2)) pts.push(v); } /* fractional endpoints like -1/3 aren't checked exactly because of rounding error */});});
   for(const x of pts){ let pv; try{pv=pred(x)===true}catch(e){pv=false}
     if(pv!==B.has(set,x)){ console.log('MISMATCH',id,setStr,'at x=',x,'pred',pv); bad++; return; } }
 }
@@ -35,7 +35,7 @@ const nums={
 };
 for(const id in nums){ if(BANK[id].ans!==nums[id]){console.log('NUM MISMATCH',id,BANK[id].ans,nums[id]);bad++;} }
 console.log('interval items',n,'total',Object.keys(BANK).length,'bad',bad);
-// verifikasi tambahan bank2
+// extra checks for bank2
 const B2=globalThis.BC.BANK; let bad2=0;
 const c2=(p,lo=-60,hi=60)=>{let c=0;for(let x=lo;x<=hi;x++){let v=false;try{v=p(x)}catch(e){} if(v)c++;}return c;};
 const chk={
@@ -73,29 +73,29 @@ for(const name in C.GEN){ for(let s=1;s<=400;s++){ const it=C.makeGen(name,s*791
   if(it.type==='mc'){ if(it.opts.filter(o=>o.ok).length!==1){errs++;console.log('mc ok count',name,s,JSON.stringify(it.opts));} }
   if(s===3) sample[name]=it.q+'  =>  '+(it.ans??JSON.stringify(it.opts?.map(o=>o.t+(o.ok?'*':''))));
 }}
-console.log('generator: ' + Object.keys(C.GEN).length + ' jenis x 400 seed, error', errs); if (errs) process.exitCode = 1; }
+console.log('generator: ' + Object.keys(C.GEN).length + ' kinds x 400 seeds, errors', errs); if (errs) process.exitCode = 1; }
 
-/* Soal menyusun bukti (tipe order) */
+/* Proof-ordering questions (type order) */
 { let e = 0, n = 0; const BK = globalThis.BC.BANK;
   for (const id in BK) { const q = BK[id]; if (q.type !== 'order') continue; n++;
     if (!Array.isArray(q.steps) || q.steps.length < 3) { console.log('ORDER steps', id); e++; }
-    if (new Set(q.steps).size !== q.steps.length) { console.log('ORDER duplikat', id); e++; }
-    (q.extra || []).forEach(x => { if (q.steps.includes(x)) { console.log('ORDER pengecoh sama dengan langkah', id); e++; } });
-    (q.alt || []).forEach(a => { if (a.length !== q.steps.length || new Set(a).size !== a.length || a.some(i => i < 0 || i >= q.steps.length)) { console.log('ORDER alt tidak valid', id); e++; } });
+    if (new Set(q.steps).size !== q.steps.length) { console.log('ORDER duplicate', id); e++; }
+    (q.extra || []).forEach(x => { if (q.steps.includes(x)) { console.log('ORDER distractor equals a step', id); e++; } });
+    (q.alt || []).forEach(a => { if (a.length !== q.steps.length || new Set(a).size !== a.length || a.some(i => i < 0 || i >= q.steps.length)) { console.log('ORDER invalid alt', id); e++; } });
   }
-  console.log('soal bukti: ' + n + ', error ' + e); if (e) process.exitCode = 1; }
-/* Kursus contoh: muat ke objek terpisah lalu cek kunci */
+  console.log('proof questions: ' + n + ', errors ' + e); if (e) process.exitCode = 1; }
+/* Example course: load into a separate object, then check its keys */
 { const saved = globalThis.BC; globalThis.BC = {}; require(path.join(ROOT, 'courses/contoh-kursus/course.js')); const T = globalThis.BC; globalThis.BC = saved;
   const B = globalThis.BM; let e = 0;
   const exp = { 'p1-1': 15 / 100 * 60, 'p1-3': 12 / 48 * 100, 'p2-1': 50000 * 1.1, 'p2-2': 100 * 1.5 * 0.5, 'p2-3': (1 - 0.7 * 0.8) * 100, 'p2-4': 150000 / 0.75 };
-  for (const id in exp) if (Math.abs(T.BANK[id].ans - exp[id]) > 1e-6) { console.log('TEMPLAT', id, T.BANK[id].ans, exp[id]); e++; }
-  const set = B.parseSet(T.BANK['p1-5'].ans); for (let x = -10; x <= 110; x += 0.25) { const p = x >= 0 && x <= 100 && 80000 * (1 - x / 100) < 60000; if (p !== B.has(set, x)) { console.log('TEMPLAT p1-5 di x=', x); e++; break; } }
-  ['SECTIONS', 'LESSONS', 'BANK'].forEach(k => { if (!T[k]) { console.log('TEMPLAT tanpa', k); e++; } });
-  for (const s in T.LESSONS) T.LESSONS[s].forEach(b => { if (b.k === 'q' && !T.BANK[b.id]) { console.log('TEMPLAT blok q tanpa soal', b.id); e++; } if (b.k === 'exit') b.qs.forEach(id => { if (!T.BANK[id]) { console.log('TEMPLAT exit tanpa soal', id); e++; } }); });
-  console.log('kursus contoh: ' + Object.keys(T.BANK).length + ' soal, error ' + e); if (e) process.exitCode = 1; }
-/* Semua referensi soal di materi harus ada */
+  for (const id in exp) if (Math.abs(T.BANK[id].ans - exp[id]) > 1e-6) { console.log('TEMPLATE', id, T.BANK[id].ans, exp[id]); e++; }
+  const set = B.parseSet(T.BANK['p1-5'].ans); for (let x = -10; x <= 110; x += 0.25) { const p = x >= 0 && x <= 100 && 80000 * (1 - x / 100) < 60000; if (p !== B.has(set, x)) { console.log('TEMPLATE p1-5 at x=', x); e++; break; } }
+  ['SECTIONS', 'LESSONS', 'BANK'].forEach(k => { if (!T[k]) { console.log('TEMPLATE missing', k); e++; } });
+  for (const s in T.LESSONS) T.LESSONS[s].forEach(b => { if (b.k === 'q' && !T.BANK[b.id]) { console.log('TEMPLATE q block without question', b.id); e++; } if (b.k === 'exit') b.qs.forEach(id => { if (!T.BANK[id]) { console.log('TEMPLATE exit without question', id); e++; } }); });
+  console.log('example course: ' + Object.keys(T.BANK).length + ' questions, errors ' + e); if (e) process.exitCode = 1; }
+/* Every question referenced from a lesson must exist */
 { const C = globalThis.BC; let e = 0;
-  for (const s in C.LESSONS) C.LESSONS[s].forEach(b => { if (b.k === 'q' && !C.BANK[b.id]) { console.log('blok q tanpa soal', s, b.id); e++; } if (b.k === 'exit') b.qs.forEach(id => { if (!C.BANK[id]) { console.log('exit tanpa soal', id); e++; } }); });
-  console.log('referensi materi→soal: error ' + e); if (e) process.exitCode = 1; }
+  for (const s in C.LESSONS) C.LESSONS[s].forEach(b => { if (b.k === 'q' && !C.BANK[b.id]) { console.log('q block without question', s, b.id); e++; } if (b.k === 'exit') b.qs.forEach(id => { if (!C.BANK[id]) { console.log('exit without question', id); e++; } }); });
+  console.log('lesson→question references: errors ' + e); if (e) process.exitCode = 1; }
 if (bad || bad2) process.exitCode = 1;
-console.log(process.exitCode ? 'ADA YANG GAGAL' : 'SEMUA KUNCI JAWABAN LULUS');
+console.log(process.exitCode ? 'SOMETHING FAILED' : 'ALL ANSWER KEYS PASSED');

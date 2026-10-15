@@ -1,13 +1,13 @@
-/* Batas — bank soal buatan tangan.
+/* Pertidaksamaan — hand-written question bank.
    type: mc | interval | num | tf | order | err
-   lvl : 1 mekanik, 2 konsep, 3 aplikasi standar, 4 multi-langkah/UTBK, 5 tantangan/mandiri */
+   lvl : 1 mechanics, 2 concepts, 3 standard application, 4 multi-step/UTBK, 5 challenge/entrance exam */
 (function (G) {
   'use strict';
   const C = G.BC = G.BC || {};
   const B = C.BANK = {};
   const Q = (o) => { o.mode = o.mode || ['sekolah']; B[o.id] = o; };
 
-  /* =============== PRASYARAT & DIAGNOSTIK =============== */
+  /* =============== PREREQUISITES & DIAGNOSTIC =============== */
   Q({ id: 'd-P1a', sec: 0, pre: 'P1', lvl: 1, type: 'mc', concepts: ['urutan'], q: 'Urutkan dari yang <b>terkecil</b>: $-3,\\ 2,\\ -7,\\ 0$', opts: [
     { t: '$-7,\\ -3,\\ 0,\\ 2$', ok: 1 }, { t: '$-3,\\ -7,\\ 0,\\ 2$', why: 'Di garis bilangan, −7 ada di kiri −3, jadi −7 lebih kecil.' },
     { t: '$0,\\ 2,\\ -3,\\ -7$', why: 'Bilangan negatif selalu lebih kecil dari 0.' }, { t: '$2,\\ 0,\\ -3,\\ -7$', why: 'Itu urutan dari terbesar.' }],
@@ -53,7 +53,7 @@
     sol: '$2^{x+3}=2^x\\cdot2^3=8\\cdot2^x$.' });
   Q({ id: 'd-P10b', sec: 0, pre: 'P10', lvl: 1, type: 'num', concepts: ['eksp-log-dasar'], q: '$\\log_3 81=\\;?$', ans: 4, sol: '$3^4=81$.' });
 
-  /* =============== BAGIAN 1 =============== */
+  /* =============== SECTION 1 =============== */
   Q({ id: 's1-pre', sec: 1, lvl: 2, type: 'mc', concepts: ['sifat-dasar'], trap: 'balik-tanda', q: 'Jika $-2x<6$, maka…', opts: [
     { t: '$x>-3$', ok: 1 }, { t: '$x<-3$', why: 'Membagi dengan −2 (negatif) harus membalik tanda. Cek: $x=-4$ → $8<6$ salah.', trap: 'balik-tanda' },
     { t: '$x<3$', why: 'Pembagiannya −2, bukan 2. Cek $x=-5$: $10<6$ salah, padahal $-5<3$.' }, { t: '$x>3$', why: 'Cek $x=0$: $0<6$ benar, tapi 0 tidak memenuhi $x>3$.' }],
@@ -93,7 +93,7 @@
     { t: '$(\\frac14,1)$', ok: 1 }, { t: '$(1,4)$', why: 'Membalik pecahan bilangan positif membalik urutan.', trap: 'balik-pecahan' }, { t: '$(-1,-\\frac14)$', why: '$x$ positif, jadi $\\frac1x$ positif.' }, { t: '$(\\frac14,1]$', why: '$x=1$ tidak termasuk, jadi $\\frac1x=1$ juga tidak.' }],
     sol: 'Semua positif, jadi $\\frac14<\\frac1x<1$.' });
 
-  /* =============== BAGIAN 2 =============== */
+  /* =============== SECTION 2 =============== */
   Q({ id: 's2-pre', sec: 2, lvl: 1, type: 'mc', concepts: ['linear'], trap: 'balik-tanda', q: 'Penyelesaian $3-2x\\ge7$ adalah…', opts: [
     { t: '$x\\le-2$', ok: 1 }, { t: '$x\\ge-2$', why: 'Membagi −2 membalik tanda.', trap: 'balik-tanda' }, { t: '$x\\le2$', why: '$-2x\\ge4$, jadi $x\\le-2$.' }, { t: '$x\\ge5$', why: '3 dikurangkan, bukan ditambahkan.' }], sol: '$-2x\\ge4 \\Rightarrow x\\le-2$.' });
   Q({ id: 's2-err', sec: 2, lvl: 2, type: 'err', concepts: ['berantai'], trap: 'berantai-sebagian', q: 'Doni menyelesaikan $-1<2x+3<7$. Langkah mana yang salah?', steps: ['$-1<2x<4$', '$-\\frac12<x<2$', 'Jawaban: $(-\\frac12,2)$'], bad: 0, why: 'Angka 3 harus dikurangkan dari ketiga ruas: $-4<2x<4$, sehingga $-2<x<2$.' });
@@ -119,7 +119,7 @@
     { t: 'Ada tepat 3 nilai $x$ yang memenuhi', v: true, why: '$12>3x \\Rightarrow x<4$: $x\\in\\{1,2,3\\}$.' }, { t: 'Nilai $x$ terbesar adalah 4', v: false, why: '$x<4$, jadi terbesar 3.' },
     { t: 'Jumlah semua nilai $x$ adalah 6', v: true, why: '$1+2+3=6$.' }, { t: '$x=0$ memenuhi', v: false, why: '0 bukan bilangan bulat positif.' }] });
 
-  /* =============== BAGIAN 3 =============== */
+  /* =============== SECTION 3 =============== */
   Q({ id: 's3-pre', sec: 3, lvl: 2, type: 'mc', concepts: ['kuadrat'], trap: 'lupa-akar-negatif', q: 'Himpunan penyelesaian $x^2>9$ adalah…', opts: [
     { t: '$x<-3$ atau $x>3$', ok: 1 }, { t: '$x>3$', why: 'Coba $x=-4$: $16>9$ benar, tapi tidak termasuk jawabanmu.', trap: 'lupa-akar-negatif' },
     { t: '$-3<x<3$', why: 'Coba $x=0$: $0>9$ salah. Itu daerah untuk $x^2<9$.', trap: 'arah-daerah' }, { t: '$x\\le-3$ atau $x\\ge3$', why: '$x=3$: $9>9$ salah. Titik ujung harus kosong.', trap: 'titik-ujung' }],
@@ -145,7 +145,7 @@
   Q({ id: 's3-l5-2', sec: 3, lvl: 5, mode: ['mandiri'], type: 'interval', v: 'm', concepts: ['parameter', 'diskriminan'], q: 'Nilai $m$ agar $mx^2-4x+m>0$ untuk semua $x$ real adalah…', ans: '(2,inf)', pred: m => m > 0 && 16 - 4 * m * m < 0, wrong: [{ a: '(-inf,-2)u(2,inf)', why: 'Untuk $m<-2$ parabola terbuka ke bawah, jadi tidak mungkin selalu positif. Syarat $m>0$ juga perlu.' }], sol: '$m>0$ dan $16-4m^2<0 \\Rightarrow m>2$.' });
   Q({ id: 's3-l5-3', sec: 3, lvl: 5, mode: ['mandiri', 'utbk'], type: 'interval', v: 'k', concepts: ['parameter', 'diskriminan'], q: 'Nilai $k$ agar $x^2+(k-2)x+k+1=0$ mempunyai dua akar real <b>berbeda</b> adalah…', ans: '(-inf,0)u(8,inf)', pred: k => (k - 2) * (k - 2) - 4 * (k + 1) > 0, sol: '$D=(k-2)^2-4(k+1)=k^2-8k>0 \\Rightarrow k(k-8)>0$.' });
 
-  /* =============== BAGIAN 4 =============== */
+  /* =============== SECTION 4 =============== */
   Q({ id: 's4-pre', sec: 4, lvl: 2, type: 'mc', concepts: ['polinomial', 'tabel-tanda'], trap: 'tanda-akar-genap', q: 'Penyelesaian $(x-1)(x-3)^2<0$ adalah…', opts: [
     { t: '$x<1$', ok: 1 }, { t: '$1<x<3$', why: 'Coba $x=2$: $(1)(1)=1$, positif. $(x-3)^2$ tidak membuat tanda berganti.', trap: 'tanda-akar-genap' },
     { t: '$x<1$ atau $x>3$', why: 'Coba $x=4$: $(3)(1)=3$, positif.' }, { t: '$x>3$', why: 'Coba $x=4$: hasilnya positif.' }],
@@ -167,7 +167,7 @@
     { t: '$p(x)\\ge0$ untuk setiap $x\\ge b$', v: true, why: 'Kedua faktor ≥ 0.' }, { t: '$p(x)<0$ untuk setiap $x<b$', v: false, why: 'Di $x=a$, $p(a)=0$, bukan negatif.' },
     { t: '$p(a)=0$', v: true, why: 'Faktor $(x-a)^2$ nol.' }, { t: 'Tanda $p$ berganti saat melewati $x=a$', v: false, why: 'Akar berpangkat genap: tidak berganti.' }] });
 
-  /* =============== BAGIAN 5 =============== */
+  /* =============== SECTION 5 =============== */
   Q({ id: 's5-pre', sec: 5, lvl: 2, type: 'mc', concepts: ['rasional'], trap: 'kali-silang', q: 'Penyelesaian $\\frac{x+1}{x-2}>1$ adalah…', opts: [
     { t: '$x>2$', ok: 1 }, { t: 'semua $x\\ne2$', why: 'Itu hasil kali silang ($1>-2$). Coba $x=0$: $-\\frac12>1$ salah!', trap: 'kali-silang' }, { t: '$x<2$', why: 'Coba $x=0$: $-\\frac12>1$ salah.' }, { t: '$x>-1$', why: 'Coba $x=0$.' }],
     sol: '$\\frac{x+1}{x-2}-1=\\frac{3}{x-2}>0 \\Rightarrow x>2$.' });
@@ -187,7 +187,7 @@
   Q({ id: 's5-l5-1', sec: 5, lvl: 5, mode: ['mandiri'], type: 'interval', concepts: ['rasional', 'diskriminan'], q: 'Selesaikan $\\frac{x^2+2x+5}{x^2-4}>0$.', ans: '(-inf,-2)u(2,inf)', pred: x => Math.abs(x * x - 4) > 1e-12 && (x * x + 2 * x + 5) / (x * x - 4) > 0, sol: 'Pembilang definit positif ($D=-16$). Cukup $x^2-4>0$.' });
   Q({ id: 's5-l5-2', sec: 5, lvl: 5, mode: ['mandiri'], type: 'interval', concepts: ['rasional'], q: 'Selesaikan $\\frac{1}{x-2}+\\frac{1}{x+2}\\le0$.', ans: '(-inf,-2)u[0,2)', pred: x => x !== 2 && x !== -2 && 1 / (x - 2) + 1 / (x + 2) <= 0, sol: '$\\frac{2x}{(x-2)(x+2)}\\le0$. Tanda: $x>2$ +, $(0,2)$ −, $(-2,0)$ +, $x<-2$ −.' });
 
-  /* =============== BAGIAN 6 =============== */
+  /* =============== SECTION 6 =============== */
   Q({ id: 's6-pre', sec: 6, lvl: 2, type: 'mc', concepts: ['irasional', 'syarat-akar'], trap: 'syarat-akar', q: 'Penyelesaian $\\sqrt{x-3}<2$ adalah…', opts: [
     { t: '$3\\le x<7$', ok: 1 }, { t: '$x<7$', why: 'Coba $x=0$: $\\sqrt{-3}$ tidak terdefinisi.', trap: 'syarat-akar' }, { t: '$3<x<7$', why: '$x=3$: $\\sqrt0=0<2$ benar.', trap: 'titik-ujung' }, { t: '$3\\le x<5$', why: 'Kuadratkan 2 juga: $x-3<4$.' }],
     sol: 'Syarat $x\\ge3$, lalu $x-3<4 \\Rightarrow x<7$.' });
@@ -210,7 +210,7 @@
     { t: 'Jika $g(x)\\le0$, nilai $x$ itu pasti tidak memenuhi', v: true, why: 'Akar ≥ 0 tidak mungkin kurang dari bilangan ≤ 0.' }, { t: 'Syarat $f(x)\\ge0$ wajib ditulis', v: true, why: 'Akar harus terdefinisi.' },
     { t: 'Boleh langsung dikuadratkan menjadi $f<g^2$ tanpa syarat apa pun', v: false, why: 'Tanpa $g>0$ dan $f\\ge0$, hasilnya bisa salah.' }, { t: '$\\sqrt{f}<g$ selalu setara dengan $f<g^2$', v: false, why: 'Contoh $\\sqrt{x}<-1$ tidak punya solusi, tapi $x<1$ punya.' }] });
 
-  /* =============== BAGIAN 7 =============== */
+  /* =============== SECTION 7 =============== */
   Q({ id: 's7-pre', sec: 7, lvl: 2, type: 'mc', concepts: ['mutlak'], trap: 'mutlak-negatif-kecil', q: 'Penyelesaian $|x-1|<-2$ adalah…', opts: [
     { t: '$\\emptyset$', ok: 1 }, { t: '$-1<x<3$', why: 'Itu untuk $|x-1|<2$. Jarak tidak pernah negatif.', trap: 'mutlak-negatif-kecil' }, { t: '$x<-1$ atau $x>3$', why: 'Nilai mutlak tidak pernah kurang dari bilangan negatif.' }, { t: 'semua $x$', why: 'Coba $x=1$: $0<-2$ salah.' }],
     sol: 'Jarak selalu ≥ 0, tidak mungkin < −2.' });
@@ -231,7 +231,7 @@
   Q({ id: 's7-l5-1', sec: 7, lvl: 5, mode: ['mandiri'], type: 'interval', concepts: ['mutlak'], q: 'Selesaikan $|x-3|>2x$.', ans: '(-inf,1)', pred: x => Math.abs(x - 3) > 2 * x, sol: '$x-3>2x \\Rightarrow x<-3$, atau $x-3<-2x \\Rightarrow x<1$. Gabungan: $x<1$.' });
   Q({ id: 's7-l5-2', sec: 7, lvl: 4, mode: ['utbk'], type: 'num', concepts: ['mutlak', 'soal-cerita'], q: 'Panjang baut $p$ (mm) diterima jika $|p-10|\\le0{,}05$. Selisih panjang terpanjang dan terpendek yang diterima adalah… mm', unit: 'mm', ans: 0.1, tol: 1e-6, sol: '$9{,}95\\le p\\le10{,}05$, selisih 0,1 mm.' });
 
-  /* =============== BAGIAN 8 =============== */
+  /* =============== SECTION 8 =============== */
   Q({ id: 's8-pre', sec: 8, lvl: 2, type: 'mc', concepts: ['eksponen'], trap: 'basis-kecil', q: 'Penyelesaian $(\\frac12)^x>(\\frac12)^3$ adalah…', opts: [
     { t: '$x<3$', ok: 1 }, { t: '$x>3$', why: 'Basis ½ < 1: mesin pengecil, urutan dibalik. Coba $x=4$: $\\frac1{16}>\\frac18$ salah.', trap: 'basis-kecil' }, { t: '$x>-3$', why: 'Pangkatnya dibandingkan langsung, tidak berubah tanda.' }, { t: '$x<-3$', why: 'Coba $x=0$: $1>\\frac18$ benar.' }], sol: 'Basis antara 0 dan 1 membalik tanda: $x<3$.' });
   Q({ id: 's8-err', sec: 8, lvl: 2, type: 'err', concepts: ['logaritma'], trap: 'syarat-numerus', q: 'Gita menyelesaikan $\\log_2(x-1)<3$. Langkah mana yang salah/kurang?', steps: ['$3=\\log_2 8$', '$x-1<8$', 'Jawaban: $x<9$'], bad: 2, why: 'Syarat numerus terlupa: $x-1>0 \\Rightarrow x>1$. Jawaban benar $1<x<9$.' });
@@ -249,7 +249,7 @@
   Q({ id: 's8-l5-1', sec: 8, lvl: 5, mode: ['mandiri'], type: 'interval', concepts: ['logaritma'], trap: 'basis-kecil', q: 'Selesaikan $\\log_{\\frac12}(x^2-1)>\\log_{\\frac12}3$.', ans: '(-2,-1)u(1,2)', pred: x => x * x - 1 > 0 && x * x - 1 < 3, sol: 'Basis < 1: $0<x^2-1<3 \\Rightarrow 1<x^2<4$.' });
   Q({ id: 's8-l5-2', sec: 8, lvl: 4, mode: ['utbk'], type: 'num', concepts: ['eksponen', 'soal-cerita'], q: 'Bakteri berlipat dua setiap jam, awalnya 100. Paling sedikit setelah berapa jam (bulat) jumlahnya lebih dari 10.000?', unit: 'jam', ans: 7, sol: '$100\\cdot2^t>10000 \\Rightarrow 2^t>100$. $2^6=64$, $2^7=128$ → 7 jam.' });
 
-  /* =============== BAGIAN 9 =============== */
+  /* =============== SECTION 9 =============== */
   Q({ id: 's9-pre', sec: 9, lvl: 2, type: 'mc', concepts: ['sptldv'], trap: 'arsir-salah', q: 'Daerah penyelesaian $2x+3y\\le6$ adalah sisi garis $2x+3y=6$ yang…', opts: [
     { t: 'memuat titik $(0,0)$', ok: 1 }, { t: 'tidak memuat titik $(0,0)$', why: 'Uji $(0,0)$: $0\\le6$ benar.' }, { t: 'selalu di sebelah kanan garis', why: 'Arah tidak bisa ditebak dari tanda saja; uji titik.', trap: 'arsir-salah' }, { t: 'tidak bisa ditentukan', why: 'Bisa, dengan uji titik.' }], sol: 'Uji $(0,0)$: $0\\le6$ benar.' });
   Q({ id: 's9-err', sec: 9, lvl: 2, type: 'err', concepts: ['sptldv'], trap: 'garis-putus', q: 'Hana menggambar daerah $x-2y<4$. Langkah mana yang salah?', steps: ['Garis $x-2y=4$ memotong $(4,0)$ dan $(0,-2)$', 'Gambar garisnya tegas', 'Uji $(0,0)$: $0<4$ benar, pilih sisi yang memuat $(0,0)$'], bad: 1, why: 'Tanda < berarti titik di garis tidak ikut: garis putus-putus.' });
@@ -273,7 +273,7 @@
   Q({ id: 's9-l4-2', sec: 9, lvl: 4, type: 'mc', concepts: ['sptldv'], q: 'Daerah segitiga dengan titik pojok $(0,0)$, $(4,0)$, $(0,4)$ adalah penyelesaian dari…', opts: [
     { t: '$x\\ge0$, $y\\ge0$, $x+y\\le4$', ok: 1 }, { t: '$x\\ge0$, $y\\ge0$, $x+y\\ge4$', why: '(0,0) harus termasuk.' }, { t: '$x\\le0$, $y\\le0$, $x+y\\le4$', why: 'Daerahnya di kuadran I.' }, { t: '$x\\ge0$, $y\\ge0$, $4x+4y\\le1$', why: 'Garisnya $x+y=4$.' }], sol: 'Garis $x+y=4$ dan kedua sumbu.' });
 
-  /* =============== CAMPURAN / LINTAS BAB =============== */
+  /* =============== MIXED / CROSS-CHAPTER =============== */
   Q({ id: 'mx-1', sec: 5, lvl: 4, mode: ['utbk'], type: 'num', concepts: ['rasional'], q: 'Banyak bilangan bulat <b>positif</b> yang memenuhi $\\frac{x^2-9}{x-1}\\le0$ adalah…', ans: 2, sol: '$\\frac{(x-3)(x+3)}{x-1}\\le0$: $(-\\infty,-3]\\cup(1,3]$. Bulat positif: 2, 3.' });
   Q({ id: 'mx-2', sec: 7, lvl: 4, mode: ['utbk'], type: 'mc', concepts: ['mutlak', 'kuadrat'], q: 'Jika $|x-1|<2$ dan $x^2-4\\ge0$, maka…', opts: [
     { t: '$2\\le x<3$', ok: 1 }, { t: '$-1<x\\le-2$', why: 'Interval itu kosong.' }, { t: '$-1<x<3$', why: 'Belum diiris dengan $x^2\\ge4$.' }, { t: '$x\\le-2$ atau $x\\ge2$', why: 'Belum diiris dengan $-1<x<3$.' }], sol: '$(-1,3)\\cap((-\\infty,-2]\\cup[2,\\infty))=[2,3)$.' });

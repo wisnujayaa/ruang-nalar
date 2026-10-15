@@ -1,4 +1,4 @@
-/* Batas — widget interaktif tambahan */
+/* Pertidaksamaan — more interactive widgets */
 (function (G) {
   'use strict';
   const B = G.BM, W = G.BC.WIDGETS;
@@ -15,7 +15,7 @@
     return g;
   }
 
-  /* ---------- Cermin di titik 0 ---------- */
+  /* ---------- Mirror at 0 ---------- */
   W.cermin = function (el) {
     el.innerHTML = '<div class="w-grid3">' + slider('cm-a', 'a', -6, 6, 1, 2) + slider('cm-b', 'b', -6, 6, 1, 5) + '</div><svg class="w-svg" viewBox="0 0 600 150" id="cm-svg" role="img" aria-label="Bilangan a dan b serta cerminannya"></svg><p class="w-read" id="cm-o" aria-live="polite"></p>';
     const A = el.querySelector('#cm-a'), Bv = el.querySelector('#cm-b'), svg = el.querySelector('#cm-svg'), X = NLX(-7, 7);
@@ -34,7 +34,7 @@
     A.addEventListener('input', draw); Bv.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Mengkuadratkan: kapan aman? ---------- */
+  /* ---------- Squaring: when is it safe? ---------- */
   W.kuadratAman = function (el) {
     el.innerHTML = '<div class="w-grid3">' + slider('ka-a', 'a', -5, 5, 0.5, -3) + slider('ka-b', 'b', -5, 5, 0.5, 1) + '</div><div class="w-truth" id="ka-t" aria-live="polite"></div>';
     const A = el.querySelector('#ka-a'), Bv = el.querySelector('#ka-b');
@@ -48,7 +48,7 @@
     A.addEventListener('input', draw); Bv.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Pembongkar langkah (linear) ---------- */
+  /* ---------- Step-by-step unpacker (linear) ---------- */
   W.langkah = function (el) {
     const P = [{ a: 3, b: -7, r: '<', c: 8 }, { a: -2, b: 5, r: '>=', c: 11 }, { a: -4, b: -3, r: '<=', c: 9 }];
     el.innerHTML = seg('lk-p', P.map((p, i) => [String(i), B.rich('$' + lin(p.a, p.b) + RELX[p.r] + ' ' + p.c + '$')]), '0') + '<div class="w-eq" id="lk-eq" aria-live="polite"></div><div class="w-btns" id="lk-b"></div><ol class="w-log" id="lk-log"></ol>';
@@ -77,7 +77,7 @@
     bindSeg(el, 'lk-p', reset); reset();
   };
 
-  /* ---------- Uji titik per daerah (polinomial / rasional) ---------- */
+  /* ---------- Test point per region (polynomial / rational) ---------- */
   W.regiontest = function (el, preset) {
     const PR = {
       kuad: { tex: '(x-3)(x+2)\\le 0', f: x => (x - 3) * (x + 2), crit: [-2, 3], ex: [], rel: '<=' },
@@ -105,7 +105,7 @@
     bindSeg(el, 'rt-p', () => { tested = {}; draw(); }); draw();
   };
 
-  /* ---------- Parameter m: selalu positif? ---------- */
+  /* ---------- Parameter m: always positive? ---------- */
   W.paramm = function (el) {
     el.innerHTML = '<p class="w-read">' + B.rich('$f(x)=mx^2-4x+m$') + '</p><div class="w-row">' + slider('pm-m', 'm', -4, 4, 0.25, 1) + '</div><svg class="w-svg" viewBox="0 0 600 300" id="pm-svg" role="img" aria-label="Grafik f untuk berbagai m"></svg><div class="w-truth" id="pm-o" aria-live="polite"></div>';
     const M = el.querySelector('#pm-m'), svg = el.querySelector('#pm-svg');
@@ -120,7 +120,7 @@
     M.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Saklar tanda faktor ---------- */
+  /* ---------- Factor sign switches ---------- */
   W.saklar = function (el) {
     const F = [{ t: 'x+2', r: -2, p: 1 }, { t: 'x-1', r: 1, p: 1 }, { t: '(x-3)^2', r: 3, p: 2 }];
     el.innerHTML = '<p class="w-read">' + B.rich('$f(x)=(x+2)(x-1)(x-3)^2$') + '</p><div class="w-row">' + slider('sk-x', 'x', -5, 6, 0.1, -3) + '</div><div class="w-lamps" id="sk-l" aria-live="polite"></div><svg class="w-svg" viewBox="0 0 600 90" id="sk-svg" role="img" aria-label="Posisi x di garis bilangan"></svg>';
@@ -137,7 +137,7 @@
     xs.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Tanda pecahan ---------- */
+  /* ---------- Sign of a fraction ---------- */
   W.pecahantanda = function (el) {
     el.innerHTML = '<p class="w-read">' + B.rich('$\\frac{x+3}{x-1}$') + '</p><div class="w-row">' + slider('pt-x', 'x', -6, 6, 0.1, -4) + '</div><div class="w-lamps" id="pt-l" aria-live="polite"></div><p class="w-read" id="pt-o"></p>';
     const xs = el.querySelector('#pt-x');
@@ -152,7 +152,7 @@
     xs.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Gerbang akar ---------- */
+  /* ---------- Square-root gate ---------- */
   W.gerbang = function (el) {
     el.innerHTML = '<p class="w-read">' + B.rich('$\\sqrt{x-3}<2$') + '</p><div class="w-row">' + slider('gb-x', 'x', -2, 10, 0.5, 1) + '</div><div class="w-lamps" id="gb-l" aria-live="polite"></div><svg class="w-svg" viewBox="0 0 600 90" id="gb-svg" role="img" aria-label="Garis bilangan dengan daerah terlarang"></svg>';
     const xs = el.querySelector('#gb-x'), svg = el.querySelector('#gb-svg'), X = NLX(-2, 10);
@@ -167,7 +167,7 @@
     xs.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Titik tengah: lebih dekat ke a atau b ---------- */
+  /* ---------- Midpoint: closer to a or b ---------- */
   W.titiktengah = function (el) {
     el.innerHTML = '<p class="w-read">' + B.rich('$|x-a|<|x-b|$: titik yang lebih dekat ke $a$ daripada ke $b$') + '</p><div class="w-grid3">' + slider('tt-a', 'a', -6, 6, 1, 2) + slider('tt-b', 'b', -6, 6, 1, -4) + slider('tt-x', 'x', -8, 8, 0.5, 0) + '</div><svg class="w-svg" viewBox="0 0 600 130" id="tt-svg" role="img" aria-label="Jarak x ke a dan ke b"></svg><p class="w-read" id="tt-o" aria-live="polite"></p>';
     const ids = ['a', 'b', 'x'].map(k => el.querySelector('#tt-' + k)), svg = el.querySelector('#tt-svg'), X = NLX(-8, 8);
@@ -185,7 +185,7 @@
     ids.forEach(i => i.addEventListener('input', draw)); draw();
   };
 
-  /* ---------- Grafik logaritma ---------- */
+  /* ---------- Logarithm graph ---------- */
   W.loggraph = function (el) {
     el.innerHTML = '<p class="w-read">' + B.rich('$\\log_a x>k$') + '</p><div class="w-grid3">' + slider('lg-a', 'a', 0.2, 4, 0.1, 2) + slider('lg-k', 'k', -2, 3, 0.5, 1) + '</div><svg class="w-svg" viewBox="0 0 600 300" id="lg-svg" role="img" aria-label="Grafik logaritma"></svg><div id="lg-nl"></div><p class="w-read" id="lg-o" aria-live="polite"></p>';
     const A = el.querySelector('#lg-a'), K = el.querySelector('#lg-k'), svg = el.querySelector('#lg-svg');
@@ -205,7 +205,7 @@
     A.addEventListener('input', draw); K.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Garis dari dua titik potong ---------- */
+  /* ---------- Line from two intercepts ---------- */
   W.garisdua = function (el) {
     el.innerHTML = '<div class="w-grid3">' + slider('gd-a', 'a', 1, 8, 1, 4) + slider('gd-b', 'b', 1, 8, 1, 2) + '</div>' + seg('gd-s', [['in', 'memuat (0,0)'], ['out', 'tidak memuat (0,0)']], 'in') + seg('gd-t', [['n', 'garis tegas (≤ / ≥)'], ['s', 'putus-putus (< / >)']], 'n') + '<svg class="w-svg" viewBox="0 0 600 380" id="gd-svg" role="img" aria-label="Garis melalui dua titik potong sumbu"></svg><p class="w-read" id="gd-o" aria-live="polite"></p>';
     const A = el.querySelector('#gd-a'), Bv = el.querySelector('#gd-b'), svg = el.querySelector('#gd-svg');
@@ -224,7 +224,7 @@
     A.addEventListener('input', draw); Bv.addEventListener('input', draw); bindSeg(el, 'gd-s', draw); bindSeg(el, 'gd-t', draw); draw();
   };
 
-  /* ---------- AM-GM: persegi panjang keliling tetap ---------- */
+  /* ---------- AM-GM: rectangle with fixed perimeter ---------- */
   W.amgm = function (el) {
     el.innerHTML = '<p class="w-read">Keliling selalu 20, jadi panjang + lebar = 10. Ubah panjangnya.</p><div class="w-row">' + slider('ag-x', 'panjang', 0.5, 9.5, 0.5, 8) + '</div><svg class="w-svg" viewBox="0 0 600 260" id="ag-svg" role="img" aria-label="Persegi panjang dan perbandingan rata-rata"></svg><p class="w-read" id="ag-o" aria-live="polite"></p>';
     const xs = el.querySelector('#ag-x'), svg = el.querySelector('#ag-svg');
@@ -241,7 +241,7 @@
     xs.addEventListener('input', draw); draw();
   };
 
-  /* ---------- Ketaksamaan segitiga |a+b| ≤ |a|+|b| ---------- */
+  /* ---------- Triangle inequality |a+b| ≤ |a|+|b| ---------- */
   W.segitiga = function (el) {
     el.innerHTML = '<div class="w-grid3">' + slider('sg-a', 'a', -6, 6, 1, 4) + slider('sg-b', 'b', -6, 6, 1, -3) + '</div><svg class="w-svg" viewBox="0 0 600 150" id="sg-svg" role="img" aria-label="Langkah a lalu b di garis bilangan"></svg><p class="w-read" id="sg-o" aria-live="polite"></p>';
     const A = el.querySelector('#sg-a'), Bv = el.querySelector('#sg-b'), svg = el.querySelector('#sg-svg'), X = NLX(-12, 12);

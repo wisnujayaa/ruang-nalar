@@ -1,8 +1,8 @@
-/* Ruang Nalar — parser ekspresi matematika yang aman (tanpa eval/Function).
-   Dipakai widget yang rumusnya ditulis guru, misalnya grafik "a*x^2 + b*x + c".
-   Mendukung: + - * / ^, kurung, perkalian implisit (2x, 3(x+1), ax → a·x),
-   fungsi sin cos tan sqrt abs ln log exp floor ceil, konstanta pi dan e.
-   NalarExpr.compile(src, ['x','a','b']) → fungsi (env) => angka, atau melempar Error berbahasa Indonesia. */
+/* Ruang Nalar — safe math expression parser (no eval/Function).
+   Used by widgets whose formulas are written by teachers, e.g. a graph of "a*x^2 + b*x + c".
+   Supports: + - * / ^, parentheses, implicit multiplication (2x, 3(x+1), ax → a·x),
+   functions sin cos tan sqrt abs ln log exp floor ceil, constants pi and e.
+   NalarExpr.compile(src, ['x','a','b']) → function (env) => number, or throws an Error (message in Indonesian, shown to teachers). */
 (function (G) {
   'use strict';
   const FN = { sin: Math.sin, cos: Math.cos, tan: Math.tan, sqrt: Math.sqrt, akar: Math.sqrt, abs: Math.abs, ln: Math.log, log: (v) => Math.log10(v), exp: Math.exp, floor: Math.floor, ceil: Math.ceil };
@@ -23,11 +23,11 @@
   }
   function compile(src, vars) {
     const allowed = new Set(vars || ['x']);
-    /* Kata yang bukan fungsi/konstanta/variabel dipecah per huruf: "ax" → a x (lalu dikali implisit), sehingga ax^2 = a·x² */
+    /* Words that aren't functions/constants/variables are split per letter: "ax" → a x (implicitly multiplied), so ax^2 = a·x² */
     const tk = []; tokenize(src).forEach(t => { if (t.t === 'w' && t.v.length > 1 && !FN[t.v.toLowerCase()] && CONST[t.v.toLowerCase()] === undefined && !allowed.has(t.v)) t.v.split('').forEach(ch => tk.push({ t: 'w', v: ch })); else tk.push(t); });
     let p = 0, depth = 0;
     const peek = () => tk[p], eat = (t) => { if (!tk[p] || tk[p].t !== t) throw new Error('Rumus belum lengkap: kurang "' + t + '".'); p++; };
-    /* Kata "ax" dipecah menjadi a·x jika bukan nama fungsi/konstanta */
+    /* "ax" is split into a·x unless it's a function/constant name */
     function word(w) {
       const lw = w.toLowerCase();
       if (FN[lw]) { const f = FN[lw]; if (!peek() || peek().t !== '(') throw new Error('Fungsi ' + w + ' butuh kurung, misalnya ' + w + '(x).'); eat('('); const a = expr(); eat(')'); return (env) => f(a(env)); }

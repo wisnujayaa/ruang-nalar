@@ -1,10 +1,10 @@
-/* Batas — inti matematika: himpunan interval, parser jawaban, solver, renderer rumus */
+/* Ruang Nalar — math core: interval sets, answer parser, solver, math renderer */
 (function (G) {
   'use strict';
   const EPS = 1e-9;
   const eq = (a, b) => (a === b) || Math.abs(a - b) < EPS;
 
-  /* ---------- RNG berbiji (supaya soal acak bisa diulang persis) ---------- */
+  /* ---------- seeded RNG (so random questions can be reproduced exactly) ---------- */
   function rng(seed) {
     let s = (seed >>> 0) || 0x9e3779b9;
     const r = function () {
@@ -18,9 +18,9 @@
     return r;
   }
 
-  /* ---------- Bilangan -> teks ---------- */
+  /* ---------- number -> text ---------- */
   function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; }
-  function frac(n) { // -> {p,q} atau null
+  function frac(n) { // -> {p,q} or null
     if (!isFinite(n)) return null;
     for (let q = 1; q <= 60; q++) { const p = Math.round(n * q); if (Math.abs(p / q - n) < 1e-9) { const g = gcd(p, q) || 1; return { p: p / g, q: q / g }; } }
     return null;
@@ -41,8 +41,8 @@
     return (f.q === 1 ? String(f.p) : f.p + '/' + f.q).replace('-', '−');
   }
 
-  /* ---------- Himpunan interval ----------
-     set = [{a, b, ca, cb}]  a<=b, ca/cb = ujung tertutup */
+  /* ---------- interval sets ----------
+     set = [{a, b, ca, cb}]  a<=b, ca/cb = closed endpoint */
   const I = (a, b, ca, cb) => ({ a, b, ca: a === -Infinity ? false : !!ca, cb: b === Infinity ? false : !!cb });
   const ALL = () => [I(-Infinity, Infinity, false, false)];
   const PT = (x) => I(x, x, true, true);
@@ -93,7 +93,7 @@
   const minus = (s1, s2) => intersect(s1, complement(s2));
   const isAll = (s) => { const n = norm(s); return n.length === 1 && n[0].a === -Infinity && n[0].b === Infinity; };
 
-  /* titik saksi: satu bilangan yang ada di dalam set (untuk umpan balik "coba x = ...") */
+  /* witness point: one number inside the set (for "try x = ..." feedback) */
   function witness(set) {
     const s = norm(set); if (!s.length) return null;
     const p = s[0];
@@ -121,7 +121,7 @@
     const s = norm(set);
     if (!s.length) return '\\text{tidak ada } ' + v + '\\text{ yang memenuhi}';
     if (isAll(s)) return v + '\\in\\R\\text{ (semua bilangan real)}';
-    // kasus R minus titik-titik
+    // case: R minus some points
     const comp = complement(s);
     if (comp.length && comp.every(p => eq(p.a, p.b))) return comp.map(p => v + '\\ne ' + numTex(p.a)).join(',\\ ');
     return s.map(p => {
@@ -138,7 +138,7 @@
     return s.map(p => eq(p.a, p.b) ? '{' + numTxt(p.a) + '}' : (p.ca ? '[' : '(') + numTxt(p.a) + ', ' + numTxt(p.b) + (p.cb ? ']' : ')')).join(' ∪ ');
   }
 
-  /* ---------- Evaluasi ujung (angka, pecahan, akar, ∞) ---------- */
+  /* ---------- endpoint evaluation (numbers, fractions, roots, ∞) ---------- */
   function evalNum(str) {
     let t = String(str).trim().toLowerCase()
       .replace(/−|–|—/g, '-').replace(/\s+/g, '')
@@ -151,9 +151,9 @@
     try { const v = Function('"use strict";return (' + t + ')')(); return typeof v === 'number' && !isNaN(v) ? v : NaN; } catch (e) { return NaN; }
   }
 
-  /* ---------- Parser jawaban siswa ----------
-     Menerima: notasi interval "(−∞,−2) ∪ [3,∞)", himpunan "{2}", "R", "kosong",
-     dan bentuk pertidaksamaan "x < −2 atau x ≥ 3", "-1 <= x < 4", "x != 2". */
+  /* ---------- student answer parser ----------
+     Accepts: interval notation "(−∞,−2) ∪ [3,∞)", sets "{2}", "R", "kosong" (empty),
+     and inequality forms "x < −2 atau x ≥ 3", "-1 <= x < 4", "x != 2" (atau = or, dan = and). */
   function parseAnswer(raw, v) {
     v = (v || 'x').toLowerCase();
     let s = String(raw || '').trim();
@@ -163,12 +163,12 @@
     const low = s.toLowerCase().replace(/\s+/g, ' ').trim();
     if (/^(∅|\{\s*\}|kosong|tidak ada|tidak ada (solusi|penyelesaian)|himpunan kosong|none)$/.test(low)) return { ok: true, set: [] };
     if (/^(r|ℝ|semua( bilangan)?( real)?|semua x|x ∈ (r|ℝ)|x anggota (r|ℝ)|\(-?∞ ?, ?∞\)|\(-∞ ?, ?\+?∞\))$/.test(low)) return { ok: true, set: ALL() };
-    // pisahkan bagian-bagian
+    // split into parts
     const parts = s.split(/∪|\bU\b|\bu\b|\batau\b|\bor\b|\|\|/i).map(p => p.trim()).filter(Boolean);
     let set = [];
-    let restrict = null; // untuk "x != a" yang berdiri sendiri digabung "dan"
+    let restrict = null; // a standalone "x != a" is joined with "dan" (and)
     for (let part of parts) {
-      // "dan" -> irisan
+      // "dan" (and) -> intersection
       const ands = part.split(/\bdan\b|\band\b|&&|,(?=\s*x\s*!=)/i).map(p => p.trim()).filter(Boolean);
       let acc = ALL();
       for (const a of ands) {
@@ -185,7 +185,7 @@
     p = p.trim();
     if (/^(r|ℝ)$/i.test(p)) return { ok: true, set: ALL() };
     if (/^(∅|\{\s*\})$/.test(p)) return { ok: true, set: [] };
-    // himpunan titik {a, b}
+    // point set {a, b}
     let m = /^\{(.+)\}$/.exec(p);
     if (m && !/x/i.test(m[1])) {
       const vals = m[1].split(/[;,]/);
@@ -202,7 +202,7 @@
       if (a > b) return { ok: false, err: 'Pada interval, ujung kiri harus lebih kecil dari ujung kanan: "' + p + '".' };
       return { ok: true, set: norm([I(a, b, ca, cb)]) };
     }
-    // bentuk pertidaksamaan
+    // inequality form
     const q = p.replace(/\s+/g, '').toLowerCase().replace(/\bx∈/, 'x');
     const V = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const R = '(<=|>=|<|>|!=|=)';
@@ -242,7 +242,7 @@
   }
   const parseSet = (str) => { const r = parseAnswer(str); if (!r.ok) throw new Error('parseSet gagal: ' + str + ' — ' + r.err); return r.set; };
 
-  /* ---------- Solver: dari predikat + titik kritis -> himpunan tepat ---------- */
+  /* ---------- solver: predicate + critical points -> exact set ---------- */
   function solve(pred, crit) {
     const c = Array.from(new Set(crit.filter(isFinite).map(x => +x.toFixed(12)))).sort((a, b) => a - b);
     const safe = (x) => { try { const r = pred(x); return r === true; } catch (e) { return false; } };
@@ -258,7 +258,7 @@
     return norm(pieces);
   }
 
-  /* ---------- Renderer rumus mini (subset TeX -> HTML) ---------- */
+  /* ---------- mini math renderer (TeX subset -> HTML) ---------- */
   const SYM = {
     le: '≤', leq: '≤', ge: '≥', geq: '≥', ne: '≠', neq: '≠', lt: '<', gt: '>', infty: '∞', cup: '∪', cap: '∩', in: '∈', notin: '∉',
     pm: '±', mp: '∓', cdot: '·', times: '×', div: '÷', Rightarrow: '⇒', Leftrightarrow: '⇔', iff: '⇔', to: '→', implies: '⇒',
@@ -267,7 +267,7 @@
   };
   const REL = new Set(['≤', '≥', '≠', '<', '>', '=', '⇒', '⇔', '→', '∈', '∉', '≈', '⊂']);
   const BIN = new Set(['∪', '∩', '±', '∓', '·', '×', '÷', '+', '−']);
-  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }   // aman untuk teks maupun atribut
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }   // safe for both text and attributes
   function tex(src) {
     let i = 0;
     const wrapSym = (ch) => REL.has(ch) ? '<span class="mr">' + esc(ch) + '</span>' : BIN.has(ch) ? '<span class="mb">' + esc(ch) + '</span>' : esc(ch);
@@ -313,7 +313,7 @@
     while (i < src.length) { if (src[i] === '}') { i++; continue; } out += atom(); }
     return out;
   }
-  /* rich(): teks HTML dengan $...$ sebagai rumus inline dan $$...$$ sebagai rumus blok */
+  /* rich(): HTML text with $...$ as inline math and $$...$$ as display math */
   function rich(s) {
     if (s == null) return '';
     return String(s)
@@ -321,7 +321,7 @@
       .replace(/\$([^$]+?)\$/g, (_, t) => '<span class="m">' + tex(t) + '</span>');
   }
 
-  /* ---------- Garis bilangan (SVG) ---------- */
+  /* ---------- number line (SVG) ---------- */
   function numberLine(set, opt) {
     opt = opt || {};
     const s = norm(set);

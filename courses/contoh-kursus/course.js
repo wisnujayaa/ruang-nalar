@@ -1,34 +1,35 @@
-/* Contoh kursus: "Persen dalam 15 menit".
-   Kursus kecil ini sengaja memakai SEMUA jenis blok dan soal yang didukung platform,
-   supaya bisa disalin sebagai titik awal kursus baru. Panduan: docs/MENAMBAH-KURSUS.md
+/* Example course: "Persen dalam 15 menit" (percentages in 15 minutes).
+   This small course deliberately uses EVERY block and question type the platform supports,
+   so it can be copied as the starting point for a new course. Guide: docs/ADDING-COURSES.md
+   (Course content is in Indonesian because the learners are Indonesian.)
 
-   Semua data ditulis ke objek `C` (= window.BC, kursus yang sedang dimuat).
-   Field yang dikenali UI:
+   All data is written to the object `C` (= window.BC, the course being loaded).
+   Fields recognized by the UI:
      SECTIONS, LESSONS, BANK, CARDS, TRAPS, CONCEPTS, RES, RES_GENERAL, GEN, GEN_BY_SEC,
      INTRO, PREREQ, GEN_BY_PRE, CHECK, SUMMARY, DECISION, INFO, WIDGETS
-   Hanya SECTIONS, LESSONS, dan BANK yang wajib. */
+   Only SECTIONS, LESSONS, and BANK are required. */
 (function (G) {
   'use strict';
   const C = G.BC;
-  const B = G.BM; // utilitas matematika: B.esc, B.rich (render $…$), B.numberLine, dll.
+  const B = G.BM; // math utilities: B.esc, B.rich (renders $…$), B.numberLine, etc.
 
   C.INFO = { introTitle: 'Pengantar', tips: 'Kursus contoh: lihat kodenya di courses/contoh-kursus/course.js' };
 
-  /* 1. Peta bagian. concepts dipakai untuk peta penguasaan. jalur opsional. */
+  /* 1. Section map. concepts feed the mastery map. jalur (track) is optional. */
   C.SECTIONS = [
     { id: 1, short: 'Arti persen', title: 'Persen = per seratus', glyph: '%', concepts: ['arti-persen'] },
     { id: 2, short: 'Naik & turun', title: 'Kenaikan, penurunan, dan diskon bertingkat', glyph: '±%', concepts: ['perubahan-persen'] }
   ];
   C.CONCEPTS = { 'arti-persen': 'Arti persen', 'perubahan-persen': 'Perubahan persen' };
 
-  /* 2. Katalog jebakan: muncul sebagai "radar" di soal yang punya trap yang sama. */
+  /* 2. Trap catalog: shown as a "radar" on questions that share the trap. */
   C.TRAPS = {
     'naik-turun': { name: 'Naik p% lalu turun p% dianggap kembali semula', sec: 2, wrong: 'Naik 50% lalu turun 50% → kembali ke 100', right: '$100\\to150\\to75$', tip: 'Persen kedua dihitung dari nilai yang <b>baru</b>, bukan dari nilai awal.' },
     'diskon-jumlah': { name: 'Diskon bertingkat dijumlahkan', sec: 2, wrong: 'Diskon 30% + 20% = 50%', right: 'Sisa harga $0{,}7\\times0{,}8=0{,}56$, jadi diskon total 44%', tip: 'Diskon bertingkat dikalikan (sisanya), bukan dijumlahkan.' },
     'basis-persen': { name: 'Salah memilih "dari" (basis)', sec: 1, wrong: 'Harga setelah diskon 25% = 150 → semula $150\\times1{,}25$', right: 'Semula $=150\\div0{,}75=200$', tip: 'Tanyakan: persen ini dihitung <b>dari</b> angka yang mana?' }
   };
 
-  /* 3. Bank soal. Tipe: mc, num, interval, tf, err, order. lvl 1–6. mode: sekolah/utbk/mandiri/olimpiade. */
+  /* 3. Question bank. Types: mc, num, interval, tf, err, order. lvl 1–6. mode: sekolah/utbk/mandiri/olimpiade (school/UTBK/entrance/olympiad). */
   const Q = (o) => { o.mode = o.mode || ['sekolah']; C.BANK[o.id] = o; };
   C.BANK = {};
   Q({ id: 'p1-1', sec: 1, lvl: 1, type: 'num', concepts: ['arti-persen'], q: 'Berapa $15\\%$ dari $60$?', ans: 9, sol: '$\\frac{15}{100}\\times60=9$.' });
@@ -51,7 +52,7 @@
     extra: ['Naik $p\\%$ dan turun $p\\%$ saling menghapus.'],
     why: 'Justru itu pernyataan keliru yang sedang dibantah: turunnya dihitung dari nilai yang lebih besar.' });
 
-  /* 4. Materi: setiap bagian adalah daftar blok. */
+  /* 4. Lessons: each section is a list of blocks. */
   C.LESSONS = {
     1: [
       { k: 'text', tag: 'Intuisi', title: 'Persen itu "dari setiap seratus"', html: '<p>Kalau 30% siswa suka matematika, artinya <b>dari setiap 100 siswa, 30 orang</b> suka matematika. Simbol % sendiri berasal dari tulisan "per cento" (per seratus).</p><p>Jadi $p\\%=\\frac{p}{100}$. Itu saja rumusnya: semua soal persen adalah perkalian dengan pecahan ini.</p>' },
@@ -74,7 +75,7 @@
     ]
   };
 
-  /* 5. Flashcard */
+  /* 5. Flashcards */
   C.CARDS = [
     { id: 'c1', sec: 1, kind: 'Konsep', f: 'Apa arti $p\\%$?', b: '$\\frac{p}{100}$, "per seratus".' },
     { id: 'c2', sec: 1, kind: 'Trik', f: '$8\\%$ dari $50$ = ?', b: '$= 50\\%$ dari $8 = 4$. ($x\\%$ dari $y$ = $y\\%$ dari $x$.)' },
@@ -82,20 +83,20 @@
     { id: 'c4', sec: 2, kind: 'Rumus', f: 'Diskon $a\\%$ lalu $b\\%$: sisa harga?', b: '$(1-\\frac a{100})(1-\\frac b{100})$ dari harga awal.' }
   ];
 
-  /* 6. Sumber eksternal per bagian */
+  /* 6. External resources per section */
   C.RES = {
     1: [{ type: 'artikel', title: 'Percentages (bahasa Inggris, interaktif)', src: 'Math is Fun', url: 'https://www.mathsisfun.com/percentage.html' }],
     2: [{ type: 'video', title: 'Cari video: diskon bertingkat', src: 'YouTube (pencarian)', url: 'https://www.youtube.com/results?search_query=diskon+bertingkat+persen+matematika' }]
   };
 
-  /* 7. Ringkasan & cek 5 detik (opsional) */
+  /* 7. Summary & 5-second checks (optional) */
   C.CHECK = { 1: ['Persen ini dihitung dari angka yang mana?'], 2: ['Perubahan kedua dihitung dari angka baru?', 'Diskon bertingkat dikalikan, bukan dijumlah?'] };
   C.SUMMARY = [
     { sec: 1, type: 'Arti persen', first: 'Ubah p% menjadi p/100', key: 'p% dari N = pN/100', trap: 'Salah memilih basis', points: ['p% = p/100', 'p% dari N = pN/100', 'a dari b dalam persen = a/b × 100%'] },
     { sec: 2, type: 'Perubahan persen', first: 'Ubah ke faktor pengali', key: 'Perubahan berturut-turut = kalikan faktornya', trap: 'Naik-turun dianggap batal; diskon dijumlah', points: ['Naik p% = ×(1+p/100)', 'Turun p% = ×(1−p/100)', 'Bertingkat: kalikan faktor', 'Naik lalu turun p%: hasil H(1−r²) < H'] }
   ];
 
-  /* 8. Widget interaktif milik kursus ini. mount(id, el) dipanggil oleh blok {k:'widget', id}. */
+  /* 8. This course's own interactive widgets. mount(id, el) is called by a {k:'widget', id} block. */
   C.WIDGETS = {
     mount(id, el) {
       if (id !== 'persen') { el.textContent = 'Widget tidak dikenal: ' + id; return; }

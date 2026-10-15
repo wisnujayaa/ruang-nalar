@@ -1,6 +1,6 @@
-/* Ruang Nalar — antarmuka belajar (halaman kursus, soal, review, flashcard, statistik).
-   Halaman platform (beranda katalog, kelas, forum, akun) ada di platform.js dan
-   memakai helper yang diekspor lewat G.BU. */
+/* Ruang Nalar — learning UI (course page, questions, review, flashcards, stats).
+   Platform pages (catalog home, classes, forum, account) live in platform.js and
+   use the helpers exported through G.BU. */
 (function (G) {
   'use strict';
   const B = G.BM, C = G.BC, A = G.BA;
@@ -18,7 +18,7 @@
   const info = () => C.INFO || {};
   const hasDiag = () => Object.keys(C.BANK).some(k => k.startsWith('d-'));
 
-  /* ------------------------ ikon kecil ------------------------ */
+  /* ------------------------ small icons ------------------------ */
   const IC = {
     home: '<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>', map: '<circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h6a4 4 0 000-8h-2a4 4 0 010-8h6" fill="none"/>',
     review: '<path d="M20 12a8 8 0 11-3-6.2" fill="none"/><path d="M20 4v5h-5" fill="none"/>', cards: '<rect x="3" y="6" width="14" height="14" rx="2" fill="none"/><path d="M7 3h12a2 2 0 012 2v12" fill="none"/>',
@@ -35,22 +35,22 @@
   };
   const ic = (n, cls) => '<svg class="ic ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (IC[n] || '') + '</svg>';
 
-  /* ------------------------ kursus aktif ------------------------ */
+  /* ------------------------ active course ------------------------ */
   async function openCourse(id) {
     await G.NR.load(id);
     A.useCourse(id);
     if (A.set.lastCourse !== id) { A.set.lastCourse = id; A.saveSettings(); }
     return G.NR.current();
   }
-  /* Halaman yang butuh kursus aktif */
+  /* Views that need an active course */
   const COURSE_VIEWS = new Set(['course', 'map', 'intro', 'diag', 'prereq', 'lesson', 'summary', 'mixed', 'lintas', 'tryout', 'dump', 'traps', 'review', 'run', 'mistakes', 'cards', 'stats']);
 
-  /* ------------------------ navigasi ------------------------ */
+  /* ------------------------ navigation ------------------------ */
   const ROOTS = ['home', 'course', 'review', 'kelas', 'me'];
   const nav = { stack: [], cur: { v: 'home' } };
-  /* Riwayat browser: setiap pindah halaman dicatat dengan history.pushState, sehingga tombol Kembali
-     di browser/HP berpindah antarhalaman di dalam situs, bukan langsung keluar. history.state hanya
-     menyimpan nomor urut + id sesi; isi halamannya (nav.cur) disimpan di memori (HIST). */
+  /* Browser history: every navigation is recorded with history.pushState, so the Back button on
+     desktop/phone moves between pages inside the site instead of leaving it. history.state only
+     stores a sequence number + session id; the page params (nav.cur) are kept in memory (HIST). */
   const SID = Math.random().toString(36).slice(2, 10);
   const HIST = []; let pos = 0;
   const hasHist = !!(G.history && G.history.pushState);
@@ -60,7 +60,7 @@
     try {
       if (push) { pos++; HIST.length = pos; HIST[pos] = nav.cur; history.pushState({ rn: pos, sid: SID }, '', cleanUrl()); }
       else { HIST[pos] = nav.cur; history.replaceState({ rn: pos, sid: SID }, '', keepUrl ? location.href : cleanUrl()); }
-    } catch (e) { /* mis. dalam iframe tanpa izin: tetap jalan tanpa riwayat */ }
+    } catch (e) { /* e.g. inside a sandboxed iframe: keep working without history */ }
   }
   function stopActive() { if (nav.active && nav.active.cleanup) nav.active.cleanup(); nav.active = null; }
   function go(v, p, opt) {
@@ -73,17 +73,17 @@
     record(push);
     render();
     try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
-    // Pembaca layar: pindahkan fokus ke isi halaman baru (tanpa menggulir)
+    // Screen readers: move focus to the new page content (without scrolling)
     try { const vw = view(); if (vw && !vw.contains(document.activeElement)) vw.focus({ preventScroll: true }); } catch (e) { }
   }
-  /* Tombol kembali di dalam aplikasi = tombol Kembali browser, supaya keduanya selalu seirama */
+  /* The in-app back button is the browser Back button, so both always agree */
   function back() {
     if (hasHist && pos > 0 && HIST[pos - 1]) { history.back(); return; }
     const p = nav.stack.pop() || { v: 'home' }; stopActive(); nav.cur = p; record(false); render();
   }
-  /* Kembali ke halaman v: pakai riwayat bila halaman sebelumnya memang v, selain itu ganti halaman ini */
+  /* Go back to view v: use history if the previous page is v, otherwise replace the current page */
   function up(v, p) { if (hasHist && pos > 0 && HIST[pos - 1] && HIST[pos - 1].v === v) history.back(); else go(v, p, { replace: true }); }
-  /* Hasil membuka tautan dari email Supabase: #access_token=…&type=signup|recovery|… atau #error=…&error_code=otp_expired */
+  /* Result of opening a Supabase email link: #access_token=…&type=signup|recovery|… or #error=…&error_code=otp_expired */
   function authLanding(hash, search) {
     const q = new URLSearchParams(String(hash || '').replace(/^#/, '')), s = new URLSearchParams(search || '');
     const get = (k) => q.get(k) || s.get(k);
@@ -96,10 +96,10 @@
     if (l.error || l.code) return go('authinfo', { code: l.code || l.error, desc: l.desc }, { replace: true });
     if (l.type === 'recovery' || bb.recovery) return go('sandi', { recovery: 1 }, { replace: true });
     if (bb.user && ['signup', 'magiclink', 'invite', 'email_change'].includes(l.type)) return go('selamat', { type: l.type }, { replace: true });
-    // Masuk dengan Google untuk pertama kali (akun baru dibuat beberapa saat lalu) → sambutan
+    // First Google sign-in (account created moments ago) → welcome page
     if (bb.user && !l.type && bb.user.created && Date.now() - bb.user.created < 10 * 60000) return go('selamat', { type: 'oauth' }, { replace: true });
   }
-  /* #gabung=KODE, #kursus=id, #bagian3 → buka halamannya; false bila hash tidak dikenali */
+  /* #gabung=CODE, #kursus=id, #bagian3 → open that page; false if the hash is not recognized */
   function routeHash(hash) {
     const h = decodeURIComponent((hash || '').slice(1));
     let m;
@@ -107,32 +107,32 @@
     else if ((m = h.match(/^kursus=([a-z0-9_-]+)$/)) && (G.NR.isDb(m[1]) || (G.NR.meta(m[1]) && !G.NR.meta(m[1]).soon))) go('course', { course: m[1] });
     else if ((m = h.match(/^bagian(\d{1,2})$/))) go('lesson', { sec: +m[1] });
     else if ((m = h.match(/^bantuan(?:=([a-z0-9-]{1,40}))?$/))) go('bantuan', m[1] ? { topik: m[1] } : {});
-    else if (['review', 'kelas', 'me', 'stats'].includes(h)) go(h);   // pintasan aplikasi di layar utama
+    else if (['review', 'kelas', 'me', 'stats'].includes(h)) go(h);   // home-screen app shortcuts
     else return false;
     return true;
   }
   function onPop(e) {
     const st = e.state;
-    if (!st && location.hash && routeHash(location.hash)) return;   // tautan #... dibuka saat situs sudah terbuka
+    if (!st && location.hash && routeHash(location.hash)) return;   // a #... link opened while the site is already open
     if (nav.cur.v === 'editor' && G.BE && G.BE.dirty && !confirm('Ada perubahan yang belum disimpan. Tetap keluar?')) {
       try { history.pushState({ rn: pos, sid: SID }, '', cleanUrl()); } catch (er) {} return;
     }
     if (G.BE && nav.cur.v === 'editor') G.BE.dirty = false;
     stopActive();
     if (st && st.sid === SID && HIST[st.rn]) { pos = st.rn; nav.cur = HIST[pos]; }
-    else { pos = st && st.sid === SID ? st.rn : 0; nav.cur = { v: 'home' }; HIST[pos] = nav.cur; }   // entri dari sebelum halaman dimuat ulang
+    else { pos = st && st.sid === SID ? st.rn : 0; nav.cur = { v: 'home' }; HIST[pos] = nav.cur; }   // entry from before the page was reloaded
     nav.stack = [];
     render();
   }
   const TAB = { home: 'home', course: 'course', map: 'course', intro: 'course', diag: 'course', prereq: 'course', lesson: 'course', summary: 'course', mixed: 'course', lintas: 'course', tryout: 'course', dump: 'course', traps: 'course',
     review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me', lapor: 'me', laporan: 'me', sandi: 'me', authinfo: 'me', selamat: 'me', bantuan: 'me' };
   function tabOf(v) { return v === 'run' ? (nav.cur.tab === 'map' ? 'course' : nav.cur.tab || 'review') : TAB[v] || 'home'; }
-  /* Kursus Studio yang tidak boleh kubuka (draf, khusus kelas, atau sudah dihapus) */
+  /* Studio course I may not open (draft, class-only, or deleted) */
   function lockedHTML() {
     const inUser = G.BB && G.BB.user;
     return '<div class="card locked"><span class="lk-ic">' + ic('lock') + '</span><h2>Kursus ini terkunci</h2><p>Kursus ini hanya bisa dibuka oleh <b>anggota kelas</b> gurunya' + (inUser ? '' : ', jadi kamu perlu masuk dulu') + '. Minta <b>kode kelas</b> ke gurumu, lalu gabung lewat menu Kelas.</p><p class="muted small">Bisa juga kursusnya masih draf atau sudah dihapus.</p><div class="row">' + (inUser ? '<button class="btn primary" data-go="kelas">Gabung kelas</button>' : '<button class="btn primary" data-go="login">Masuk</button>') + '<button class="btn" data-go="home">Ke beranda</button></div></div>';
   }
-  /* Judul tab browser mengikuti halaman (juga terlihat di daftar riwayat tombol Kembali) */
+  /* Browser tab title follows the page (also shown in the Back button history list) */
   const TITLES = { home: 'Beranda', course: '', review: 'Review harian', cards: 'Flashcard', mistakes: 'Buku kesalahan', kelas: 'Kelas', klas: 'Kelas', me: 'Akun', settings: 'Pengaturan', stats: 'Statistik', login: 'Masuk', studio: 'Studio kursus', editor: 'Studio kursus', bantuan: 'Pusat bantuan', lapor: 'Laporkan kendala', laporan: 'Laporan masuk', lesson: '', run: 'Latihan', tryout: 'Tryout', sandi: 'Kata sandi', selamat: 'Selamat datang', admin: 'Kelola pengguna' };
   function setTitle(v) {
     const site = (G.NALAR_CONFIG || {}).siteName || 'Ruang Nalar';
@@ -140,7 +140,7 @@
     if (t === '' || t === undefined) { const h1 = document.querySelector('#view h1'); t = h1 ? h1.textContent.trim().slice(0, 60) : ''; }
     document.title = t ? t + ' · ' + site : site;
   }
-  /* Koneksi terputus: beri tahu bahwa progres tetap aman di perangkat */
+  /* Offline: tell the user progress is still safe on the device */
   function netBanner() {
     let el = document.getElementById('netbar');
     if (navigator.onLine !== false) { if (el) el.remove(); return; }
@@ -174,7 +174,7 @@
     const cc = $('#course-chip'); if (cc) { const m = A.course && G.NR.meta(A.course); cc.hidden = !m; if (m) { cc.textContent = m.brand || m.title; cc.title = 'Kursus aktif: ' + m.title; } }
   }
 
-  /* ======================== KOMPONEN SOAL ======================== */
+  /* ======================== QUESTION COMPONENT ======================== */
   function qTags(it) {
     const t = [];
     if (it.sec) t.push('<span class="tag">' + esc(secMeta(it.sec).short) + '</span>'); else if (it.pre) t.push('<span class="tag">Prasyarat ' + it.pre + '</span>');
@@ -185,8 +185,8 @@
     if (it.lintas) t.push('<span class="tag t-lintas">Lintas bab</span>');
     return '<div class="tags">' + t.join('') + '</div>';
   }
-  /* QComp: render satu soal. opts: {src, tryout, onDone(res), hideSol} */
-  /* Dua himpunan sama bentuknya (jenis kurung & jumlah ruas) dan ujung-ujungnya berbeda paling banyak tol */
+  /* QComp: renders one question. opts: {src, tryout, onDone(res), hideSol} */
+  /* Two sets with the same shape (bracket types & number of pieces) whose endpoints differ by at most tol */
   function nearSame(s1, s2, tol) {
     const a = B.norm(s1), b = B.norm(s2); if (a.length !== b.length) return false;
     const close = (x, y) => (x === y) || Math.abs(x - y) <= tol;
@@ -285,7 +285,7 @@
         const r = B.parseAnswer(raw, it.v); if (!r.ok) return { err: r.err, trapHit: r.trap };
         const ans = it.ansSet || B.parseSet(it.ans);
         if (B.same(r.set, ans)) return { ok: true, ans: raw, user: r.set };
-        // Ujung ditulis sebagai desimal pembulatan (0.67 untuk 2/3): penalarannya benar, jadi beri kesempatan memperbaiki
+        // Endpoint written as a rounded decimal (0.67 for 2/3): the reasoning is right, so allow a correction
         if (/\d[.,]\d/.test(raw) && nearSame(r.set, ans, 0.006)) return { err: 'Hampir! Bentuk intervalnya sudah benar, tapi tulis ujungnya sebagai pecahan persis (misalnya 2/3), bukan desimal yang dibulatkan.' };
         for (const w of (it.wrong || [])) { const ws = w.set || B.parseSet(w.a); if (B.same(ws, r.set)) return { ok: false, why: w.why, trapHit: w.trap, ans: raw, user: r.set }; }
         return Object.assign({ ok: false, ans: raw, user: r.set }, diagnose(r.set, ans, it));
@@ -341,7 +341,7 @@
       if (r.why) h += '<p>' + rich(r.why) + '</p>';
       if (!r.ok && st.conf === 3) h += '<p class="note">' + ic('flame') + ' Salah tapi yakin. Justru ini kesempatan emas: soal ini akan muncul lagi lebih cepat di review supaya ingatanmu dikoreksi.</p>';
       if (r.ok && st.conf === 1) h += '<p class="note">Benar, tapi kamu menebak. Soal serupa tetap dijadwalkan ulang.</p>';
-      // jawaban benar
+      // correct answer
       if (it.type === 'mc') { const c = it.opts.find(o => o.ok); if (!r.ok) h += '<p><b>Jawaban:</b> ' + rich(c.t) + '</p>'; }
       if (it.type === 'interval') { const ans = it.ansSet || B.parseSet(it.ans); h += (r.ok ? '' : '<p><b>Jawaban:</b> ' + rich('$' + B.toTex(ans) + '$') + ' &nbsp;atau&nbsp; ' + rich('$' + B.toIneqTex(ans, it.v) + '$') + '</p>') + B.numberLine(ans); }
       if (it.type === 'num' && !r.ok) h += '<p><b>Jawaban:</b> ' + esc(String(it.ans).replace('.', ',')) + (it.unit ? ' ' + esc(it.unit) : '') + '</p>';
@@ -359,7 +359,7 @@
     }
     return { submit };
   }
-  /* diagnosis otomatis jawaban interval */
+  /* automatic diagnosis of interval answers */
   function diagnose(user, ans, it) {
     const sameEnds = (() => { const e = s => B.norm(s).flatMap(p => [p.a, p.b]).filter(isFinite).map(v => B.numTxt(v)).sort().join('|'); return e(user) === e(ans) && e(ans) !== ''; })();
     const strip = s => B.norm(s.map(p => B.I(p.a, p.b, false, false)));
@@ -373,7 +373,7 @@
     return { why: why || 'Bandingkan dengan pembahasan di bawah.', trapHit: null };
   }
 
-  /* ======================== RUNNER (sesi soal) ======================== */
+  /* ======================== RUNNER (question session) ======================== */
   /* refs: array id / {gen, seed}; cfg: {title, src, tryout:{seconds}, until(results), after(results), tab, intro} */
   function startRun(refs, cfg) { go('run', { refs, cfg, tab: cfg.tab }); }
   const V = {};
@@ -431,7 +431,7 @@
     if (it.type === 'order') return '<p><b>Urutan bukti:</b></p><ol class="ord-key">' + it.steps.map(x => '<li>' + rich(x) + '</li>').join('') + '</ol>';
     return '';
   }
-  /* mini-runner tertanam (di dalam materi) */
+  /* embedded mini-runner (inside lessons) */
   function miniRun(host, refs, cfg) {
     cfg = cfg || {}; const items = refs.map(A.item).filter(Boolean); let i = 0; const res = [];
     host.innerHTML = '<div class="mini"><div class="mini-n"></div><div class="mini-q"></div><div class="mini-next"></div></div>';
@@ -444,7 +444,7 @@
     step();
   }
 
-  /* ======================== PEMILIH SOAL ======================== */
+  /* ======================== QUESTION PICKER ======================== */
   function bankFor(sec, lvl, mode) {
     return Object.values(C.BANK).filter(q => q.sec === sec && q.lvl === lvl && !/-pre$|-err$/.test(q.id) && !q.id.startsWith('d-') && (!mode || mode === 'semua' || (q.mode || []).includes(mode)));
   }
@@ -495,7 +495,7 @@
     if (nx) return { t: 'Mulai Bagian ' + nx.id, d: nx.title, go: ['lesson', { sec: nx.id, i: 0 }] };
     return { t: 'Tryout', d: 'Semua bagian selesai. Uji dirimu dengan waktu.', go: ['tryout'] };
   }
-  /* Halaman kursus: lanjutkan + alat latihan + peta belajar */
+  /* Course page: continue + practice tools + learning map */
   const JALUR = { sekolah: 'Jalur sekolah', ujian: 'Jalur ujian PT', campuran: 'Eksponen: sekolah · Log: ujian PT', tantangan: 'Tantangan: olimpiade & kuliah' };
   V.course = function () {
     const S = A.S, ns = nextStep(), due = A.dueItems().length, dc = A.dueCards(A.cardPool()).length, mk = Object.values(S.mistakes).filter(m => !m.fx).length;
@@ -546,7 +546,7 @@
   }
   function pathItem(go, _, t, cls, num) { return '<li class="sec ' + cls + '"><button data-go="' + go + '"><span class="num">' + num + '</span><span class="sec-t"><b>' + esc(t) + '</b></span></button></li>'; }
 
-  /* ---------- Bagian 0 & materi (stepper) ---------- */
+  /* ---------- Section 0 & lessons (stepper) ---------- */
   V.intro = function (p) { lessonView(0, p.i || 0); };
   V.lesson = function (p) { lessonView(+p.sec, p.i != null ? +p.i : A.secProgress(+p.sec).step); };
   const GRP = { pemanasan: 'Pemanasan', materi: 'Materi', contoh: 'Contoh', ringkas: 'Rangkuman & jebakan', latihan: 'Latihan', sumber: 'Sumber belajar' };
@@ -565,7 +565,7 @@
     const blk = L[i]; const meta = sec ? secMeta(sec) : { title: info().introTitle || 'Pengantar' };
     const visited = sec ? ((A.S.sections[sec] || {}).visited || {}) : {};
     const goBtn = (k, cls, label) => '<button class="' + cls + '" data-act="les-go" data-sec="' + sec + '" data-i="' + k + '">' + label + '</button>';
-    // daftar isi berkelompok
+    // grouped table of contents
     let toc = '', lastG = null; const seenG = {};
     L.forEach((b, k) => {
       const g = grpOf(b);
@@ -673,7 +673,7 @@
     el.innerHTML = h + '</div>';
   }
 
-  /* ---------- diagnostik & prasyarat ---------- */
+  /* ---------- diagnostic test & prerequisites ---------- */
   V.diag = function () {
     const S = A.S;
     let h = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Fondasi</p><h1>Tes diagnostik</h1></div></header><div class="card">';
@@ -695,7 +695,7 @@
     return out.length ? out : hand;
   }
 
-  /* ---------- review, campuran, tryout ---------- */
+  /* ---------- review, mixed practice, tryout ---------- */
   V.review = function () {
     const due = A.dueItems().length, refs = buildReview();
     view().innerHTML = '<section class="page"><h1>Review harian</h1>' + (G.NalarHelp ? '<p class="help-row">' + G.NalarHelp.link('review-harian', 'Kenapa soal lama muncul lagi?') + '</p>' : '') + '<div class="card"><p class="big2">' + due + '</p><p>soal jatuh tempo hari ini' + (due < 6 ? ', ditambah soal campuran dari bagian yang sudah kamu buka' : '') + '.</p><p class="muted">Soal dicampur dari banyak bab (interleaving). Rasanya lebih berat daripada latihan per bab, dan justru itulah yang membuat ingatan bertahan lama.</p>' + (refs.length ? '<button class="btn primary" data-act="review-start">Mulai review (' + refs.length + ' soal)</button>' : '<p class="muted">Belum ada yang bisa direview. Mulai dulu salah satu bagian materi.</p><button class="btn" data-go="map">Ke peta belajar</button>') + '</div>' +
@@ -713,7 +713,7 @@
     view().innerHTML = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Simulasi</p><h1>Tryout</h1></div></header><div class="card"><p>15 soal, 30 menit. Tidak ada petunjuk dan pembahasan sampai selesai, persis seperti ujian.</p><label class="lbl">Fokus</label><div class="seg wrap" role="radiogroup">' + [['utbk', 'Gaya UTBK'], ['mandiri', 'Ujian mandiri'], ['sekolah', 'Ulangan sekolah'], ['olimpiade', 'Olimpiade/kuliah']].map(m => '<button role="radio" data-act="to-focus" data-m="' + m[0] + '" aria-checked="' + (f === m[0]) + '">' + m[1] + '</button>').join('') + '</div><p class="muted small">Strategi: kerjakan yang mudah dulu, pakai uji titik untuk mengeliminasi pilihan, dan jangan terpaku lebih dari 3 menit di satu soal.</p><button class="btn primary" data-act="to-start">Mulai tryout</button></div></section>';
   };
 
-  /* ---------- flashcard ---------- */
+  /* ---------- flashcards ---------- */
   V.cards = function () {
     const deck = nav.deck || 'due';
     const pool = deck === 'all' ? C.CARDS : deck === 'opened' ? A.cardPool() : deck === 'due' ? A.dueCards(A.cardPool()) : C.CARDS.filter(c => c.sec === +deck);
@@ -738,7 +738,7 @@
     draw();
   }
 
-  /* ---------- buku kesalahan ---------- */
+  /* ---------- mistake notebook ---------- */
   V.mistakes = function () {
     const all = Object.values(A.S.mistakes).sort((a, b) => b.t - a.t); const f = nav.mf || 'open';
     const list = all.filter(m => f === 'open' ? !m.fx : m.fx);
@@ -751,7 +751,7 @@
   };
   function mistakeRef(m) { return m.g ? { gen: m.g, seed: A.newSeed() } : m.i; }
 
-  /* ---------- ringkasan, brain dump, katalog jebakan ---------- */
+  /* ---------- summary, brain dump, trap catalog ---------- */
   V.summary = function () {
     let h = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Penutup</p><h1>Ringkasan</h1></div></header><p class="muted">Jangan langsung dibaca! Untuk tiap kotak tertutup, tebak dulu isinya di kepala, baru ketuk untuk membuka.</p><div class="sumgrid">';
     (C.SUMMARY || []).forEach(s => {
@@ -769,15 +769,15 @@
     view().innerHTML = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Ketelitian</p><h1>Katalog jebakan</h1></div></header><p class="muted">Kesalahan karena tidak teliti itu berpola. Yang paling sering menjebakmu ada di atas. Ikon radar di soal akan memudar setelah kamu benar 3× berturut-turut pada jebakan itu.</p><div class="traplist">' + ids.map(id => { const t = C.TRAPS[id], s = st[id] || {}; return '<div class="trap card"><p class="tn">' + esc(t.name) + ' <span class="muted small">' + (t.sec ? 'Bagian ' + t.sec : 'Umum') + '</span>' + (s.hits ? ' <span class="chip bad">kena ' + s.hits + '×</span>' : '') + (s.streak >= 3 ? ' <span class="chip ok">radar mati</span>' : '') + '</p><p class="tw"><span>Salah</span>' + rich(t.wrong) + '</p><p class="tr"><span>Benar</span>' + rich(t.right) + '</p><p class="tt">' + rich(t.tip) + '</p></div>'; }).join('') + '</div></section>';
   };
 
-  /* ---------- statistik / saya / dashboard ---------- */
-  /* Dashboard statistik ada di js/stats.js */
+  /* ---------- stats / me / dashboard ---------- */
+  /* The stats dashboard lives in js/stats.js */
   function statsHTML(S, opt) { return G.NalarStats ? G.NalarStats.html(S, opt) : ''; }
   function streakOf(S) { const save = A.S; A.S = S; const s = A.streak(); A.S = save; return s; }
   V.stats = function () {
     const meta = G.NR.meta(A.course) || {};
     view().innerHTML = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Statistik</p><h1>' + esc(meta.title || 'Kursus') + '</h1></div></header>' + (G.NalarHelp ? '<p class="help-row">' + G.NalarHelp.link('statistik', 'Cara membaca halaman ini') + '</p>' : '') + statsHTML(A.S) + '</section>';
   };
-  /* Nama yang ditampilkan: akun online > nama di pengaturan > nama lama di progres */
+  /* Display name: online account > name in settings > legacy name in progress */
   A.displayName = () => { const bb = G.BB || {}; return (bb.mode !== 'local' && bb.user && bb.user.name) || A.set.name || A.S.nick || ''; };
   V.settings = function () {
     const s = A.set; const sy = A.sync; const bb = G.BB || {};
@@ -846,7 +846,7 @@
 
   /* ======================== TEMA & BOOT ======================== */
   function applyTheme() { const t = A.set.theme; if (t === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); }
-  /* Jalankan target tugas/pesan, misalnya {kind:'practice', sec:5, lvl:3}. Kursus harus sudah aktif. */
+  /* Open an assignment/message target, e.g. {kind:'practice', sec:5, lvl:3}. The course must be active. */
   function doTarget(t) {
     t = t || {};
     if (t.kind === 'lesson' && secMeta(t.sec)) return go('lesson', { sec: +t.sec });
@@ -855,14 +855,14 @@
     if (['diag', 'review', 'tryout', 'mixed', 'lintas', 'cards', 'mistakes', 'summary', 'dump'].includes(t.kind)) return go(t.kind);
     go('course');
   }
-  /* Dipakai platform.js */
+  /* Used by platform.js */
   Object.assign(G.BU = G.BU || {}, { QComp, go, back, up, render, renderTop, V, nav, ic, esc, rich, $, $$, view, statsHTML, openCourse, tile, LV, secMeta, shuffle, greet, startRun, applyTheme, COURSE_VIEWS, doTarget, hasDiag });
 
   function boot() {
     applyTheme();
     const h0 = location.hash;
-    /* Tautan dari email (konfirmasi akun / lupa sandi) membawa token atau pesan error di #hash. Hash itu jangan
-       dihapus sebelum Supabase selesai membacanya; setelah itu baru dibersihkan dan pengguna diarahkan. */
+    /* Email links (account confirmation / password reset) carry a token or error in the #hash. Do not clear
+       the hash before Supabase has read it; only then clean the URL and route the user. */
     const landing = authLanding(h0, location.search);
     if (hasHist) { record(false, !!landing); window.addEventListener('popstate', onPop); }
     window.addEventListener('nalar-auth', (e) => { if (e.detail === 'recovery' && nav.cur.v !== 'sandi') go('sandi', { recovery: 1 }, { replace: true }); });
@@ -879,7 +879,7 @@
       }
       if (nav.cur.v === 'home' || nav.cur.v === 'settings') render();
     });
-    // Pilih backend: Supabase (bila dikonfigurasi) atau lokal; di claude.ai, tunggu runtime Artifact muncul
+    // Pick the backend: Supabase (if configured) or local; on claude.ai, wait for the Artifact runtime
     const start = () => A.sync.init().catch(e => { console.error(e); A.sync.status = 'lokal'; renderTop(); })
       .then(() => { if (landing) handleLanding(landing); })
       .then(() => G.NR.refreshRemote()).then(() => { if (['home', 'me', 'kelas', 'studio'].includes(nav.cur.v)) render(); });
@@ -895,7 +895,7 @@
     window.addEventListener('pagehide', A.flush);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { A.flush(); A.sync.push(); } });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.cur.v !== 'home') { const t = e.target; if (!t.matches || !t.matches('input,textarea,select')) back(); } });
-    // Tautan langsung: #gabung=KODE, #kursus=id, #bagian3 (hash dibaca sebelum riwayat menghapusnya dari URL)
+    // Deep links: #gabung=CODE, #kursus=id, #bagian3 (hash is read before history clears it from the URL)
     if (!routeHash(h0)) render();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();

@@ -1,9 +1,9 @@
 -- =====================================================================
--- Ruang Nalar — laporan kendala dari pengguna (bug, soal salah, materi salah, saran)
--- Jalankan SETELAH schema.sql dan roles.sql. Aman dijalankan ulang.
---   - Siapa pun boleh melapor (termasuk yang belum masuk), dengan batas jumlah per jam.
---   - Pelapor hanya bisa melihat laporannya sendiri; admin melihat & mengelola semuanya.
---   - Notifikasi email/WhatsApp dikirim Edge Function supabase/functions/notify-report.
+-- Ruang Nalar — problem reports from users (bugs, wrong questions, wrong lessons, suggestions)
+-- Run AFTER schema.sql and roles.sql. Safe to re-run.
+--   - Anyone may report (including signed-out visitors), with an hourly limit.
+--   - Reporters only see their own reports; admins see & manage all of them.
+--   - Email/WhatsApp notifications are sent by the Edge Function supabase/functions/notify-report.
 -- =====================================================================
 create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),
@@ -34,14 +34,14 @@ create policy reports_update on public.reports for update to authenticated
 drop policy if exists reports_delete on public.reports;
 create policy reports_delete on public.reports for delete to authenticated using (public.is_admin());
 
--- Hak kolom: pelapor hanya mengisi isi laporan (id boleh dibuat di browser supaya pengunjung
--- tanpa akun tetap bisa memicu notifikasi); status & catatan hanya diubah admin.
+-- Column grants: reporters only fill in the report itself (the id may be generated in the browser so
+-- anonymous visitors can still trigger a notification); status & notes are admin-only.
 revoke all on public.reports from anon, authenticated;
 grant insert (id, kind, body, contact, context) on public.reports to anon, authenticated;
 grant select, delete on public.reports to authenticated;
 grant update (status, admin_note) on public.reports to authenticated;
 
--- Batas: 10 laporan/jam per akun, 20 laporan/jam untuk semua pengunjung tanpa akun
+-- Limits: 10 reports/hour per account, 20 reports/hour across all anonymous visitors
 create or replace function public.limit_reports() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin

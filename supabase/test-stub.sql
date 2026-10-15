@@ -1,4 +1,4 @@
--- Stub minimal lingkungan Supabase untuk menguji schema.sql di Postgres biasa (bukan untuk produksi)
+-- Minimal Supabase environment stub for testing schema.sql on plain Postgres (not for production)
 create extension if not exists pgcrypto;
 do $$ begin create role anon nologin; exception when duplicate_object then null; end $$;
 do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;

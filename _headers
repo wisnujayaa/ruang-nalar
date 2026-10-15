@@ -1,8 +1,8 @@
-# Header keamanan (format _headers dipahami Cloudflare Pages maupun Netlify; berlaku untuk semua halaman).
-# - Content-Security-Policy: hanya skrip dari situs ini sendiri yang boleh jalan (tanpa skrip inline / eval),
-#   koneksi hanya ke Supabase, iframe hanya dari layanan embed yang diizinkan widget.
-#   Jika kamu memindahkan situs ke proyek Supabase lain, *.supabase.co tetap cocok.
-# - frame-ancestors 'none' + X-Frame-Options: situs tidak bisa dibungkus iframe orang lain (anti-clickjacking).
+# Security headers (the _headers format is understood by Cloudflare Pages and Netlify; applies to every page).
+# - Content-Security-Policy: only this site's own scripts may run (no inline scripts / eval),
+#   connections only to Supabase, iframes only from the embed services the widgets allow.
+#   *.supabase.co keeps working if you move to another Supabase project.
+# - frame-ancestors 'none' + X-Frame-Options: the site can't be framed by others (anti-clickjacking).
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://www.desmos.com https://www.geogebra.org https://phet.colorado.edu; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
@@ -11,6 +11,6 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
 
-# Dokumen internal & tes tidak perlu diakses publik lewat situs (tetap ada di GitHub)
+# Internal docs & tests don't need to be indexed from the site (they stay on GitHub)
 /supabase/*
   X-Robots-Tag: noindex

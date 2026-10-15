@@ -1,12 +1,12 @@
-/* Konfigurasi situs Ruang Nalar.
-   Kunci di bawah adalah kunci "anon" (publik) Supabase: memang aman ada di browser,
-   karena semua akses data dijaga Row Level Security (supabase/schema.sql).
-   JANGAN pernah menaruh kunci service_role / secret di sini. */
+/* Ruang Nalar site configuration.
+   The key below is Supabase's "anon" (public) key: it is meant to be in the browser,
+   because all data access is guarded by Row Level Security (supabase/schema.sql).
+   NEVER put a service_role / secret key here. */
 window.NALAR_CONFIG = {
   siteName: 'Ruang Nalar',
-  // Nomor WA untuk tombol "Kirim lewat WhatsApp" setelah melapor (opsional, TERLIHAT PUBLIK). Contoh: '62812xxxxxxx'
+  // WhatsApp number for the "Send via WhatsApp" button after reporting (optional, PUBLICLY VISIBLE). Example: '62812xxxxxxx'
   reportWhatsApp: '',
-  // Repositori kode situs (untuk tautan "Buka di GitHub" di Studio). Kosongkan bila tidak ingin ditampilkan.
+  // Source repository (for the "Open on GitHub" links in the Studio). Leave empty to hide them.
   repoUrl: 'https://github.com/wisnujayaa/ruang-nalar',
   tagline: 'Belajar sedikit tiap hari, paham sampai ke akarnya.',
   supabaseUrl: 'https://qrupegzfpecuiullaqeu.supabase.co',

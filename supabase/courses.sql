@@ -1,6 +1,6 @@
 -- =====================================================================
--- Ruang Nalar — kursus buatan guru (editor kursus di web)
--- Jalankan SETELAH schema.sql, lalu roles.sql dan course-access.sql (akses kursus). Aman dijalankan ulang.
+-- Ruang Nalar — teacher-made courses (web course editor)
+-- Run AFTER schema.sql, then roles.sql and course-access.sql (course access). Safe to re-run.
 -- =====================================================================
 create table if not exists public.courses (
   id text primary key default ('c-' || substr(md5(random()::text || clock_timestamp()::text), 1, 10))
@@ -22,10 +22,10 @@ create index if not exists idx_courses_public on public.courses (visibility) whe
 
 alter table public.courses enable row level security;
 
--- Pengunjung tanpa akun: hanya kursus publik / bertautan
+-- Anonymous visitors: public / unlisted courses only
 drop policy if exists courses_select_anon on public.courses;
 create policy courses_select_anon on public.courses for select to anon using (visibility <> 'draft');
--- Pengguna masuk: kursus non-draf, kursus miliknya, atau kursus yang dipakai kelasnya
+-- Signed-in users: non-draft courses, their own courses, or courses used by their classes
 drop policy if exists courses_select_auth on public.courses;
 create policy courses_select_auth on public.courses for select to authenticated using (
   visibility <> 'draft' or owner_id = auth.uid()
@@ -39,7 +39,7 @@ create policy courses_delete on public.courses for delete to authenticated using
 
 grant select on public.courses to anon, authenticated;
 grant insert, delete on public.courses to authenticated;
--- pemilik & id tidak bisa diubah
+-- owner & id cannot be changed
 revoke update on public.courses from authenticated;
 grant update (title, subject, level, blurb, glyph, color, visibility, content, updated_at) on public.courses to authenticated;
 revoke insert, delete, truncate, references, trigger on public.courses from anon;

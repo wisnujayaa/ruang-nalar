@@ -1,7 +1,7 @@
-/* Ruang Nalar — registry & pemuat kursus.
-   Semua file konten kursus menulis ke `window.BC`. Di sini BC adalah Proxy yang
-   meneruskan baca/tulis ke objek kursus yang sedang aktif, sehingga file konten
-   tidak perlu tahu ada banyak kursus. */
+/* Ruang Nalar — course registry & loader.
+   Every course content file writes to `window.BC`. Here BC is a Proxy that
+   forwards reads/writes to the currently active course object, so content files
+   don't need to know that several courses exist. */
 (function (G) {
   'use strict';
   const holder = { cur: {} };
@@ -13,9 +13,9 @@
     ownKeys: () => Reflect.ownKeys(holder.cur),
     getOwnPropertyDescriptor: (_, k) => { const d = Object.getOwnPropertyDescriptor(holder.cur, k); if (d) d.configurable = true; return d; }
   });
-  /* Dua sumber kursus:
-     - file  : courses/index.js (ditulis di kode, misalnya Pertidaksamaan)
-     - db    : dibuat guru lewat editor web (id diawali "c-"), diambil dari backend */
+  /* Two course sources:
+     - file  : courses/index.js (written in code, e.g. Pertidaksamaan)
+     - db    : created by teachers in the web editor (id starts with "c-"), loaded from the backend */
   const R = G.NR = {
     remote: [],
     list: () => (G.NALAR_COURSES || []).concat(R.remote.filter(r => !(G.NALAR_COURSES || []).some(c => c.id === r.id))),
@@ -25,17 +25,17 @@
     active: null,
     base: 'courses/'
   };
-  /* Perbarui daftar kursus dari backend (dipanggil setelah masuk/keluar & setelah menyimpan di editor) */
+  /* Refresh the course list from the backend (called after sign-in/out and after saving in the editor) */
   R.refreshRemote = async function () {
     try { R.remote = (G.BB && G.BB.courses) ? await G.BB.courses.list() : []; } catch (e) { R.remote = []; }
     return R.remote;
   };
-  /* Paksa muat ulang (misalnya setelah kursus diedit) */
+  /* Force a reload (e.g. after a course was edited) */
   R.forget = function (id) { delete R.loaded[id]; if (R.active === id) R.active = null; };
   function loadScript(src) {
     return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Gagal memuat ' + src)); document.head.appendChild(s); });
   }
-  /* Muat kursus (sekali saja), lalu jadikan aktif */
+  /* Load a course (once), then make it active */
   R.load = async function (id) {
     if (R.isDb(id)) {
       if (!R.loaded[id]) {
@@ -58,8 +58,8 @@
     R.use(id);
     return R.loaded[id];
   };
-  /* Pasang kursus dari data mentah editor (sudah dibersihkan oleh NalarSafe.compile) */
-  /* Visibilitas kursus Studio — label & penjelasan yang dipakai Studio, katalog, dan halaman kelas */
+  /* Install a course from raw editor data (already sanitized by NalarSafe.compile) */
+  /* Studio course visibility — labels & descriptions used by the Studio, catalog, and class pages */
   R.VIS = {
     draft: { label: 'Draf', cls: 'st-todo', desc: 'Hanya kamu. Siswa di kelasmu pun belum bisa membukanya. Pakai saat masih menulis.' },
     class: { label: 'Khusus kelas', cls: 'st-doing', desc: 'Terkunci: hanya kamu dan siswa yang bergabung ke kelasmu yang memakai kursus ini. Orang lain tidak bisa membukanya, walau punya tautannya.' },
@@ -73,7 +73,7 @@
   };
   R.use = function (id) { if (!R.loaded[id]) return false; holder.cur = R.loaded[id]; R.active = id; return true; };
   R.current = () => holder.cur;
-  /* Lengkapi field opsional supaya UI tidak perlu banyak pengecekan */
+  /* Fill optional fields so the UI needs fewer checks */
   R.normalize = function (o) {
     o.SECTIONS = o.SECTIONS || []; o.LESSONS = o.LESSONS || {}; o.BANK = o.BANK || {}; o.GEN = o.GEN || {};
     o.CARDS = o.CARDS || []; o.TRAPS = o.TRAPS || {}; o.PREREQ = o.PREREQ || []; o.INTRO = o.INTRO || [];

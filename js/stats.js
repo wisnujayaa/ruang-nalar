@@ -1,7 +1,7 @@
-/* Ruang Nalar — dashboard statistik belajar.
-   Semua angka dihitung dari log jawaban (S.attempts), menit harian (S.daily), dan jadwal review (S.items).
-   Grafik digambar sebagai SVG biasa; warna memakai token CSS supaya ikut mode terang/gelap.
-   Dipakai halaman Statistik siswa dan halaman progres siswa milik guru (opt.mentor). */
+/* Ruang Nalar — learning statistics dashboard.
+   Every number is computed from the answer log (S.attempts), daily minutes (S.daily), and the review schedule (S.items).
+   Charts are plain SVG; colors use CSS tokens so they follow light/dark mode.
+   Used by the student Stats page and the teacher's student-progress page (opt.mentor). */
 (function (G) {
   'use strict';
   const DAY = 86400000;
@@ -9,10 +9,10 @@
   const sum = (a) => a.reduce((s, x) => s + x, 0);
   const median = (a) => { if (!a.length) return 0; const b = a.slice().sort((x, y) => x - y); const m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
   const accOf = (list) => list.length ? sum(list.map(a => a.ok)) / list.length : null;
-  /* Penguasaan "terkini": rata-rata eksponensial, jawaban terbaru lebih berbobot (sama seperti peta konsep) */
+  /* "Current" mastery: exponential average, recent answers weigh more (same as the concept map) */
   const recentMastery = (list) => list.reduce((m, a) => m * 0.65 + a.ok * 0.35, 0.5);
 
-  /* ---------- angka turunan ---------- */
+  /* ---------- derived numbers ---------- */
   function compute(S) {
     const A = G.BA, C = G.BC;
     const t = Date.now(), at = S.attempts || [], daily = S.daily || {};
@@ -35,14 +35,14 @@
     const slots = SLOTS.map(([name, a, b]) => { const l = at.filter(x => { const h = hourOf(x.t); return h >= a && h < b; }); return { name, n: l.length, acc: accOf(l) }; });
     const items = Object.values(S.items || {});
     const mem = { fragile: items.filter(s => (s.iv || 0) < 4).length, mid: items.filter(s => s.iv >= 4 && s.iv < 21).length, strong: items.filter(s => s.iv >= 21).length, due: items.filter(s => s.due <= t).length, total: items.length };
-    // tren 30 hari: akurasi per hari (hanya hari yang ada jawaban)
+    // 30-day trend: accuracy per day (only days with answers)
     const trend = []; for (let i = 29; i >= 0; i--) { const from = startToday - i * DAY; const l = inRange(from, from + DAY); trend.push({ d: from, n: l.length, acc: accOf(l) }); }
     const totalMin = Math.round(sum(Object.values(daily)) / 60000);
     const ms = at.map(a => a.ms).filter(x => x > 0 && x < 15 * 60000);
     return { t, at, daily, minutesOn, dayKey, startToday, thisW, prevW, minThis: minW(w0), minPrev: minW(w1), secs, conf, lv, slots, mem, trend, totalMin, medSec: Math.round(median(ms) / 1000) };
   }
 
-  /* ---------- komponen ---------- */
+  /* ---------- components ---------- */
   const delta = (now, prev, unit, isPct) => {
     if (prev == null || now == null) return '';
     const d = isPct ? pct(now) - pct(prev) : now - prev;
@@ -53,7 +53,7 @@
     const r = 46, c = 2 * Math.PI * r, v = Math.max(0, Math.min(1, value || 0));
     return '<svg class="st-ring" viewBox="0 0 120 120" role="img" aria-label="' + label + ' ' + pct(v) + '%"><circle class="sr-bg" cx="60" cy="60" r="' + r + '"/><circle class="sr-fg" cx="60" cy="60" r="' + r + '" stroke-dasharray="' + (c * v).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 60 60)"/><text x="60" y="58" class="sr-v">' + pct(v) + '%</text><text x="60" y="76" class="sr-l">' + label + '</text></svg>';
   }
-  /* Kalender aktivitas 18 minggu (seperti GitHub): satu warna, makin pekat makin lama belajar */
+  /* 18-week activity calendar (GitHub-style): one hue, darker = more study time */
   function heatmap(D, goal) {
     const weeks = 18, cell = 12, gap = 3, top = 16, left = 24;
     const today = new Date(D.startToday); const dow = (today.getDay() + 6) % 7;   // Senin = 0
@@ -74,7 +74,7 @@
     const legend = '<div class="hm-leg"><span>Sedikit</span>' + [0, 1, 2, 3, 4].map(i => '<i class="hm' + i + '"></i>').join('') + '<span>Banyak</span><span class="muted">· kotak ke-3 = target ' + goal + ' menit</span></div>';
     return '<div class="hm-wrap"><svg class="heatcal" style="width:' + Math.round(W * 1.45) + 'px" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Kalender aktivitas belajar 18 minggu">' + months + days + cells + '</svg></div>' + legend;
   }
-  /* Garis akurasi harian 30 hari; jumlah soal ada di tooltip (bukan sumbu kedua) */
+  /* 30-day daily accuracy line; question counts live in the tooltip (no second axis) */
   function trendChart(D) {
     const W = 560, H = 170, l = 34, r = 10, tp = 10, b = 24, iw = W - l - r, ih = H - tp - b;
     const pts = D.trend.map((p, i) => ({ x: l + i / 29 * iw, y: p.acc == null ? null : tp + (1 - p.acc) * ih, p }));
@@ -88,13 +88,13 @@
     const last = have[have.length - 1];
     return '<svg class="trend" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Akurasi harian 30 hari terakhir">' + grid + '<path class="t-area" d="' + area + '"/><path class="t-line" d="' + path + '"/>' + dots + '<text class="t-end" x="' + Math.min(last.x, W - r - 4).toFixed(1) + '" y="' + Math.max(12, last.y - 10).toFixed(1) + '" text-anchor="end">' + pct(last.p.acc) + '%</text>' + xl + '</svg>';
   }
-  /* Batang horizontal satu warna; teks nilai memakai warna tinta, bukan warna batang */
+  /* Single-hue horizontal bars; value labels use the ink color, not the bar color */
   function hbars(rows, opt) {
     opt = opt || {};
     return '<ul class="hbars">' + rows.map(r => '<li title="' + (r.tip || '') + '"><span class="hb-l">' + r.label + '</span><span class="hb-t"><i style="width:' + Math.max(r.v == null ? 0 : 2, pct(r.v || 0)) + '%"' + (r.v == null ? ' class="none"' : '') + '></i>' + (opt.mark ? '<em style="left:' + pct(opt.mark) + '%"></em>' : '') + '</span><b>' + (r.v == null ? '–' : pct(r.v) + '%') + '</b><small>' + (r.sub || '') + '</small></li>').join('') + '</ul>';
   }
 
-  /* ---------- insight otomatis ---------- */
+  /* ---------- automatic insights ---------- */
   function insights(D, S, opt) {
     const out = [], who = opt.mentor ? 'Siswa ini' : 'Kamu';
     const weak = D.secs.filter(s => s.n >= 5).sort((a, b) => a.m - b.m)[0];
@@ -110,7 +110,7 @@
     return out.slice(0, 4);
   }
 
-  /* ---------- halaman ---------- */
+  /* ---------- page ---------- */
   function html(S, opt) {
     opt = opt || {};
     const A = G.BA, C = G.BC, U = G.BU, ic = U.ic, esc = U.esc;
@@ -154,7 +154,7 @@
     const sl = D.slots.filter(s => s.n);
     if (sl.length > 1) h += '<div class="card"><h2>Kapan belajar paling efektif?</h2>' + hbars(D.slots.map(s => ({ label: s.name, v: s.acc, sub: s.n + ' soal' }))) + '</div>';
 
-    // bagian lama yang tetap berguna
+    // older sections that are still useful
     const st = A.stats(S);
     if (C.CONCEPTS && Object.keys(C.CONCEPTS).length) h += '<div class="card"><h2>Peta penguasaan konsep</h2><p class="muted small">Per konsep, dari jawaban terakhir (yang terbaru lebih berbobot).</p><div class="heat">' + Object.keys(C.CONCEPTS).map(k => { const c = st.conc[k]; const cls = !c ? 'h0' : c.n < 3 ? 'h1' : c.m >= 0.8 ? 'h4' : c.m >= 0.55 ? 'h3' : 'h2'; return '<div class="hc ' + cls + '" title="' + esc(C.CONCEPTS[k]) + (c ? ' · ' + c.n + ' soal' : '') + '"><span>' + esc(C.CONCEPTS[k]) + '</span></div>'; }).join('') + '</div><div class="heat-leg"><span><i class="hc h0"></i>belum</span><span><i class="hc h1"></i>baru mulai</span><span><i class="hc h2"></i>perlu latihan</span><span><i class="hc h3"></i>cukup</span><span><i class="hc h4"></i>kuat</span></div></div>';
     const tr = Object.entries(st.traps).filter(([k, v]) => v.hits && C.TRAPS && C.TRAPS[k]).sort((a, b) => b[1].hits - a[1].hits).slice(0, 6);

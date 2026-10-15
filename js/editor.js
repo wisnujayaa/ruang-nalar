@@ -1,7 +1,7 @@
-/* Ruang Nalar — Studio: editor kursus berbasis formulir untuk guru (tanpa menulis kode).
-   Data yang diedit (E.raw) memakai format kursus yang sama dengan kursus berbasis file,
-   tetapi teks materi ditulis dengan format ringan (md) dan selalu dibersihkan oleh NalarSafe.compile()
-   sebelum ditampilkan ke siswa. */
+/* Ruang Nalar — Studio: form-based course editor for teachers (no code).
+   The edited data (E.raw) uses the same course format as file-based courses,
+   but lesson text uses light formatting (md) and is always sanitized by NalarSafe.compile()
+   before students see it. */
 (function (G) {
   'use strict';
   const A = G.BA, U = G.BU, NR = G.NR, Sf = G.NalarSafe, B = G.BM;
@@ -22,7 +22,7 @@
   const btn = (act, label, extra, cls) => '<button type="button" class="' + (cls || 'btn small') + '" data-eact="' + act + '"' + (extra || '') + '>' + label + '</button>';
   const FMT = 'Format: **tebal**, *miring*, baris diawali "- " untuk daftar, "1. " untuk daftar bernomor, baris kosong untuk paragraf baru, rumus di antara $…$ (contoh $x^2-4<0$) atau $$…$$ untuk rumus di baris sendiri.';
 
-  /* ---------- akses data ---------- */
+  /* ---------- data access ---------- */
   function getPath(o, path) { return path.split('.').reduce((x, k) => x == null ? x : x[k], o); }
   function setPath(o, path, v) { const ks = path.split('.'); const last = ks.pop(); const t = ks.reduce((x, k) => x[k], o); t[last] = v; }
   const secs = () => E.raw.SECTIONS;
@@ -44,7 +44,7 @@
     return q;
   }
 
-  /* ---------- Studio: daftar kursus saya ---------- */
+  /* ---------- Studio: my courses ---------- */
   V.studio = function () {
     const b = bb(); const can = b.courses && b.courses.canEdit;
     let h = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Untuk guru</p><h1>Studio kursus</h1></div></header>';
@@ -55,11 +55,11 @@
     h += '<div class="card nudge"><p><b>Buat kursus tanpa menulis kode.</b> Susun bagian materi, contoh bertahap, soal 6 tipe, flashcard, dan jebakan umum. Semua fitur platform (review berjarak, buku kesalahan, kelas, tugas, laporan guru) langsung berlaku untuk kursusmu.</p>' + btn('new', ic('plus') + ' Buat kursus baru', '', 'btn primary') + '</div>';
     if (b.mode === 'local') h += '<p class="muted small">Mode tanpa server: kursus hanya tersimpan di browser ini.</p>';
     h += '<div id="st-list">' + '<div class="loading"><span class="spin"></span></div>' + '</div>';
-    /* Kursus berkas (folder courses/) tidak bisa diedit di Studio: isinya berupa kode, termasuk widget & generator soal */
+    /* File courses (courses/ folder) can't be edited in the Studio: they are code, including widgets & question generators */
     const files = NR.list().filter(c => !c.db && !c.soon);
     if (files.length && b.isAdmin) {
       const repo = String((G.NALAR_CONFIG || {}).repoUrl || '').replace(/\/$/, '');
-      h += '<h2 class="h1like">Kursus berkas (kode)</h2><div class="card"><p class="muted small">Kursus ini ditulis sebagai kode di folder <code>courses/</code>, karena memakai widget interaktif dan generator soal buatan sendiri yang tidak bisa dibuat lewat formulir. Mengeditnya lewat GitHub: ubah file, lalu Netlify memperbarui situs otomatis dalam ~1 menit. Panduan: <code>docs/MENAMBAH-KURSUS.md</code>.</p><ul class="file-courses">' +
+      h += '<h2 class="h1like">Kursus berkas (kode)</h2><div class="card"><p class="muted small">Kursus ini ditulis sebagai kode di folder <code>courses/</code>, karena memakai widget interaktif dan generator soal buatan sendiri yang tidak bisa dibuat lewat formulir. Mengeditnya lewat GitHub: ubah file, lalu Netlify memperbarui situs otomatis dalam ~1 menit. Panduan: <code>docs/ADDING-COURSES.md</code>.</p><ul class="file-courses">' +
         files.map(c => '<li><b>' + escA(c.title) + '</b> <span class="muted small mono">courses/' + escA(c.id) + '/</span>' + (c.hidden ? ' <span class="chip">tersembunyi</span>' : '') + (repo ? ' <a class="btn small" target="_blank" rel="noopener" href="' + escA(repo) + '/tree/main/courses/' + encodeURIComponent(c.id) + '">Buka di GitHub</a>' : '') + '</li>').join('') + '</ul></div>';
     }
     h += '</section>';
@@ -116,7 +116,7 @@
       field('Warna', sel('meta.color', m.color, [['accent', 'Biru'], ['sol', 'Hijau toska']])) + '</div>';
   }
 
-  /* ---------- Tab materi ---------- */
+  /* ---------- Lessons tab ---------- */
   function tabMateri() {
     let h = '<p class="muted small">Setiap bagian adalah satu bab kecil. Di dalamnya, susun blok dari atas ke bawah: mulai dari intuisi, lalu penjelasan, contoh, jebakan, latihan, dan tiket keluar.</p>';
     secs().forEach((s, si) => {
@@ -163,7 +163,7 @@
       '<p class="lbl">Soal tiket keluar (maksimal 3)</p>' + (qs.length ? '<div class="kmem">' + qs.map(q => '<label><input type="checkbox" data-eact-chk="exit-q" data-p="' + P + '" data-id="' + escA(q.id) + '"' + ((b.qs || []).includes(q.id) ? ' checked' : '') + '> <span>L' + q.lvl + ' · ' + escA(plainPreview(q.q, 60)) + '</span></label>').join('') + '</div>' : '<p class="muted small">Belum ada soal di bagian ini.</p>');
     return '';
   }
-  /* ---------- blok widget: pilih dari pustaka, isi parameter ---------- */
+  /* ---------- widget block: pick from the library, fill in parameters ---------- */
   const NW = () => G.NalarWidgets;
   function wDefaults(w) { const d = NW().defs[w]; const o = {}; (d ? d.params : []).forEach(s => { o[s.key] = JSON.parse(JSON.stringify(s.def != null ? s.def : '')); }); return o; }
   function widgetForm(b, P) {
@@ -193,7 +193,7 @@
     return '<details class="ed-res"' + (list.length ? '' : '') + '><summary>Sumber belajar eksternal (' + list.length + ')</summary>' + list.map((r, k) => '<div class="ed-res-row">' + sel(P + '.' + k + '.type', r.type || 'artikel', [['artikel', 'Artikel'], ['video', 'Video'], ['alat', 'Alat'], ['buku', 'Buku/PDF']]) + inp(P + '.' + k + '.title', r.title, 'Judul') + inp(P + '.' + k + '.url', r.url, 'https://…') + inp(P + '.' + k + '.src', r.src, 'Sumber, misal YouTube') + btn('arr-del', ic('trash'), ' data-p="' + P + '" data-i="' + k + '" aria-label="Hapus"') + '</div>').join('') + btn('arr-add', ic('plus') + ' Tambah tautan', ' data-p="' + P + '" data-new="res"') + '<p class="muted small">Hanya tautan https:// yang ditampilkan.</p></details>';
   }
 
-  /* ---------- Tab soal ---------- */
+  /* ---------- Questions tab ---------- */
   function tabSoal(issues) {
     if (!secs().length) return '<p class="muted">Tambahkan bagian dulu.</p>';
     if (!secs().some(s => s.id === E.sec)) E.sec = secs()[0].id;
@@ -238,7 +238,7 @@
     if (!r.ok && el.value.trim()) $('p', box).textContent = r.err;
   }
 
-  /* ---------- Tab kartu & jebakan ---------- */
+  /* ---------- Cards & traps tab ---------- */
   function tabKartu() {
     const secOpts = secs().map(s => [s.id, s.id + ' · ' + (s.short || s.title)]);
     let h = '<h2 class="h1like small">Flashcard</h2><p class="muted small">Kartu muncul di menu Flashcard setelah siswa membuka bagiannya, lalu dijadwalkan ulang otomatis (review berjarak).</p>';
@@ -250,7 +250,7 @@
     return h;
   }
 
-  /* ---------- Tab terbitkan ---------- */
+  /* ---------- Publish tab ---------- */
   function tabTerbit(issues) {
     const m = E.meta; const link = E.id ? location.origin + location.pathname + '#kursus=' + E.id : '';
     const errs = issues.filter(i => i.level === 'error'), warns = issues.filter(i => i.level === 'warn');
@@ -264,7 +264,7 @@
     return h;
   }
 
-  /* ---------- simpan & pratinjau ---------- */
+  /* ---------- save & preview ---------- */
   async function save(quiet) {
     if (E.saving) return false;
     if (!(E.meta.title || '').trim()) { E.tab = 'info'; drawEditor(); const t = $('[data-b="meta.title"]'); if (t) { t.focus(); t.insertAdjacentHTML('afterend', '<p class="err">Beri judul kursus dulu.</p>'); } return false; }
@@ -287,7 +287,7 @@
     go('course', { course: E.id });
   }
 
-  /* ---------- event ---------- */
+  /* ---------- events ---------- */
   function coerce(el) {
     const t = el.dataset.t; const v = el.type === 'checkbox' ? el.checked : el.value;
     if (t === 'bool') return el.type === 'checkbox' ? el.checked : !!el.value;
@@ -297,7 +297,7 @@
   }
   document.addEventListener('input', (e) => {
     const el = e.target; if (!el.dataset || !el.dataset.b || !E.raw || !el.closest('.editor')) return;
-    if (el.dataset.t === 'arr') return;   // ditangani di 'change'
+    if (el.dataset.t === 'arr') return;   // handled in 'change'
     if (el.type === 'radio' && !el.checked) return;
     setPath(E, el.dataset.b, coerce(el)); markDirty();
     if (/\.predict\.ansN$/.test(el.dataset.b)) setPath(E, el.dataset.b.replace(/ansN$/, 'ans'), Math.max(0, (+el.value || 1) - 1));

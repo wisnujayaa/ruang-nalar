@@ -1,17 +1,17 @@
-/* Batas — generator soal (tak terbatas, berbiji, kunci dihitung otomatis) */
+/* Pertidaksamaan — question generators (unlimited, seeded, keys computed automatically) */
 (function (G) {
   'use strict';
   const B = G.BM, C = G.BC = G.BC || {};
   const T = B.numTex;
   const GEN = C.GEN = {};
   const REL = ['<', '\\le', '>', '\\ge'];
-  /* Toleransi di KEDUA jenis relasi: titik kritis pecahan (mis. 2/3) tidak bisa disimpan persis di komputer, sehingga
-     (x+2)/(x−2) di x=2/3 bisa bernilai −2,0000000000000004. Tanpa toleransi, "< −2" salah dianggap benar dan ujung
-     interval ikut masuk ke kunci. (Ditemukan oleh tests/verify-gen.js.) */
+  /* Tolerance on BOTH kinds of relation: fractional critical points (e.g. 2/3) can't be stored exactly in floating point, so
+     (x+2)/(x−2) at x=2/3 can evaluate to −2.0000000000000004. Without tolerance, "< −2" is wrongly true and the
+     endpoint leaks into the key. (Found by tests/verify-gen.js.) */
   const EPSR = 1e-9;
   const relFn = { '<': (a, b) => a < b - EPSR, '\\le': (a, b) => a <= b + EPSR, '>': (a, b) => a > b + EPSR, '\\ge': (a, b) => a >= b - EPSR };
   const flipRel = { '<': '>', '>': '<', '\\le': '\\ge', '\\ge': '\\le' };
-  // koefisien linear "ax+b" sebagai TeX rapi
+  // linear coefficients "ax+b" as clean TeX
   function lin(a, b, v) {
     v = v || 'x';
     let s = a === 1 ? v : a === -1 ? '-' + v : a + v;
@@ -41,7 +41,7 @@
     return opts;
   }
 
-  /* ----------------- PRASYARAT ----------------- */
+  /* ----------------- PREREQUISITES ----------------- */
   GEN.p1 = { pre: 'P1', lvl: 1, concepts: ['urutan'], make(seed) {
     const r = B.rng(seed);
     const kinds = [() => [-r.int(1, 15), -r.int(1, 15)], () => [-r.int(1, 9) / r.pick([2, 4, 5]), -r.int(1, 9) / r.pick([3, 4, 10])], () => [r.int(-9, 9) / 10, r.int(-99, 99) / 100]];
@@ -104,7 +104,7 @@
     return mk('p10', seed, { sec: 0, pre: 'P10', lvl: 1, type: 'num', concepts: ['eksp-log-dasar'], q: '$\\log_' + a + ' ' + vt + '=\\;?$', ans: k, sol: '$' + a + '^{' + k + '}=' + vt + '$.' });
   } };
 
-  /* ----------------- BAGIAN 1 ----------------- */
+  /* ----------------- SECTION 1 ----------------- */
   GEN.s1a = { sec: 1, lvl: 1, concepts: ['notasi-interval'], make(seed) {
     const r = B.rng(seed); const a = r.int(-8, 3), b = a + r.int(1, 7); const t = r.int(0, 3);
     const ca = r() < .5, cb = r() < .5;
@@ -118,7 +118,7 @@
   } };
   GEN.s1b = { sec: 1, lvl: 2, concepts: ['sifat-dasar'], make(seed) {
     const r = B.rng(seed); const k = r.int(-5, 5), a = r.nz(-4, 4), b = r.int(-6, 6); const rel = r.pick(REL);
-    // diketahui x rel k, tentukan himpunan nilai a x + b
+    // given x rel k, find the set of values of a x + b
     const lim = a * k + b;
     const out = a > 0 ? rel : flipRel[rel];
     const set = solveRel(out, lim);
@@ -129,7 +129,7 @@
   } };
   function solveRel(rel, k) { return rel === '<' ? [B.I(-Infinity, k, false, false)] : rel === '\\le' ? [B.I(-Infinity, k, false, true)] : rel === '>' ? [B.I(k, Infinity, false, false)] : [B.I(k, Infinity, true, false)]; }
 
-  /* ----------------- BAGIAN 2 ----------------- */
+  /* ----------------- SECTION 2 ----------------- */
   GEN.s2a = { sec: 2, lvl: 1, concepts: ['linear'], make(seed) {
     const r = B.rng(seed);
     let a = r.nz(-7, 7), c = r.nz(-7, 7); while (a === c) c = r.nz(-7, 7);
@@ -153,7 +153,7 @@
       hints: ['Kurangi ' + b + ' di ketiga ruas.', 'Bagi ketiga ruas dengan ' + a + (a < 0 ? ' dan balik kedua tanda.' : '.')], sol: '$' + B.toIneqTex(set) + '$.' });
   } };
 
-  /* ----------------- BAGIAN 3 ----------------- */
+  /* ----------------- SECTION 3 ----------------- */
   GEN.s3a = { sec: 3, lvl: 1, concepts: ['kuadrat'], make(seed) {
     const r = B.rng(seed); let p = r.int(-6, 5), q = p + r.int(1, 7);
     const lead = r() < 0.25 ? -1 : 1; const rel = r.pick(REL);
@@ -167,7 +167,7 @@
   } };
   GEN.s3b = { sec: 3, lvl: 2, concepts: ['kuadrat', 'diskriminan'], make(seed) {
     const r = B.rng(seed); const lead = r.pick([1, 1, -1]); const k = r.int(-4, 4); const m = r.int(1, 6); const rel = r.pick(REL);
-    // lead*((x-k)^2 + m)  -> D<0 ; atau kuadrat sempurna (m=0) sesekali
+    // lead*((x-k)^2 + m)  -> D<0 ; or occasionally a perfect square (m=0)
     const perf = r() < 0.35; const mm = perf ? 0 : m;
     const a = lead, b = -2 * k * lead, c = lead * (k * k + mm);
     const pred = x => relFn[rel](a * x * x + b * x + c, 0);
@@ -176,7 +176,7 @@
       hints: ['Hitung $D=b^2-4ac$.', perf ? 'Bentuknya kuadrat sempurna: $' + (lead < 0 ? '-' : '') + fac(k) + '^2$.' : '$D<0$: parabola tidak menyentuh sumbu-x.'], sol: '$D=' + (b * b - 4 * a * c) + '$. Jawaban: $' + B.toTex(set) + '$.' });
   } };
 
-  /* ----------------- BAGIAN 4 ----------------- */
+  /* ----------------- SECTION 4 ----------------- */
   GEN.s4a = { sec: 4, lvl: 2, concepts: ['tabel-tanda'], make(seed) {
     const r = B.rng(seed); const n = r.int(2, 3); const roots = r.shuffle([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4]).slice(0, n).sort((a, b) => a - b);
     const pw = roots.map(() => r() < 0.35 ? 2 : 1); if (pw.every(v => v === 2)) pw[0] = 1;
@@ -190,7 +190,7 @@
       hints: ['Daerah paling kanan bertanda +.', 'Berganti di akar berpangkat ganjil, tetap di akar berpangkat genap.', 'Cek titik-titik akar satu per satu.'], sol: 'Jawaban: $' + B.toTex(set) + '$.' });
   } };
 
-  /* ----------------- BAGIAN 5 ----------------- */
+  /* ----------------- SECTION 5 ----------------- */
   GEN.s5a = { sec: 5, lvl: 1, concepts: ['rasional', 'syarat-penyebut'], make(seed) {
     const r = B.rng(seed); let a = r.int(-6, 6), b = r.int(-6, 6); while (a === b) b = r.int(-6, 6);
     const rel = r.pick(REL);
@@ -214,7 +214,7 @@
       hints: ['Pindahkan ' + k + ' ke ruas kiri.', 'Satukan menjadi satu pecahan, lalu tabel tanda.'], sol: 'Jawaban: $' + B.toIneqTex(set) + '$.' });
   } };
 
-  /* ----------------- BAGIAN 6 ----------------- */
+  /* ----------------- SECTION 6 ----------------- */
   GEN.s6a = { sec: 6, lvl: 1, concepts: ['irasional', 'syarat-akar'], make(seed) {
     const r = B.rng(seed); const p = r.pick([1, 1, 2]); const q = r.int(-6, 6); const k = r.int(1, 4); const rel = r.pick(REL);
     // sqrt(p x - q) rel k
@@ -226,7 +226,7 @@
       hints: ['Syarat: $' + lin(p, -q) + '\\ge0$.', 'Ruas kanan positif, jadi boleh dikuadratkan.'], sol: 'Syarat $x\\ge' + T(dom) + '$. Kuadratkan: $' + lin(p, -q) + rel + ' ' + k * k + '$. Iris: $' + B.toTex(set) + '$.' });
   } };
 
-  /* ----------------- BAGIAN 7 ----------------- */
+  /* ----------------- SECTION 7 ----------------- */
   GEN.s7a = { sec: 7, lvl: 1, concepts: ['mutlak'], make(seed) {
     const r = B.rng(seed); const p = r.pick([1, 1, 2, 3, -1, -2]); const q = r.int(-6, 6); const neg = r() < 0.12; const k = neg ? -r.int(1, 3) : r.int(1, 6); const rel = r.pick(REL);
     const f = x => Math.abs(p * x + q);
@@ -239,16 +239,16 @@
       hints: neg ? ['Nilai mutlak tidak pernah negatif.'] : ['Ubah ke bentuk tanpa mutlak.', rel[0] === '<' || rel === '\\le' ? '$-' + k + rel + ' ' + lin(p, q) + rel + ' ' + k + '$' : '$' + lin(p, q) + flipRel[rel] + ' -' + k + '$ atau $' + lin(p, q) + rel + ' ' + k + '$'], sol: 'Jawaban: $' + B.toTex(set) + '$.' });
   } };
 
-  /* ----------------- BAGIAN 8 ----------------- */
+  /* ----------------- SECTION 8 ----------------- */
   GEN.s8a = { sec: 8, lvl: 1, concepts: ['eksponen'], make(seed) {
     const r = B.rng(seed); const base = r.pick([[2, '2', 2, 1], [3, '3', 3, 1], [0.5, '\\frac12', 1, 2], [1 / 3, '\\frac13', 1, 3]]); const p = r.pick([1, 1, 2, -1]); const q = r.int(-3, 3); const k = r.int(-2, 4); const rel = r.pick(REL);
     const bb = base[0];
-    // Ruas kanan = basis^k sebagai pecahan PERSIS (pembilang & penyebut dipangkatkan langsung), bukan desimal yang dibulatkan.
-    // Sebelumnya (1/3)^4 = 1/81 tampil sebagai "0.012", sehingga jawaban eksaknya bukan lagi kunci yang tersimpan.
+    // Right-hand side = base^k as an EXACT fraction (numerator & denominator raised directly), not a rounded decimal.
+    // Previously (1/3)^4 = 1/81 showed as "0.012", so the exact answer no longer matched the stored key.
     const num = k >= 0 ? Math.pow(base[2], k) : Math.pow(base[3], -k), den = k >= 0 ? Math.pow(base[3], k) : Math.pow(base[2], -k);
     const rhsT = den === 1 ? String(num) : '\\frac{' + num + '}{' + den + '}';
     const flip = B.solve(x => relFn[rel](p * x + q, k), [(k - q) / p]);
-    // catatan: untuk basis<1, a^f rel a^k <=> f rel' k (dibalik)
+    // note: for base<1, a^f rel a^k <=> f rel' k (flipped)
     const correct = bb > 1 ? flip : B.solve(x => relFn[flipRel[rel]](p * x + q, k), [(k - q) / p]);
     return mk('s8a', seed, { sec: 8, lvl: bb < 1 ? 2 : 1, type: 'interval', concepts: ['eksponen'], trap: bb < 1 ? 'basis-kecil' : undefined, q: 'Selesaikan $' + base[1] + '^{' + lin(p, q) + '}' + rel + ' ' + rhsT + '$.', ansSet: correct,
       wrong: bb < 1 ? [{ set: flip, why: 'Basis antara 0 dan 1: tanda harus dibalik.', trap: 'basis-kecil' }] : [],
@@ -265,11 +265,11 @@
       hints: ['Syarat numerus: $' + lin(1, -c) + '>0$.', '$' + k + '=\\log_{' + base[1] + '}' + T(N) + '$.' + (bb < 1 ? ' Basis < 1, balik tanda.' : '')], sol: 'Jawaban: $' + B.toIneqTex(correct) + '$.' });
   } };
 
-  /* ----------------- BAGIAN 9 ----------------- */
+  /* ----------------- SECTION 9 ----------------- */
   GEN.s9a = { sec: 9, lvl: 1, concepts: ['sptldv'], make(seed) {
     const r = B.rng(seed); const a = r.int(1, 4), b = r.int(1, 4), c = r.int(6, 14);
     const pts = []; const ok = (x, y) => a * x + b * y <= c && x >= 0 && y >= 0;
-    // satu titik benar
+    // one correct point
     let good; for (let i = 0; i < 50 && !good; i++) { const x = r.int(0, 5), y = r.int(0, 5); if (ok(x, y)) good = [x, y]; }
     if (!good) good = [0, 0];
     const bads = []; for (let i = 0; i < 200 && bads.length < 3; i++) { const x = r.int(-2, 7), y = r.int(-1, 7); if (!ok(x, y) && !bads.some(p => p[0] === x && p[1] === y)) bads.push([x, y]); }
@@ -279,7 +279,7 @@
   } };
 
 
-  /* ----------------- LINTAS BAB ----------------- */
+  /* ----------------- CROSS-CHAPTER ----------------- */
   GEN.x1 = { sec: 6, lvl: 4, concepts: ['rasional', 'syarat-akar', 'lintas'], make(seed) {
     const r = B.rng(seed); let a = r.int(-6, 6), b = r.int(-6, 6); while (a === b) b = r.int(-6, 6);
     const set = B.solve(x => x !== b && (x - a) / (x - b) >= 0, [a, b]);
@@ -298,7 +298,7 @@
     return mk('x3', seed, { sec: 8, lvl: 3, lintas: 1, mode: ['utbk'], type: 'interval', concepts: ['logaritma', 'kuadrat', 'lintas'], trap: 'syarat-numerus', q: 'Tentukan domain $f(x)=\\log(' + poly2(1, -(p + q), p * q) + ')$.', ansSet: set, hints: ['Numerus harus $>0$.'], sol: '$' + fac(p) + fac(q) + '>0$ → $' + B.toTex(set) + '$.' });
   } };
 
-  /* Peta: generator mana untuk bagian & level apa */
+  /* Map: which generator for which section & level */
   C.GEN_BY_SEC = { 1: ['s1a', 's1b'], 2: ['s2a', 's2b'], 3: ['s3a', 's3b'], 4: ['s4a'], 5: ['s5a', 's5b'], 6: ['s6a'], 7: ['s7a'], 8: ['s8a', 's8b'], 9: ['s9a'] };
   C.GEN_BY_PRE = { P1: ['p1'], P2: ['p2'], P3: ['p3'], P4: ['p4'], P5: ['p5'], P6: [], P7: ['p7'], P8: [], P9: ['p9'], P10: ['p10'] };
   C.makeGen = function (name, seed) { const g = GEN[name]; if (!g) return null; try { return g.make(seed >>> 0); } catch (e) { console.error('gen', name, e); return null; } };

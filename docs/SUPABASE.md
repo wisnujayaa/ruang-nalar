@@ -1,49 +1,56 @@
-# Menghubungkan Supabase
+# Connecting Supabase
 
-Supabase menyediakan database Postgres + sistem login. Paket gratisnya cukup untuk kelas kecil sampai menengah. Situs tetap 100% statis; browser berbicara langsung ke Supabase, dan **keamanan dijaga oleh Row Level Security (RLS)** di database, bukan oleh kode JavaScript.
+Supabase provides a Postgres database plus authentication. The free tier is enough for small to medium classes. The site stays 100% static: the browser talks to Supabase directly, and **security is enforced by Row Level Security (RLS)** in the database, not by JavaScript.
 
-## 1. Buat proyek
-1. Daftar di <https://supabase.com>, klik **New project**.
-2. Pilih region terdekat (misalnya Singapore), simpan sandi database di tempat aman.
+## 1. Create a project
+1. Sign up at <https://supabase.com> and click **New project**.
+2. Pick the nearest region (e.g. Singapore) and keep the database password somewhere safe.
 
-## 2. Pasang skema
-1. Buka **SQL Editor → New query**.
-2. Tempel seluruh isi `supabase/schema.sql`, klik **Run**.
-   Skrip ini aman dijalankan ulang (memakai `if not exists` / `create or replace`).
-3. Jalankan juga `supabase/courses.sql` (tabel kursus buatan guru untuk Studio kursus), lalu `supabase/roles.sql` (peran siswa/guru/admin), lalu `supabase/course-access.sql` (akses kursus: draf / khusus kelas / tautan / publik), dan `supabase/reports.sql` (laporan kendala; notifikasi email/WA di [LAPORAN.md](LAPORAN.md)).
-4. Jadikan akunmu **admin** (setelah mendaftar di situs). Di SQL Editor:
+## 2. Install the schema
+1. Open **SQL Editor → New query**.
+2. Paste all of `supabase/schema.sql` and click **Run**.
+   The script is safe to re-run (`if not exists` / `create or replace`).
+3. Then run, in order:
+   - `supabase/courses.sql`: teacher-made courses for the Course Studio
+   - `supabase/roles.sql`: student / teacher / admin roles
+   - `supabase/course-access.sql`: course access (draft / class-only / unlisted / public)
+   - `supabase/reports.sql`: problem reports (email notifications: [REPORTS.md](REPORTS.md))
+   - `supabase/hardening.sql`: least-privilege column grants, size limits, class-code attempt limits
+4. Make your account **admin** (after signing up on the site). In the SQL Editor:
    ```sql
    update public.profiles set role = 'admin'
-   where id = (select id from auth.users where email = 'email-kamu@contoh.com');
+   where id = (select id from auth.users where email = 'you@example.com');
    ```
-   Setelah itu admin bisa mengangkat guru lewat **Akun → Kelola pengguna** di situs, tanpa SQL lagi.
+   After that, the admin promotes teachers from **Akun → Kelola pengguna** (Account → Manage users) on the site, no more SQL needed.
 
-### Peran akun
-| Peran | Bisa |
+### Roles
+| Role | Can |
 |---|---|
-| Siswa (bawaan) | belajar, membuat/bergabung kelas, forum |
-| Guru | + membuat kursus di Studio |
-| Admin | + mengubah peran pengguna lain (minimal selalu ada satu admin) |
+| Student (default) | learn, create/join classes, use forums |
+| Teacher | + create courses in the Studio |
+| Admin | + change other users' roles (there is always at least one admin) |
 
-Peran disimpan di `profiles.role` dan **tidak bisa diubah sendiri** oleh pengguna (hak kolom hanya `display_name`); perubahan hanya lewat fungsi `admin_set_role` yang memeriksa admin. Diuji di `supabase/test-rls-roles.sql`.
+Roles live in `profiles.role` and **users cannot change their own** (the only writable column is `display_name`); changes go through `admin_set_role`, which checks for an admin. Tested in `supabase/test-rls-roles.sql`.
 
-Yang dibuat:
+What gets created:
 
-| Tabel | Isi | Siapa boleh membaca |
+| Table | Contents | Who can read |
 |---|---|---|
-| `profiles` | nama tampilan | diri sendiri + orang sekelas |
-| `progress` | progres per (pengguna, kursus), JSON | diri sendiri + guru kelas **untuk kursus kelas itu saja** |
-| `classes` | kelas, kode gabung 6 huruf | guru + anggota |
-| `class_members` | keanggotaan | orang di kelas itu |
-| `assignments` | tugas + target + tenggat | orang di kelas; hanya guru yang menulis |
-| `forum_threads`, `forum_posts` | forum | orang di kelas; ubah/hapus milik sendiri; guru memoderasi; hanya guru yang bisa menyematkan |
-| `messages` | pesan guru → siswa | pengirim & penerima; hanya guru dari kelas yang sama yang boleh mengirim |
-| `courses` | kursus buatan guru (Studio) | publik/bertautan: semua orang; khusus kelas: pemilik + anggota kelas milik pemilik yang memakainya; draf: pemilik saja. Kelas hanya boleh memakai kursus terkunci miliknya sendiri (trigger). Hanya pemilik yang mengubah/menghapus |
+| `profiles` | display name, role | yourself + classmates |
+| `progress` | progress per (user, course), JSON | yourself + class teachers **for that class's course only** |
+| `classes` | classes, 6-character join code | teacher + members |
+| `class_members` | membership | people in that class |
+| `assignments` | assignment + target + due date | people in the class; only the teacher writes |
+| `forum_threads`, `forum_posts` | forum | people in the class; edit/delete your own; teachers moderate; only teachers pin |
+| `messages` | teacher → student messages | sender & recipient; only a teacher of a shared class may send |
+| `courses` | teacher-made courses (Studio) | public/unlisted: everyone; class-only: owner + members of the owner's classes that use it; draft: owner only. A class may only use a locked course its owner owns (trigger). Only the owner edits/deletes |
+| `reports` | problem reports | reporter (own reports) + admins |
+| `join_attempts` | wrong class-code attempts | nobody through the API (used by `join_class`) |
 
-Siswa bergabung lewat fungsi `join_class(kode)`, jadi tidak ada yang bisa menambahkan diri ke kelas tanpa kode.
+Students join through `join_class(code)`, so nobody can add themselves to a class without the code.
 
-## 3. Isi `config.js`
-**Project Settings → API**, salin:
+## 3. Fill in `config.js`
+From **Project Settings → API**, copy:
 - **Project URL** → `supabaseUrl`
 - **anon public** key → `supabaseAnonKey`
 
@@ -55,25 +62,27 @@ window.NALAR_CONFIG = {
 };
 ```
 
-Anon key memang dirancang untuk publik (ada di setiap situs yang memakai Supabase). Yang **tidak boleh** pernah masuk repo: `service_role` key dan sandi database.
+The anon key is designed to be public (every Supabase site ships it). What must **never** go into the repo: the `service_role` key and the database password.
 
-## 4. Atur autentikasi
+## 4. Configure authentication
 **Authentication → URL Configuration**:
-- **Site URL**: alamat situsmu, misalnya `https://username.github.io/ruang-nalar/`
-- **Redirect URLs**: tambahkan alamat yang sama (dan `http://localhost:8765/` untuk uji lokal)
+- **Site URL**: your site address without a trailing slash, e.g. `https://ruang-nalar.pages.dev`
+- **Redirect URLs**: add `https://ruang-nalar.pages.dev/**` (and `http://localhost:8765/**` for local testing). List only addresses you own.
 
-**Authentication → Providers → Email**: biarkan aktif. "Confirm email" sebaiknya tetap menyala; pengguna baru menerima email konfirmasi sebelum bisa masuk. Batas email bawaan Supabase kecil (beberapa email per jam); untuk kelas besar, sambungkan SMTP sendiri di **Authentication → SMTP Settings**.
+**Authentication → Sign In / Providers → Email**: keep it enabled with "Confirm email" on, and set the minimum password length to 8.
 
-## 5. Coba
-1. Buka situs, **Akun → Masuk/daftar**, buat akun guru.
-2. **Kelas → Buat kelas baru**, pilih kursus. Salin kode atau tautan undangan.
-3. Di browser lain (atau jendela penyamaran), daftar sebagai siswa, buka tautan undangan, **Gabung**.
-4. Siswa mengerjakan latihan; guru membuka **Kelas → Progres** dan **Tugas** untuk melihat statusnya.
+**Emails:** Supabase's built-in sender is for testing only (it may refuse non-team addresses and allows only a few emails per hour). Configure your own SMTP and paste the code-based templates; see [EMAIL.md](EMAIL.md). Google sign-in, which needs no confirmation email at all, is described there too.
 
-## Menguji keamanan (opsional, untuk pengembang)
-`tests/run-rls.sh` menjalankan skenario guru / dua siswa / orang luar di Postgres **lokal yang kosong** (membuat skema `auth` tiruan), dan gagal jika ada akses yang bocor. Jangan arahkan ke database produksi.
+## 5. Try it
+1. Open the site, **Akun → Masuk/Daftar** (Account → Sign in/Sign up), and create a teacher account.
+2. **Kelas → Buat kelas baru** (Classes → New class), pick a course, and copy the code or invite link.
+3. In another browser (or a private window), sign up as a student, open the invite link, and press **Gabung** (Join).
+4. The student practises; the teacher opens the class's **Progres** and **Tugas** tabs to see the status.
 
-## Batasan yang perlu diketahui
-- Progres disimpan sebagai satu dokumen JSON per (pengguna, kursus), dipangkas otomatis bila terlalu besar (riwayat jawaban terlama dibuang).
-- Pesan dicek setiap 60 detik (bukan real-time).
-- Pengguna yang belum masuk tetap bisa belajar; progresnya digabung ke akun saat pertama kali masuk di perangkat itu.
+## Security tests (optional, for developers)
+`tests/run-rls.sh` runs teacher / two students / outsider scenarios on an **empty local Postgres** (it creates a fake `auth` schema) and fails on any leaked access. Never point it at a production database.
+
+## Known limitations
+- Progress is stored as one JSON document per (user, course) and trimmed automatically when too large (the oldest answers are dropped; capped at 600 KB by a database constraint).
+- Messages are polled every 60 seconds (not real-time).
+- Signed-out visitors can still learn; their progress is merged into the account on the first sign-in on that device.

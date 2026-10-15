@@ -1,4 +1,4 @@
-/* Batas — bank soal tambahan: HOTS UTBK, ujian mandiri, lintas bab, olimpiade/kuliah (L6) */
+/* Pertidaksamaan — extra question bank: HOTS/UTBK, university entrance, cross-chapter, olympiad/college (L6) */
 (function (G) {
   'use strict';
   const C = G.BC = G.BC || {};
@@ -6,7 +6,7 @@
   const Q = (o) => { o.mode = o.mode || ['sekolah']; B[o.id] = o; };
   const U = ['utbk'], M = ['mandiri'], UM = ['utbk', 'mandiri'], O = ['olimpiade'];
 
-  /* ---------------- Bagian 1 ---------------- */
+  /* ---------------- Section 1 ---------------- */
   Q({ id: 's1-u1', sec: 1, lvl: 4, mode: U, type: 'tf', concepts: ['sifat-dasar'], q: '$x$ dan $y$ bilangan real dengan $x<y$. Pernyataan mana yang <b>pasti</b> benar?', stmts: [
     { t: '$x-5<y-5$', v: true, why: 'Mengurangi bilangan yang sama tidak mengubah tanda.' }, { t: '$x^3<y^3$', v: true, why: 'Fungsi pangkat tiga selalu naik, jadi urutan terjaga, termasuk untuk bilangan negatif.' },
     { t: '$|x|<|y|$', v: false, why: 'Contoh $x=-3$, $y=1$: $3<1$ salah.' }, { t: '$2^x<2^y$', v: true, why: 'Basis 2 > 1, fungsi naik.' }] });
@@ -22,7 +22,7 @@
     { t: '$a<\\sqrt{ab}<\\frac{a+b}2<b$', ok: 1 }, { t: '$a<\\frac{a+b}2<\\sqrt{ab}<b$', why: 'Coba $a=1, b=9$: $\\sqrt{ab}=3$, $\\frac{a+b}2=5$.' },
     { t: '$\\sqrt{ab}<a<b<\\frac{a+b}2$', why: 'Rata-rata selalu di antara kedua bilangan.' }, { t: '$a<\\sqrt{ab}=\\frac{a+b}2<b$', why: 'Sama hanya jika $a=b$.' }], hints: ['Coba angka: $a=1$, $b=9$.'], sol: 'Untuk $a=1,b=9$: $1<3<5<9$. Secara umum AM ≥ GM dan keduanya di antara $a$ dan $b$.' });
 
-  /* ---------------- Bagian 2 ---------------- */
+  /* ---------------- Section 2 ---------------- */
   Q({ id: 's2-u1', sec: 2, lvl: 4, mode: U, type: 'num', concepts: ['soal-cerita'], q: 'Taksi: tarif awal Rp7.000 lalu Rp4.000 per km. Dengan uang Rp50.000, jarak <b>terjauh</b> (km, bilangan bulat) yang bisa ditempuh adalah…', ans: 10, wrong: [{ v: 11, why: '11 km butuh Rp51.000, melebihi uangmu.' }], sol: '$7000+4000d\\le50000 \\Rightarrow d\\le10{,}75$. Bulat terbesar 10.' });
   Q({ id: 's2-u2', sec: 2, lvl: 4, mode: U, type: 'tf', concepts: ['soal-cerita', 'linear'], q: 'Tabungan Andi Rp150.000, bertambah Rp20.000 per minggu. Tabungan Budi Rp60.000, bertambah Rp35.000 per minggu. Tentukan benar/salah:', stmts: [
     { t: 'Setelah 6 minggu tabungan mereka sama', v: true, why: '150 + 120 = 60 + 210 = 270 (ribu).' }, { t: 'Mulai minggu ke-7 tabungan Budi lebih banyak', v: true, why: '$60+35n>150+20n \\iff n>6$.' },
@@ -35,7 +35,7 @@
   Q({ id: 's2-m2', sec: 2, lvl: 5, mode: M, type: 'num', concepts: ['linear', 'parameter'], q: 'Penyelesaian $3x-a\\le x+5$ adalah $x\\le4$. Nilai $a$ adalah…', ans: 3, sol: '$2x\\le a+5 \\Rightarrow x\\le\\frac{a+5}2=4 \\Rightarrow a=3$.' });
   Q({ id: 's2-m3', sec: 2, lvl: 5, mode: M, type: 'interval', concepts: ['berantai'], q: 'Selesaikan $2\\le\\frac{3x-1}{4}<5$.', ans: '[3,7)', pred: x => 2 <= (3 * x - 1) / 4 && (3 * x - 1) / 4 < 5, sol: '$8\\le3x-1<20 \\Rightarrow 9\\le3x<21 \\Rightarrow 3\\le x<7$.' });
 
-  /* ---------------- Bagian 3 ---------------- */
+  /* ---------------- Section 3 ---------------- */
   Q({ id: 's3-u1', sec: 3, lvl: 4, mode: U, type: 'num', concepts: ['kuadrat'], q: 'Banyak bilangan bulat $n$ yang memenuhi $n^2<2n+15$ adalah…', ans: 7, sol: '$n^2-2n-15<0 \\Rightarrow (n-5)(n+3)<0 \\Rightarrow -3<n<5$: −2 sampai 4, ada 7.' });
   Q({ id: 's3-u2', sec: 3, lvl: 4, mode: U, type: 'mc', concepts: ['diskriminan'], trap: 'd-negatif', q: 'Grafik $f(x)=x^2-6x+c$ selalu di atas sumbu-x. Nilai $c$ yang memenuhi…', opts: [
     { t: '$c>9$', ok: 1 }, { t: '$c\\ge9$', why: 'Saat $c=9$, $f(3)=0$: menyentuh sumbu-x, bukan di atasnya.', trap: 'titik-ujung' }, { t: '$c<9$', why: 'Itu membuat $D>0$: memotong sumbu-x.' }, { t: '$c>0$', why: 'Coba $c=1$: $f(3)=-8$.' }], sol: '$D=36-4c<0 \\Rightarrow c>9$.' });
@@ -48,7 +48,7 @@
   Q({ id: 's3-m3', sec: 3, lvl: 5, mode: M, type: 'num', concepts: ['parameter', 'diskriminan'], q: 'Bilangan bulat <b>terbesar</b> $a$ agar $x^2+ax+9>0$ untuk semua $x$ real adalah…', ans: 5, wrong: [{ v: 6, why: '$a=6$: $(x+3)^2>0$ gagal di $x=-3$.', trap: 'kuadrat-sempurna' }], sol: '$a^2-36<0 \\Rightarrow -6<a<6$.' });
   Q({ id: 's3-o1', sec: 3, lvl: 6, mode: O, type: 'num', concepts: ['parameter', 'diskriminan'], q: 'Banyak bilangan bulat $a$ sehingga pertidaksamaan $x^2-ax+a+3<0$ <b>tidak mempunyai</b> penyelesaian real adalah…', ans: 9, hints: ['Tidak ada penyelesaian berarti $x^2-ax+a+3\\ge0$ untuk semua $x$.'], sol: 'Butuh $D\\le0$: $a^2-4a-12\\le0 \\Rightarrow -2\\le a\\le6$: 9 bilangan.' });
 
-  /* ---------------- Bagian 4 ---------------- */
+  /* ---------------- Section 4 ---------------- */
   Q({ id: 's4-u1', sec: 4, lvl: 4, mode: U, type: 'num', concepts: ['polinomial'], q: 'Banyak bilangan bulat $x$ yang memenuhi $(x^2-4)(x^2-9)<0$ adalah…', ans: 0, hints: ['Anggap $p=x^2$.'], sol: '$(p-4)(p-9)<0 \\Rightarrow 4<x^2<9$: $2<|x|<3$. Tidak ada bilangan bulat.' });
   Q({ id: 's4-u2', sec: 4, lvl: 4, mode: UM, type: 'interval', concepts: ['tabel-tanda'], trap: 'bagi-x', q: 'Selesaikan $x^3\\ge4x^2$.', ans: '{0}u[4,inf)', pred: x => x ** 3 >= 4 * x * x, wrong: [{ a: '[4,inf)', why: 'Kamu membagi $x^2$. Padahal $x=0$ memenuhi: $0\\ge0$.', trap: 'bagi-x' }], sol: '$x^2(x-4)\\ge0$: $x=0$ atau $x\\ge4$.' });
   Q({ id: 's4-u3', sec: 4, lvl: 4, mode: U, type: 'tf', concepts: ['tabel-tanda'], q: '$p(x)=(x+1)^2(x-2)(x-5)$. Tentukan benar/salah:', stmts: [
@@ -58,7 +58,7 @@
   Q({ id: 's4-m2', sec: 4, lvl: 5, mode: M, type: 'interval', concepts: ['tabel-tanda'], q: 'Selesaikan $(x-1)(x-2)(x-3)(x-4)>0$.', ans: '(-inf,1)u(2,3)u(4,inf)', pred: x => (x - 1) * (x - 2) * (x - 3) * (x - 4) > 0, sol: 'Empat akar sederhana. Dari kanan: +, −, +, −, +.' });
   Q({ id: 's4-o1', sec: 4, lvl: 6, mode: O, type: 'num', concepts: ['tabel-tanda', 'pembuktian'], q: 'Berapa banyak bilangan bulat $n$ dengan $1\\le n\\le100$ yang memenuhi $(n-1)(n-3)(n-5)\\cdots(n-99)<0$? (50 faktor, semua bilangan ganjil 1 sampai 99)', ans: 25, hints: ['Untuk $n$ ganjil, salah satu faktor nol.', 'Untuk $n$ genap, hitung berapa faktor yang negatif.'], sol: '$n$ genap: faktor negatif ada $\\frac{100-n}{2}$ buah. Ganjil jika $n\\equiv2 \\pmod 4$: 2, 6, …, 98 → 25 bilangan.'.replace('\\pmod 4', '\\ (\\text{mod }4)') });
 
-  /* ---------------- Bagian 5 ---------------- */
+  /* ---------------- Section 5 ---------------- */
   Q({ id: 's5-u1', sec: 5, lvl: 4, mode: U, type: 'interval', concepts: ['rasional'], trap: 'kali-silang', q: 'Selesaikan $\\frac{2x-1}{x+2}\\ge1$.', ans: '(-inf,-2)u[3,inf)', pred: x => x !== -2 && (2 * x - 1) / (x + 2) >= 1, wrong: [{ a: '[3,inf)', why: 'Itu hasil kali silang. Coba $x=-3$: $\\frac{-7}{-1}=7\\ge1$ benar.', trap: 'kali-silang' }], sol: '$\\frac{x-3}{x+2}\\ge0 \\Rightarrow x<-2$ atau $x\\ge3$.' });
   Q({ id: 's5-u2', sec: 5, lvl: 4, mode: U, type: 'tf', concepts: ['rasional'], q: '$f(x)=\\frac{x-1}{x+3}$. Tentukan benar/salah:', stmts: [
     { t: '$f(x)<0$ untuk $-3<x<1$', v: true, why: 'Pembilang negatif, penyebut positif.' }, { t: '$f(-3)$ tidak terdefinisi', v: true, why: 'Penyebut nol.' },
@@ -68,7 +68,7 @@
   Q({ id: 's5-m2', sec: 5, lvl: 5, mode: M, type: 'interval', concepts: ['rasional'], q: 'Selesaikan $\\frac{1}{x-1}>\\frac{1}{x+1}$.', ans: '(-inf,-1)u(1,inf)', pred: x => x !== 1 && x !== -1 && 1 / (x - 1) > 1 / (x + 1), sol: '$\\frac{2}{(x-1)(x+1)}>0 \\Rightarrow x^2>1$.' });
   Q({ id: 's5-m3', sec: 5, lvl: 5, mode: M, type: 'interval', concepts: ['rasional'], trap: 'kali-variabel', q: 'Selesaikan $\\frac{x}{x-1}\\ge x$.', ans: '(-inf,0]u(1,2]', pred: x => x !== 1 && x / (x - 1) >= x - 1e-12, hints: ['Jangan bagi dengan $x$!', '$\\frac{x}{x-1}-x=\\frac{-x(x-2)}{x-1}$.'], sol: '$\\frac{x(x-2)}{x-1}\\le0$: titik 0, 1, 2. Jawaban $(-\\infty,0]\\cup(1,2]$.' });
 
-  /* ---------------- Bagian 6 ---------------- */
+  /* ---------------- Section 6 ---------------- */
   Q({ id: 's6-u1', sec: 6, lvl: 4, mode: U, type: 'num', concepts: ['irasional'], q: 'Banyak bilangan bulat $x$ yang memenuhi $\\sqrt{x+5}\\ge x+3$ adalah…', ans: 5, sol: 'Syarat $x\\ge-5$. Kasus $x<-3$: otomatis → $[-5,-3)$. Kasus $x\\ge-3$: $x+5\\ge(x+3)^2 \\Rightarrow x^2+5x+4\\le0 \\Rightarrow [-4,-1]$, iris → $[-3,-1]$. Gabung $[-5,-1]$: 5 bilangan.' });
   Q({ id: 's6-u2', sec: 6, lvl: 4, mode: U, type: 'tf', concepts: ['irasional', 'syarat-akar'], q: 'Tentang $\\sqrt{x-2}<3$, tentukan benar/salah:', stmts: [
     { t: '$x=2$ memenuhi', v: true, why: '$\\sqrt0=0<3$.' }, { t: '$x=11$ memenuhi', v: false, why: '$\\sqrt9=3$, dan $3<3$ salah.' },
@@ -78,7 +78,7 @@
   Q({ id: 's6-m2', sec: 6, lvl: 5, mode: M, type: 'interval', concepts: ['irasional'], trap: 'kuadrat-ruas-negatif', q: 'Selesaikan $\\sqrt{x-1}>3-x$.', ans: '(2,inf)', pred: x => x - 1 >= 0 && Math.sqrt(x - 1) > 3 - x + 1e-12, sol: 'Kasus $x>3$: otomatis. Kasus $1\\le x\\le3$: $x-1>(3-x)^2 \\Rightarrow (x-2)(x-5)<0$ → $(2,3]$. Gabung $(2,\\infty)$.' });
   Q({ id: 's6-o1', sec: 6, lvl: 6, mode: O, type: 'num', concepts: ['irasional', 'pembuktian'], q: 'Banyak bilangan bulat $x$ yang memenuhi $\\sqrt{x+10}-\\sqrt{x+1}>1$ adalah…', ans: 16, hints: ['Pindahkan: $\\sqrt{x+10}>1+\\sqrt{x+1}$. Kedua ruas positif, kuadratkan.'], sol: 'Syarat $x\\ge-1$. $x+10>x+2+2\\sqrt{x+1} \\Rightarrow \\sqrt{x+1}<4 \\Rightarrow x<15$. Bulat: −1 sampai 14 → 16.' });
 
-  /* ---------------- Bagian 7 ---------------- */
+  /* ---------------- Section 7 ---------------- */
   Q({ id: 's7-u1', sec: 7, lvl: 4, mode: U, type: 'num', concepts: ['mutlak'], q: 'Banyak bilangan bulat $x$ yang memenuhi $|2x-3|\\le7$ adalah…', ans: 8, sol: '$-7\\le2x-3\\le7 \\Rightarrow -2\\le x\\le5$: 8 bilangan.' });
   Q({ id: 's7-u2', sec: 7, lvl: 4, mode: U, type: 'tf', concepts: ['mutlak', 'soal-cerita'], q: 'Suhu ideal ruang server memenuhi $|T-22|\\le3$ (°C). Tentukan benar/salah:', stmts: [
     { t: '19 °C masih ideal', v: true, why: '$|19-22|=3\\le3$.' }, { t: '25,5 °C masih ideal', v: false, why: '$|25{,}5-22|=3{,}5>3$.' },
@@ -91,7 +91,7 @@
   Q({ id: 's7-o1', sec: 7, lvl: 6, mode: O, type: 'num', concepts: ['mutlak'], q: 'Banyak bilangan bulat $x$ yang memenuhi $\\big||x-3|-2\\big|\\le1$ adalah…', ans: 6, hints: ['Buka mutlak luar dulu: $-1\\le|x-3|-2\\le1$.'], sol: '$1\\le|x-3|\\le3$: $x\\in[0,2]\\cup[4,6]$ → 0, 1, 2, 4, 5, 6.' });
   Q({ id: 's7-o2', sec: 7, lvl: 6, mode: O, type: 'num', concepts: ['mutlak', 'pembuktian'], q: '<b>(Kalkulus)</b> Agar $|x-2|<\\delta$ menjamin $|3x-6|<0{,}3$, nilai $\\delta$ terbesar adalah…', ans: 0.1, tol: 1e-9, sol: '$|3x-6|=3|x-2|<3\\delta\\le0{,}3 \\Rightarrow \\delta=0{,}1$.' });
 
-  /* ---------------- Bagian 8 ---------------- */
+  /* ---------------- Section 8 ---------------- */
   Q({ id: 's8-u1', sec: 8, lvl: 4, mode: U, type: 'num', concepts: ['eksponen', 'soal-cerita'], q: 'Investasi Rp10 juta tumbuh 10% per tahun (bunga majemuk). Paling sedikit berapa tahun agar nilainya <b>lebih dari</b> Rp20 juta? (gunakan $\\log 2\\approx0{,}301$, $\\log1{,}1\\approx0{,}0414$)', unit: 'tahun', ans: 8, sol: '$1{,}1^n>2 \\Rightarrow n>\\frac{\\log2}{\\log1{,}1}\\approx7{,}27$. Bulat terkecil 8.' });
   Q({ id: 's8-u2', sec: 8, lvl: 4, mode: U, type: 'mc', concepts: ['eksponen', 'kuadrat'], q: 'Penyelesaian $3^{2x}-10\\cdot3^x+9\\le0$ adalah…', opts: [
     { t: '$0\\le x\\le2$', ok: 1 }, { t: '$1\\le x\\le9$', why: 'Itu batas untuk $p=3^x$. Kembalikan ke $x$.' }, { t: '$x\\le0$ atau $x\\ge2$', why: 'Untuk ≤ 0 ambil di antara.' }, { t: '$0<x<2$', why: 'Tanda ≤ membuat ujung ikut.' }], sol: '$p=3^x$: $(p-1)(p-9)\\le0 \\Rightarrow 1\\le3^x\\le9 \\Rightarrow 0\\le x\\le2$.' });
@@ -103,7 +103,7 @@
   Q({ id: 's8-m3', sec: 8, lvl: 5, mode: M, type: 'interval', concepts: ['logaritma'], q: 'Selesaikan $\\log_x 4<2$ (basis $x$).', ans: '(0,1)u(2,inf)', pred: x => x > 0 && Math.abs(x - 1) > 1e-12 && Math.log(4) / Math.log(x) < 2 - 1e-12, hints: ['Basis harus positif dan bukan 1.', 'Pecah kasus $x>1$ dan $0<x<1$.'], sol: '$x>1$: $4<x^2 \\Rightarrow x>2$. $0<x<1$: $\\log_x4<0<2$ selalu. Gabung.' });
   Q({ id: 's8-o1', sec: 8, lvl: 6, mode: O, type: 'num', concepts: ['eksponen', 'pembuktian'], q: 'Bilangan asli terkecil $n$ yang memenuhi $2^n>n^2+100$ adalah…', ans: 8, sol: '$n=7$: $128$ vs $149$ (belum). $n=8$: $256>164$ ✓.' });
 
-  /* ---------------- Bagian 9 ---------------- */
+  /* ---------------- Section 9 ---------------- */
   Q({ id: 's9-u1', sec: 9, lvl: 4, mode: U, type: 'num', concepts: ['sptldv', 'soal-cerita'], q: 'Meja butuh 3 jam kerja dan 2 papan; kursi butuh 1 jam dan 2 papan. Tersedia 18 jam dan 16 papan. Untung meja Rp50 ribu, kursi Rp30 ribu. Untung maksimum (ribu rupiah)?', ans: 340, hints: ['Model: $3x+y\\le18$, $2x+2y\\le16$.', 'Perpotongan: $(5,3)$.'], sol: 'Pojok: $(6,0)=300$, $(5,3)=340$, $(0,8)=240$.' });
   Q({ id: 's9-u2', sec: 9, lvl: 4, mode: U, type: 'num', concepts: ['sptldv'], q: 'Luas daerah penyelesaian $x+y\\ge4$, $x\\le3$, $y\\le3$ adalah… satuan luas', ans: 2, sol: 'Segitiga dengan titik $(1,3)$, $(3,1)$, $(3,3)$: alas 2, tinggi 2, luas 2.' });
   Q({ id: 's9-u3', sec: 9, lvl: 4, mode: U, type: 'tf', concepts: ['sptldv'], q: 'Daerah $y\\ge x$, $y\\le4$, $x\\ge0$. Tentukan benar/salah:', stmts: [
@@ -113,7 +113,7 @@
   Q({ id: 's9-o1', sec: 9, lvl: 6, mode: O, type: 'num', concepts: ['sptldv', 'pembuktian'], q: 'Banyak pasangan bilangan bulat <b>positif</b> $(x,y)$ dengan $3x+5y\\le30$ adalah…', ans: 23, hints: ['Hitung per nilai $y$.'], sol: '$y=1$: 8, $y=2$: 6, $y=3$: 5, $y=4$: 3, $y=5$: 1. Total 23.' });
   Q({ id: 's9-o2', sec: 9, lvl: 6, mode: O, type: 'num', concepts: ['sptldv', 'mutlak'], q: 'Banyak titik $(x,y)$ dengan $x,y$ bulat yang memenuhi $|x|+|y|\\le3$ adalah…', ans: 25, hints: ['Daerahnya berbentuk belah ketupat.'], sol: 'Per $x$: $x=0$: 7 nilai $y$; $x=\\pm1$: 5; $\\pm2$: 3; $\\pm3$: 1. Total $7+2(5+3+1)=25$.' });
 
-  /* ---------------- Bagian 10: tantangan ---------------- */
+  /* ---------------- Section 10: challenge ---------------- */
   Q({ id: 's10-pre', sec: 10, lvl: 4, type: 'mc', concepts: ['amgm'], q: 'Untuk $x>0$, nilai <b>terkecil</b> dari $x+\\frac1x$ adalah…', opts: [
     { t: '2', ok: 1 }, { t: '0', why: 'Kedua suku positif, jumlahnya pasti positif.' }, { t: '1', why: 'Coba $x=1$: $1+1=2$.' }, { t: 'tidak ada minimum', why: 'Ada, dicapai di $x=1$.' }], sol: '$x+\\frac1x\\ge2\\sqrt{x\\cdot\\frac1x}=2$, sama saat $x=1$.' });
   Q({ id: 's10-l4-1', sec: 10, lvl: 4, mode: UM, type: 'num', concepts: ['amgm'], q: 'Nilai minimum $x+\\frac9x$ untuk $x>0$ adalah…', ans: 6, sol: '$\\ge2\\sqrt9=6$, saat $x=3$.' });
@@ -138,7 +138,7 @@
     sol: '$2(a^2+b^2+c^2)-2(ab+bc+ca)=(a-b)^2+(b-c)^2+(c-a)^2\\ge0$.' });
   Q({ id: 's10-l6-8', sec: 10, lvl: 6, mode: O, type: 'num', concepts: ['amgm'], q: 'Nilai minimum $x+\\frac4{x-1}$ untuk $x>1$ adalah…', ans: 5, hints: ['Tulis $x=(x-1)+1$.'], sol: '$(x-1)+\\frac4{x-1}+1\\ge2\\cdot2+1=5$, saat $x=3$.' });
 
-  /* ---------------- Lintas bab ---------------- */
+  /* ---------------- Cross-chapter ---------------- */
   const X = (o) => Q(Object.assign({ mode: UM, lintas: 1 }, o, { concepts: (o.concepts || []).concat(['lintas']) }));
   X({ id: 'x-1', sec: 6, lvl: 4, type: 'interval', concepts: ['rasional', 'syarat-akar'], q: 'Domain $f(x)=\\sqrt{\\frac{x+2}{3-x}}$ adalah…', ans: '[-2,3)', pred: x => x !== 3 && (x + 2) / (3 - x) >= 0, sol: 'Isi akar $\\ge0$ dan $x\\ne3$: $\\frac{x+2}{3-x}\\ge0 \\Rightarrow -2\\le x<3$.' });
   X({ id: 'x-2', sec: 8, lvl: 4, type: 'interval', concepts: ['logaritma', 'syarat-akar'], q: 'Domain $f(x)=\\log(x^2-4)+\\sqrt{5-x}$ adalah…', ans: '(-inf,-2)u(2,5]', pred: x => x * x - 4 > 0 && 5 - x >= 0, sol: '$x^2>4$ dan $x\\le5$.' });

@@ -1,10 +1,10 @@
-/* Ruang Nalar — kompilasi & pembersihan kursus buatan guru.
-   Kursus dari editor web adalah DATA dari pengguna, jadi tidak boleh dipercaya:
-   - tidak ada HTML mentah: teks ditulis dengan format ringan (**tebal**, *miring*, daftar "- ", rumus $…$)
-   - semua teks di-escape; rumus dibersihkan dari karakter < > & sebelum dirender
-   - hanya jenis blok & tipe soal yang aman yang diizinkan (tanpa widget/JS kustom)
-   - tautan sumber belajar wajib https://
-   Hasil compile() memakai format yang sama dengan kursus berbasis file, sehingga UI tidak perlu tahu bedanya. */
+/* Ruang Nalar — compiling & sanitizing teacher-made courses.
+   Courses from the web editor are USER DATA, so they are never trusted:
+   - no raw HTML: text uses light formatting (**bold**, *italic*, "- " lists, $…$ math)
+   - all text is escaped; math is stripped of < > & before rendering
+   - only safe block types & question types are allowed (no custom widgets/JS)
+   - resource links must be https://
+   compile() returns the same format as file-based courses, so the UI can't tell them apart. */
 (function (G) {
   'use strict';
   const S = G.NalarSafe = {};
@@ -13,15 +13,15 @@
   const MATH = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
   const cleanMath = (m) => m.replace(/</g, '\\lt ').replace(/>/g, '\\gt ').replace(/&/g, '\\& ');
   const inline = (t) => t.replace(/\*\*([^*\n]+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<i>$2</i>');
-  /* Pisahkan rumus → ganti dengan token, escape sisanya, format, lalu kembalikan rumus yang sudah dibersihkan */
+  /* Pull out math → replace with tokens, escape the rest, format, then put the sanitized math back */
   function protect(s) {
     const maths = [];
     const body = str(s).replace(MATH, (m) => { maths.push(cleanMath(m)); return '\u0001' + (maths.length - 1) + '\u0002'; });
     return { text: escH(body), restore: (h) => h.replace(/\u0001(\d+)\u0002/g, (_, i) => maths[+i]) };
   }
-  /* Teks satu baris/paragraf pendek (soal, pilihan, pembahasan, dll) */
+  /* Single-line / short text (question, choices, solution, etc.) */
   S.text = function (s, max) { const p = protect(str(s, max)); return p.restore(inline(p.text).replace(/\n/g, '<br>')); };
-  /* Teks panjang dengan paragraf & daftar */
+  /* Long text with paragraphs & lists */
   S.md = function (s) {
     const p = protect(str(s, 20000));
     const blocks = p.text.replace(/\r/g, '').split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
@@ -34,7 +34,7 @@
     return p.restore(html);
   };
   const ID = /^[a-z0-9-]{1,40}$/;
-  const plain = (v, max) => str(v, max).replace(/[\u0000-\u001f]/g, ' ').trim();   // untuk field yang dirender lewat esc()
+  const plain = (v, max) => str(v, max).replace(/[\u0000-\u001f]/g, ' ').trim();   // for fields rendered through esc()
   const MODES = ['sekolah', 'utbk', 'mandiri', 'olimpiade'];
   const BLOCKS = ['text', 'example', 'q', 'traps', 'retrieval', 'recap', 'practice', 'res', 'exit', 'widget'];
   const TYPES = ['mc', 'num', 'interval', 'tf', 'err', 'order'];
@@ -42,7 +42,7 @@
   const safeUrl = (u) => /^https:\/\/[^\s"'<>`\\]+$/i.test(String(u || '')) ? String(u) : null;
   S.newId = (p) => (p || 'x') + '-' + Math.random().toString(36).slice(2, 8);
 
-  /* Kerangka kursus kosong untuk editor */
+  /* Empty course skeleton for the editor */
   S.blank = function () {
     return { v: 1, SECTIONS: [{ id: 1, short: 'Bagian 1', title: 'Bagian 1', glyph: '' }],
       LESSONS: { 1: [{ k: 'text', tag: 'Intuisi', title: 'Pengantar', md: 'Tulis penjelasan di sini. Gunakan **tebal**, *miring*, daftar dengan "- ", dan rumus seperti $x^2-4<0$.' }, { k: 'practice' }, { k: 'exit', prompt: 'Jelaskan dengan kata-katamu sendiri inti bagian ini.', points: [], qs: [] }] },
@@ -82,7 +82,7 @@
     return o;
   }
 
-  /* raw (dari database/editor) → objek kursus siap pakai, aman dirender */
+  /* raw (from database/editor) → ready-to-use course object, safe to render */
   S.compile = function (raw) {
     raw = raw || {}; const B = G.BM; const o = {};
     o.SECTIONS = (raw.SECTIONS || []).slice(0, 40).map(s => ({ id: Math.round(+s.id), short: plain(s.short || s.title, 30) || 'Bagian', title: plain(s.title, 100) || 'Bagian', glyph: plain(s.glyph, 8), concepts: ['s' + Math.round(+s.id)] }))
@@ -123,7 +123,7 @@
     return o;
   };
 
-  /* Daftar masalah untuk ditampilkan di editor. level: 'error' (bagian itu tidak akan tampil) | 'warn' (saran) */
+  /* Problems to show in the editor. level: 'error' (that part won't be shown) | 'warn' (suggestion) */
   S.validate = function (raw) {
     const out = []; const B = G.BM; raw = raw || {};
     const secs = raw.SECTIONS || []; const secIds = new Set(secs.map(s => +s.id));

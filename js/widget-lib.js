@@ -1,11 +1,11 @@
-/* Ruang Nalar — pustaka widget interaktif yang bisa dipakai guru di Studio (tanpa kode).
-   Guru hanya mengisi PARAMETER (data). Kode widget ditulis pengelola situs di file ini,
-   sehingga aman: guru tidak bisa menyisipkan JavaScript ke browser siswa.
+/* Ruang Nalar — interactive widget library teachers can use in the Studio (no code).
+   Teachers only fill in PARAMETERS (data). Widget code is written by the site maintainer in this file,
+   so it's safe: teachers cannot inject JavaScript into students' browsers.
 
-   Menambah widget baru (untuk pengelola situs):
-     W.def({ id, name, desc, params: [...skema...], mount(el, p) { ... } })
-   Jenis parameter: text, longtext, num, select, bool, vars (daftar slider), url.
-   sanitize() membersihkan parameter sesuai skema, jadi mount() selalu menerima data yang valid. */
+   Adding a widget (for maintainers):
+     W.def({ id, name, desc, params: [...schema...], mount(el, p) { ... } })
+   Parameter types: text, longtext, num, select, bool, vars (slider list), url.
+   sanitize() cleans parameters against the schema, so mount() always receives valid data. */
 (function (G) {
   'use strict';
   const W = G.NalarWidgets = { defs: {}, list: [] };
@@ -15,7 +15,7 @@
   const fmt = (v) => { if (!isFinite(v)) return v > 0 ? '∞' : '−∞'; const r = Math.round(v * 100) / 100; return String(r).replace('-', '−').replace('.', ','); };
   W.def = function (d) { W.defs[d.id] = d; W.list.push(d); };
 
-  /* Bersihkan parameter sesuai skema widget. Hasil null = widget tidak dikenal. */
+  /* Sanitize parameters against the widget schema. null = unknown widget. */
   W.sanitize = function (id, raw) {
     const d = W.defs[id]; if (!d) return null; raw = raw || {}; const out = {};
     d.params.forEach(s => {
@@ -39,7 +39,7 @@
     try { d.mount(el, W.sanitize(id, raw)); } catch (e) { console.warn('widget', id, e.message); el.innerHTML = '<p class="bad"></p>'; el.querySelector('p').textContent = 'Widget gagal dimuat: ' + e.message; }
   };
 
-  /* ---------------- 1. Grafik fungsi dengan slider ---------------- */
+  /* ---------------- 1. Function graph with sliders ---------------- */
   W.def({
     id: 'grafik', name: 'Grafik fungsi + slider',
     desc: 'Siswa menggeser parameter dan melihat grafik berubah. Bisa mengarsir daerah tempat f(x) > 0 atau < 0, cocok untuk pertidaksamaan.',
@@ -61,7 +61,7 @@
       el.innerHTML = '<svg class="w-svg wl-plot" viewBox="0 0 ' + Wd + ' ' + H + '" role="img" aria-label="Grafik fungsi"></svg><div class="wl-read"></div><div class="wl-sliders">' + p.vars.map(v => '<label class="wl-sl"><span><i>' + v.name + '</i> = <b data-v="' + v.name + '"></b></span><input type="range" min="' + v.min + '" max="' + v.max + '" step="' + v.step + '" value="' + v.value + '" data-s="' + v.name + '"></label>').join('') + '</div>';
       const svg = el.querySelector('svg'); const clip = 'wlc' + Math.random().toString(36).slice(2, 8);
       function solveSet(sign) {
-        // cari interval tempat f memenuhi relasi dengan sampel + bisection di titik perubahan
+        // find intervals where f satisfies the relation: sampling + bisection at sign changes
         const N = 800, xs = [], fs = []; for (let i = 0; i <= N; i++) { const x = p.xmin + (p.xmax - p.xmin) * i / N; xs.push(x); fs.push(f(Object.assign({ x }, env))); }
         const okAt = (v) => isFinite(v) && (sign === 'gt' ? v > 1e-9 : sign === 'ge' ? v >= -1e-9 : sign === 'lt' ? v < -1e-9 : v <= 1e-9);
         const segs = []; let start = null;
@@ -76,20 +76,20 @@
       }
       function draw() {
         let g = '';
-        // kisi & sumbu
+        // grid & axes
         const span = p.xmax - p.xmin, step = span <= 16 ? 1 : span <= 40 ? 5 : Math.pow(10, Math.floor(Math.log10(span / 4)));
         for (let x = Math.ceil(p.xmin / step) * step; x <= p.xmax; x += step) g += '<line x1="' + X(x) + '" y1="0" x2="' + X(x) + '" y2="' + H + '" class="wl-grid"/>' + (Math.abs(x) > 1e-9 && p.ymin <= 0 && p.ymax >= 0 ? '<text x="' + X(x) + '" y="' + Math.min(H - 4, Y(0) + 15) + '" class="wl-tick">' + fmt(x) + '</text>' : '');
         const ys = (p.ymax - p.ymin) <= 16 ? 1 : (p.ymax - p.ymin) <= 40 ? 5 : Math.pow(10, Math.floor(Math.log10((p.ymax - p.ymin) / 4)));
         for (let y = Math.ceil(p.ymin / ys) * ys; y <= p.ymax; y += ys) g += '<line x1="0" y1="' + Y(y) + '" x2="' + Wd + '" y2="' + Y(y) + '" class="wl-grid"/>';
         if (p.ymin <= 0 && p.ymax >= 0) g += '<line x1="0" y1="' + Y(0) + '" x2="' + Wd + '" y2="' + Y(0) + '" class="wl-axis"/>';
         if (p.xmin <= 0 && p.xmax >= 0) g += '<line x1="' + X(0) + '" y1="0" x2="' + X(0) + '" y2="' + H + '" class="wl-axis"/>';
-        // arsiran di sumbu x
+        // shading on the x-axis
         let segs = [];
         if (p.shade !== 'none') {
           segs = solveSet(p.shade); const y0 = Math.max(4, Math.min(H - 4, Y(0)));
           segs.forEach(s => { const a = X(Math.max(s[0], p.xmin)), b = X(Math.min(s[1], p.xmax)); g += '<rect x="' + a + '" y="0" width="' + Math.max(0, b - a) + '" height="' + H + '" class="wl-shade"/><line x1="' + a + '" y1="' + y0 + '" x2="' + b + '" y2="' + y0 + '" class="wl-sol"/>'; });
         }
-        // kurva (putus di titik tak terdefinisi / loncatan besar)
+        // curve (broken at undefined points / large jumps)
         let d = '', pen = false, prev = null; const N = 600, big = (p.ymax - p.ymin) * 3;
         for (let i = 0; i <= N; i++) {
           const x = p.xmin + (p.xmax - p.xmin) * i / N; const y = f(Object.assign({ x }, env));
@@ -112,7 +112,7 @@
     }
   });
 
-  /* ---------------- 2. Garis bilangan interaktif ---------------- */
+  /* ---------------- 2. Interactive number line ---------------- */
   W.def({
     id: 'garis', name: 'Garis bilangan interaktif',
     desc: 'Siswa mengetik pertidaksamaan atau interval, dan langsung melihat garis bilangannya.',
@@ -129,8 +129,8 @@
     }
   });
 
-  /* ---------------- 3. Sematan alat tepercaya ---------------- */
-  /* Hanya situs pendidikan tertentu; tautan diubah ke alamat embed resminya. */
+  /* ---------------- 3. Trusted tool embeds ---------------- */
+  /* Only specific educational sites; links are rewritten to their official embed URLs. */
   W.embedUrl = function (u) {
     u = String(u || '').trim(); let m;
     if ((m = u.match(/^https:\/\/(?:www\.|m\.)?youtube\.com\/watch\?(?:.*&)?v=([A-Za-z0-9_-]{6,20})/)) || (m = u.match(/^https:\/\/youtu\.be\/([A-Za-z0-9_-]{6,20})/)) || (m = u.match(/^https:\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,20})/))) return { src: 'https://www.youtube-nocookie.com/embed/' + m[1], kind: 'Video YouTube', ratio: '56.25%' };

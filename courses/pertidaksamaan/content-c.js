@@ -1,4 +1,4 @@
-/* Batas — konten tambahan: penjelasan lebih dalam, widget baru, sumber belajar, Bagian 10 */
+/* Pertidaksamaan — extra content: deeper explanations, new widgets, resources, Section 10 */
 (function (G) {
   'use strict';
   const C = G.BC = G.BC || {};
@@ -10,7 +10,7 @@
   }
   function before(sec, k, blocks) { const arr = L[sec]; const i = arr.findIndex(b => b.k === k); arr.splice(i < 0 ? arr.length : i, 0, ...blocks); }
 
-  /* ================= BAGIAN 1 ================= */
+  /* ================= SECTION 1 ================= */
   ins(1, 'Sebelum diajari, tebak dulu', [
     { k: 'text', tag: 'Dasar', title: 'Bahasa simbol: membaca <, >, ≤, ≥', html: `<p>Sebelum masuk sifat-sifatnya, pastikan kita sepakat soal "kamus" simbolnya.</p>
 <table class="tbl"><tr><th>Simbol</th><th>Dibaca</th><th>Contoh benar</th></tr>
@@ -30,7 +30,7 @@
     { k: 'recap', title: 'Rangkuman mini Bagian 1', items: ['$a<b$ artinya $b-a$ positif.', 'Tambah/kurang bilangan yang sama: tanda tetap.', 'Kali/bagi bilangan positif: tanda tetap.', 'Kali/bagi bilangan negatif: tanda <b>dibalik</b> (bercermin di titik 0).', 'Mengkuadratkan dan membalik pecahan hanya aman dengan syarat tertentu.', 'Penulisan: bulat penuh ↔ [ ], bulat kosong ↔ ( ), ∞ selalu ( ).'] }
   ]);
 
-  /* ================= BAGIAN 2 ================= */
+  /* ================= SECTION 2 ================= */
   ins(2, 'Membuka kado berlapis', [
     { k: 'widget', id: 'langkah', tag: 'Eksperimen', title: 'Bongkar langkah demi langkah', predict: { q: 'Pada $-2x+5\\ge11$, setelah dikurangi 5 jadi $-2x\\ge6$. Lalu dibagi $-2$, hasilnya…', opts: ['$x\\ge-3$', '$x\\le-3$'], ans: 1, after: 'Pilih soalnya, lalu tekan tombol satu per satu. Perhatikan kapan tanda berwarna oranye (dibalik).' } }
   ]);
@@ -55,7 +55,7 @@ $$\\frac{x}{2}-\\frac{x-1}{3}\\le1 \\quad\\Rightarrow\\quad 3x-2(x-1)\\le6$$
     { k: 'recap', title: 'Rangkuman mini Bagian 2', items: ['Isolasi $x$ dengan operasi kebalikan, dari lapisan terluar.', 'Ada pecahan: kalikan KPK (positif, tanda tetap).', 'Berantai: operasi ke ketiga ruas; dibagi negatif → balik kedua tanda.', '$x$ di beberapa ruas: pecah dua, selesaikan, lalu iris.', '$x$ hilang: jawabannya $\\R$ (selalu benar) atau $\\emptyset$ (selalu salah).', 'Soal cerita: terjemahkan kata kunci, perhatikan syarat bulat/positif.'] }
   ]);
 
-  /* ================= BAGIAN 3 ================= */
+  /* ================= SECTION 3 ================= */
   ins(3, 'Langkah baku pertidaksamaan kuadrat', [
     { k: 'text', tag: 'Kenapa begitu?', title: 'Dari mana pola "di antara" dan "di luar"?', html: `<p>Pola itu bukan hafalan. Ambil $(x-3)(x+2)$. Titik $-2$ dan $3$ membagi garis bilangan menjadi tiga daerah. Di dalam satu daerah, tanda tidak pernah berubah (karena hanya bisa berubah saat melewati nol). Jadi cukup uji <b>satu</b> bilangan per daerah:</p>
 <table class="tbl"><tr><th>Daerah</th><th>Uji</th><th>$(x-3)$</th><th>$(x+2)$</th><th>Hasil</th></tr>
@@ -78,7 +78,7 @@ $$x=\\frac{2\\pm\\sqrt{4+4}}{2}=1\\pm\\sqrt2$$
     { k: 'recap', title: 'Rangkuman mini Bagian 3', items: ['Nolkan ruas kanan, buat koefisien $x^2$ positif.', 'Cari akar (faktor atau rumus abc).', 'Tanda hanya bisa berubah di akar: uji satu titik per daerah.', '$a>0$: negatif di antara akar, positif di luar.', '$D<0$: definit, jawabannya $\\R$ atau $\\emptyset$.', 'Jangan bagi dengan $x$, jangan akarkan dua ruas.'] }
   ]);
 
-  /* ================= BAGIAN 4 ================= */
+  /* ================= SECTION 4 ================= */
   ins(4, 'Setiap faktor adalah saklar', [
     { k: 'widget', id: 'saklar', tag: 'Eksperimen', title: 'Lampu tanda tiap faktor', predict: { q: 'Saat $x$ bergerak dari 2 ke 4 melewati 3, tanda $(x-3)^2$…', opts: ['berubah', 'tetap positif (0 tepat di 3)'], ans: 1, after: 'Geser x dari kiri ke kanan. Lampu (x+2) dan (x−1) berganti sekali, lampu (x−3)² tidak pernah merah.' } }
   ]);
@@ -95,7 +95,7 @@ $$x=\\frac{2\\pm\\sqrt{4+4}}{2}=1\\pm\\sqrt2$$
     { k: 'recap', title: 'Rangkuman mini Bagian 4', items: ['Faktorkan sepenuhnya (teorema faktor + Horner).', 'Daerah paling kanan = tanda koefisien utama.', 'Pangkat ganjil: tanda berganti. Pangkat genap: tetap.', 'Faktor definit positif (misal $x^2+1$) boleh diabaikan.', 'Untuk ≥/≤, cek setiap akar: bisa jadi ada titik terpencil seperti $\\{-2\\}$.'] }
   ]);
 
-  /* ================= BAGIAN 5 ================= */
+  /* ================= SECTION 5 ================= */
   ins(5, 'Pecahan = pembagian, dan pembagian ikut aturan tanda', [
     { k: 'widget', id: 'pecahantanda', tag: 'Eksperimen', title: 'Tanda pembilang, penyebut, dan hasil', predict: { q: 'Jika pembilang negatif dan penyebut negatif, hasil baginya…', opts: ['positif', 'negatif'], ans: 0, after: 'Geser x dan amati tiga kotak tanda. Tepat di x = 1 kotak hasil menjadi terlarang.' } }
   ]);
@@ -110,7 +110,7 @@ $$\\frac{x+1}{x-2}>1 \\;\\Rightarrow\\; (x+1)(x-2)>(x-2)^2$$
     { k: 'recap', title: 'Rangkuman mini Bagian 5', items: ['Tulis syarat penyebut ≠ 0.', 'Jangan kali silang: pindahkan semua ke satu ruas.', 'Satukan menjadi $\\frac PQ\\;\\square\\;0$, faktorkan.', 'Tanda $\\frac PQ$ = tanda $P\\cdot Q$.', 'Atau: kalikan kuadrat penyebut (selalu positif).', 'Pembuat nol penyebut selalu bulat kosong.'] }
   ]);
 
-  /* ================= BAGIAN 6 ================= */
+  /* ================= SECTION 6 ================= */
   ins(6, 'Akar adalah gerbang dengan dua aturan', [
     { k: 'widget', id: 'gerbang', tag: 'Eksperimen', title: 'Lewati gerbang akar', predict: { q: 'Untuk $\\sqrt{x-3}<2$, apakah $x=7$ memenuhi?', opts: ['Ya', 'Tidak'], ans: 1, after: 'Geser x. Syarat 1 harus hijau dulu, baru syarat 2 berarti.' } }
   ]);
@@ -126,7 +126,7 @@ $$\\frac{x+1}{x-2}>1 \\;\\Rightarrow\\; (x+1)(x-2)>(x-2)^2$$
     { k: 'recap', title: 'Rangkuman mini Bagian 6', items: ['Selalu mulai dengan syarat isi akar ≥ 0.', 'Akar selalu ≥ 0.', '$\\sqrt f<g$: $f\\ge0$, $g>0$, $f<g^2$.', '$\\sqrt f>g$: kasus $g<0$ (otomatis) atau $g\\ge0$ (kuadratkan).', 'Akhiri dengan mengiris semua syarat.'] }
   ]);
 
-  /* ================= BAGIAN 7 ================= */
+  /* ================= SECTION 7 ================= */
   ins(7, 'Nilai mutlak adalah JARAK', [
     { k: 'text', tag: 'Dasar', title: 'Membaca $|x+2|$: pusatnya di −2', html: `<p>$|x+2|=|x-(-2)|$, jadi artinya jarak $x$ ke <b>−2</b>, bukan ke 2. Tanda di dalam selalu dibalik saat menentukan pusat.</p>
 <p>Untuk bentuk $|2x-6|$, keluarkan dulu koefisiennya: $|2x-6|=2|x-3|$. Jadi $|2x-6|<4 \\iff |x-3|<2$: jarak ke 3 kurang dari 2, yaitu $1<x<5$.</p>` }
@@ -144,7 +144,7 @@ $$\\frac{x+1}{x-2}>1 \\;\\Rightarrow\\; (x+1)(x-2)>(x-2)^2$$
     { k: 'recap', title: 'Rangkuman mini Bagian 7', items: ['$|x-a|$ = jarak $x$ ke $a$.', '< dekat (satu interval), > jauh (dua arah).', 'Ruas kanan negatif: $<$ → ∅, $>$ → semua $x$.', '$|f|<|g| \\iff (f-g)(f+g)<0$.', 'Beberapa mutlak: pecah kasus di titik nol isinya.'] }
   ]);
 
-  /* ================= BAGIAN 8 ================= */
+  /* ================= SECTION 8 ================= */
   ins(8, 'Aturannya', [
     { k: 'widget', id: 'loggraph', tag: 'Eksperimen', title: 'Grafik logaritma dan batasnya', predict: { q: 'Untuk basis $a=0{,}5$, $\\log_a x>1$ berarti…', opts: ['$x>0{,}5$', '$0<x<0{,}5$'], ans: 1, after: 'Geser basis melewati 1. Perhatikan arah grafik dan daerah abu-abu (x ≤ 0).' } },
     { k: 'text', tag: 'Hati-hati', title: 'Kenapa syarat numerus wajib ditulis paling awal?', html: `<p>Lihat $\\log x+\\log(x-3)<1$. Kalau langsung digabung: $\\log(x(x-3))<\\log10 \\Rightarrow x^2-3x-10<0 \\Rightarrow -2<x<5$.</p>
@@ -155,7 +155,7 @@ $$\\frac{x+1}{x-2}>1 \\;\\Rightarrow\\; (x+1)(x-2)>(x-2)^2$$
     { k: 'recap', title: 'Rangkuman mini Bagian 8', items: ['Samakan basis.', 'Basis > 1: tanda tetap. 0 < basis < 1: tanda dibalik.', 'Numerus > 0, ditulis dari soal asli sebelum menggabung log.', 'Substitusi $p=a^x$ (ingat $p>0$).', 'Akhiri dengan mengiris syarat.'] }
   ]);
 
-  /* ================= BAGIAN 9 ================= */
+  /* ================= SECTION 9 ================= */
   ins(9, 'Membuat pertidaksamaan dari gambar', [
     { k: 'widget', id: 'garisdua', tag: 'Eksperimen', title: 'Buat garis dari dua titik potong', predict: { q: 'Garis memotong $(4,0)$ dan $(0,2)$, daerahnya memuat $(0,0)$. Pertidaksamaannya…', opts: ['$x+2y\\le4$', '$2x+y\\le4$'], ans: 0, after: 'Geser titik potong dan pilih sisi daerahnya. Rumus bx + ay = ab muncul otomatis.' } }
   ]);
@@ -171,7 +171,7 @@ $$\\frac{x+1}{x-2}>1 \\;\\Rightarrow\\; (x+1)(x-2)>(x-2)^2$$
     { k: 'recap', title: 'Rangkuman mini Bagian 9', items: ['Gambar garis lewat titik potong sumbu.', 'Tegas untuk ≤/≥, putus-putus untuk < / >.', 'Uji titik (0,0) untuk memilih sisi.', 'Daerah penyelesaian = irisan semua daerah.', 'Soal cerita: tabel → satu kolom satu pertidaksamaan.', 'Optimum fungsi tujuan ada di titik pojok.'] }
   ]);
 
-  /* ================= BAGIAN 10: TANTANGAN ================= */
+  /* ================= SECTION 10: CHALLENGE ================= */
   C.SECTIONS.push({ id: 10, short: 'Tantangan', title: 'Tantangan: ketaksamaan klasik (olimpiade & kuliah)', jalur: 'tantangan', glyph: 'AM≥GM', concepts: ['amgm', 'ketaksamaan-klasik', 'pembuktian'] });
   Object.assign(C.CONCEPTS, { 'amgm': 'AM-GM & rata-rata', 'ketaksamaan-klasik': 'Cauchy, segitiga, Bernoulli', 'pembuktian': 'Penalaran & pembuktian', 'lintas': 'Soal lintas bab' });
   L[10] = [
@@ -216,12 +216,12 @@ $$\\text{bilangan real apa pun dikuadratkan hasilnya}\\ \\ge0$$
     'amgm-kesamaan': { name: 'Titik kesamaan tidak tercapai', sec: 10, wrong: 'min $x+\\frac1x$ di $x\\ge2$ adalah 2', right: 'Minimum $\\frac52$ di $x=2$', tip: 'Selalu cek apakah nilai kesamaan ada di domain.' }
   });
 
-  /* ================= Bagian 0: cara memakai halaman materi ================= */
+  /* ================= Section 0: how to use the lesson pages ================= */
   C.INTRO.splice(C.INTRO.length - 1, 0, { k: 'text', tag: 'Cara memakai', title: 'Peta halaman materi', html: `<p>Setiap bagian materi punya susunan yang sama, supaya kamu selalu tahu sedang di mana:</p>
 <ol class="steps"><li><b>Pemanasan</b>: dua soal dari bab sebelumnya.</li><li><b>Coba dulu</b>: satu soal sebelum diajari.</li><li><b>Materi</b>: intuisi → widget → definisi formal → kenapa begitu.</li><li><b>Contoh</b>: dari yang lengkap sampai yang kamu isi sendiri.</li><li><b>Rangkuman mini & jebakan</b>.</li><li><b>Latihan L1–L6</b> dan <b>tiket keluar</b>.</li><li><b>Sumber belajar</b>: artikel dan video untuk memperdalam.</li></ol>
 <p>Di laptop, daftar isi ada di kiri. Di HP, ketuk <b>Daftar isi</b> di atas materi. Kamu bisa lompat ke subbab mana pun kapan saja.</p>` });
 
-  /* ================= SUMBER BELAJAR EKSTERNAL ================= */
+  /* ================= EXTERNAL RESOURCES ================= */
   const yt = (q) => ({ type: 'video', title: 'Cari video: "' + q + '"', src: 'YouTube (hasil pencarian)', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q), note: 'Pilih video berdurasi 10–20 menit dari kanal pendidikan.' });
   const RG = (title, url) => ({ type: 'video', title, src: 'Ruangguru (video, mungkin perlu login)', url });
   const DESMOS = { type: 'alat', title: 'Desmos: gambar sendiri grafik pertidaksamaan', src: 'desmos.com', url: 'https://www.desmos.com/calculator', note: 'Ketik misalnya y < x^2 - x - 6 dan lihat daerahnya.' };
@@ -273,7 +273,7 @@ $$\\text{bilangan real apa pun dikuadratkan hasilnya}\\ \\ge0$$
     DESMOS
   ];
   for (let s = 1; s <= 10; s++) L[s].push({ k: 'res', title: 'Sumber belajar' });
-  /* ================= Flashcard tambahan ================= */
+  /* ================= More flashcards ================= */
   [[10, 'AM-GM', 'Bunyi AM-GM untuk dua bilangan?', '$\\frac{a+b}2\\ge\\sqrt{ab}$ untuk $a,b\\ge0$, sama jika dan hanya jika $a=b$.'],
    [10, 'AM-GM', 'Bukti satu baris AM-GM?', '$(\\sqrt a-\\sqrt b)^2\\ge0 \\Rightarrow a+b\\ge2\\sqrt{ab}$.'],
    [10, 'Strategi', 'Kapan AM-GM cocok dipakai untuk mencari minimum?', 'Saat suku-sukunya positif dan <b>hasil kalinya konstan</b>, misalnya $x+\\frac4x$.'],

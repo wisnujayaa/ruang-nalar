@@ -1,4 +1,4 @@
-/* Supabase palsu di memori (RLS hanya ditiru untuk akses kursus) untuk menguji alur UI mode Supabase. Dibagi antar tab via localStorage. */
+/* In-memory fake Supabase (RLS emulated only for course access) for testing Supabase-mode UI flows. Shared across tabs via localStorage. */
 (function () {
   const K = 'FAKE_SB';
   const load = () => JSON.parse(localStorage.getItem(K) || '{"users":[],"profiles":[],"progress":[],"classes":[],"class_members":[],"assignments":[],"forum_threads":[],"forum_posts":[],"messages":[],"courses":[]}');
@@ -28,7 +28,7 @@
       update(o) { st.op = 'update'; st.payload = o; return q; }, delete() { st.op = 'delete'; return q; },
       then(res, rej) { return Promise.resolve().then(run).then(res, rej); }
     };
-    /* Tiruan RLS kursus (lihat supabase/course-access.sql) */
+    /* Course RLS emulation (see supabase/course-access.sql) */
     const canRead = (db, k) => ['unlisted', 'public'].includes(k.visibility) || k.owner_id === me() ||
       (k.visibility === 'class' && db.classes.some(c => c.course_id === k.id && c.owner_id === k.owner_id && (c.owner_id === me() || db.class_members.some(m => m.class_id === c.id && m.user_id === me()))));
     const guard = (db, ownerId, cid) => !/^c-/.test(cid || '') || db.courses.some(k => k.id === cid && (k.owner_id === ownerId || ['unlisted', 'public'].includes(k.visibility)));
@@ -79,7 +79,7 @@
       signInWithPassword: async ({ email, password }) => { const u = load().users.find(u => u.email === email && u.password === password); if (!u) return { error: { message: 'Invalid login credentials' } }; if (u.unconfirmed) return { error: { message: 'Email not confirmed', code: 'email_not_confirmed' } }; setSession({ user: u }); return { data: {}, error: null }; },
       signOut: async () => setSession(null),
       resetPasswordForEmail: async (email, o) => { const d = load(); const u = d.users.find(x => x.email === email); if (u) { u.rcode = '654321'; u.rredirect = o && o.redirectTo; } save(d); return { data: {}, error: null }; },
-      /* Kode 6 digit dari email: 123456 untuk aktivasi, 654321 untuk lupa sandi */
+      /* 6-digit email codes: 123456 for activation, 654321 for password reset */
       verifyOtp: async ({ email, token, type }) => { const d = load(); const u = d.users.find(x => x.email === email); (d.verified = d.verified || []).push({ email, type }); save(d);
         const ok = u && ((type === 'signup' || type === 'email') && token === u.code || type === 'recovery' && token === u.rcode);
         if (!ok) return { data: { session: null, user: null }, error: { message: 'Token has expired or is invalid', code: 'otp_expired' } };

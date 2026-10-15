@@ -1,6 +1,6 @@
-/* Daftar kursus di platform.
-   Menambah kursus baru: buat folder courses/<id>/ berisi file konten, lalu daftarkan di sini.
-   Panduan lengkap: docs/MENAMBAH-KURSUS.md */
+/* Course list for the platform.
+   To add a course: create a folder courses/<id>/ with its content files, then register it here.
+   Full guide: docs/ADDING-COURSES.md */
 window.NALAR_COURSES = [
   {
     id: 'pertidaksamaan',
@@ -22,9 +22,9 @@ window.NALAR_COURSES = [
     blurb: 'Kursus mini yang menunjukkan semua jenis blok dan soal. Salin foldernya untuk membuat kursus baru.',
     glyph: '{ }',
     color: 'accent',
-    hidden: true,   // tidak tampil di katalog; tetap bisa dibuka lewat #kursus=contoh-kursus
+    hidden: true,   // hidden from the catalog; still reachable via #kursus=contoh-kursus
     files: ['course.js']
   },
-  /* Kursus yang sedang disiapkan bisa ditampilkan sebagai kartu "Segera hadir" (tidak bisa dibuka):
+  /* A course in preparation can be shown as a "Segera hadir" (coming soon) card that can't be opened:
      { id: 'fungsi-kuadrat', title: 'Fungsi kuadrat', subject: 'Matematika', blurb: 'Segera hadir.', glyph: 'x²', soon: true } */
 ];

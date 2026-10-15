@@ -1,9 +1,9 @@
-/* Ruang Nalar — laporan kendala: formulir untuk semua pengguna, kotak masuk untuk admin.
-   Laporan disimpan lewat G.BB.reports (lokal / Claude / Supabase). Di mode Supabase, Edge Function
-   notify-report meneruskannya ke email / WhatsApp / Telegram admin (lihat docs/LAPORAN.md). */
+/* Ruang Nalar — problem reports: a form for every user, an inbox for admins.
+   Reports are stored through G.BB.reports (local / Claude / Supabase). In Supabase mode, the
+   notify-report Edge Function forwards them to the admin by email / WhatsApp / Telegram (see docs/REPORTS.md). */
 (function (G) {
   'use strict';
-  /* Catat beberapa error terakhir supaya laporan bug lebih mudah dilacak (tanpa data pribadi) */
+  /* Keep the last few errors so bug reports are easier to trace (no personal data) */
   const recentErrors = [];
   const pushErr = (m) => { m = String(m || '').slice(0, 160); if (!m) return; recentErrors.push(m); if (recentErrors.length > 5) recentErrors.shift(); };
   G.addEventListener && G.addEventListener('error', e => pushErr(e.message + (e.filename ? ' @' + e.filename.split('/').pop() + ':' + e.lineno : '')));
@@ -25,7 +25,7 @@
   const page = (title, eyebrow, body) => '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div>' + (eyebrow ? '<p class="eyebrow">' + eyebrow + '</p>' : '') + '<h1>' + title + '</h1></div></header>' + body + '</section>';
   const ctxLine = (c) => [c.course && 'Kursus: ' + c.course, c.sec && 'Bagian ' + c.sec + (c.i != null ? ', subbab ' + (+c.i + 1) : ''), c.qid && 'Soal ' + c.qid, c.view && 'Halaman: ' + c.view].filter(Boolean).join(' · ');
 
-  /* Konteks otomatis: di mana pengguna berada saat melapor */
+  /* Automatic context: where the user was when reporting */
   function autoContext(kind, extra) {
     const c = Object.assign({}, extra || {});
     c.view = c.view || 'akun';
@@ -36,7 +36,7 @@
     return c;
   }
 
-  /* ---------------- Formulir laporan ---------------- */
+  /* ---------------- Report form ---------------- */
   V.lapor = function (p) {
     const b = bb(); const kind = p.kind || 'bug'; const ctx = p.ctx || {};
     if (!b.reports) { view().innerHTML = page('Laporkan kendala', '', '<div class="card"><p>Fitur laporan belum tersedia di mode ini.</p></div>'); return; }
@@ -74,7 +74,7 @@
     try {
       const context = autoContext(kind, p.ctx);
       const id = await b.reports.send({ kind, body, contact, context });
-      const sent = b.reports.canNotify ? b.reports.notify(id) : null;   // tidak ditunggu: laporan sudah aman tersimpan
+      const sent = b.reports.canNotify ? b.reports.notify(id) : null;   // not awaited: the report is already saved
       const wa = String((G.NALAR_CONFIG || {}).reportWhatsApp || '').replace(/\D/g, '');
       const waText = '[Laporan Ruang Nalar · ' + KIND_LABEL[kind] + ']\n' + body + (ctxLine(context) ? '\n(' + ctxLine(context) + ')' : '') + '\nNo. laporan: ' + id.slice(0, 8);
       $('#repf').outerHTML = '<div class="card rep-ok"><span class="lk-ic">' + ic('check') + '</span><h2>Terima kasih!</h2><p>Laporanmu sudah masuk dengan nomor <b class="mono">' + esc(id.slice(0, 8)) + '</b>. Pengelola akan memeriksanya' + (contact ? ' dan mengabarimu' : '') + '.</p>' +
@@ -85,13 +85,13 @@
     } catch (e) { btn.disabled = false; err.textContent = e.message || 'Gagal mengirim. Coba lagi.'; }
   }
 
-  /* ---------------- Kotak masuk admin ---------------- */
+  /* ---------------- Admin inbox ---------------- */
   V.laporan = function (p) {
     const b = bb();
     if (!b.reports || !b.isAdmin) { view().innerHTML = page('Laporan masuk', 'Admin', '<div class="card"><p>Halaman ini hanya untuk admin.</p></div>'); return; }
     const f = p.f || 'aktif';
     view().innerHTML = page('Laporan masuk', 'Admin', '<div class="seg" role="radiogroup">' + [['aktif', 'Perlu ditangani'], ['selesai', 'Selesai'], ['semua', 'Semua']].map(x => '<button role="radio" data-go="laporan" data-f="' + x[0] + '" aria-checked="' + (f === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' +
-      (b.reports.canNotify ? '<p class="muted small">Laporan baru juga dikirim ke email/WA-mu bila notifikasi sudah diatur (docs/LAPORAN.md).</p>' : '') + '<div id="rep-in"><div class="loading"><span class="spin"></span></div></div>');
+      (b.reports.canNotify ? '<p class="muted small">Laporan baru juga dikirim ke email/WA-mu bila notifikasi sudah diatur (docs/REPORTS.md).</p>' : '') + '<div id="rep-in"><div class="loading"><span class="spin"></span></div></div>');
     b.reports.all().then(all => {
       const list = all.filter(r => f === 'semua' || (f === 'selesai' ? r.status === 'selesai' : r.status !== 'selesai'));
       const box = $('#rep-in'); if (!box) return;
@@ -112,10 +112,10 @@
     }).catch(e => { const box = $('#rep-in'); if (box) box.innerHTML = '<div class="card"><p class="bad"></p></div>', $('#rep-in .bad').textContent = e.message; });
   };
 
-  /* ---------------- Interaksi ---------------- */
+  /* ---------------- Interaction ---------------- */
   document.addEventListener('click', async (e) => {
     const t = e.target.closest('[data-rep],[data-rk],[data-rsave],[data-rdel]'); if (!t) return;
-    if (t.dataset.rep != null) {   // tombol "Laporkan" di soal / materi
+    if (t.dataset.rep != null) {   // "Report" button on questions / lessons
       e.preventDefault();
       const q = t.closest('.q'); const les = t.closest('.lesson');
       const ctx = { view: nav.cur.v };

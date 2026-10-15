@@ -1,4 +1,4 @@
 # vendor/
 
-- `supabase.js` — [supabase-js](https://github.com/supabase/supabase-js) v2.117.2, build UMD (lisensi MIT).
-  Disimpan di repo supaya situs tidak bergantung pada CDN. Hanya dipakai jika `config.js` berisi kredensial Supabase.
+- `supabase.js`: [supabase-js](https://github.com/supabase/supabase-js) v2.117.2, UMD build (MIT license).
+  Vendored so the site doesn't depend on a CDN (and the CSP can allow only same-origin scripts). Only used when `config.js` contains Supabase credentials.

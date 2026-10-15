@@ -1,11 +1,11 @@
 -- =====================================================================
--- Ruang Nalar — peran akun: siswa / guru / admin
--- Jalankan SETELAH schema.sql dan courses.sql. Aman dijalankan ulang.
---   siswa : belajar, bergabung ke kelas, berdiskusi
---   guru  : + membuat kursus di Studio
---   admin : + mengangkat/menurunkan guru & admin
--- Admin pertama dibuat manual (lihat docs/SUPABASE.md):
---   update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'EMAIL_KAMU');
+-- Ruang Nalar — account roles: student / teacher / admin
+-- Run AFTER schema.sql and courses.sql. Safe to re-run.
+--   student : learn, join classes, discuss
+--   teacher : + create courses in the Studio
+--   admin   : + promote/demote teachers & admins
+-- The first admin is set manually (see docs/SUPABASE.md):
+--   update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'YOUR_EMAIL');
 -- =====================================================================
 alter table public.profiles add column if not exists role text not null default 'student';
 do $$ begin
@@ -23,11 +23,11 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 $$;
 
--- Hanya guru/admin yang boleh membuat & mengubah kursus
+-- Only teachers/admins may create & edit courses
 alter policy courses_insert on public.courses with check (owner_id = auth.uid() and public.is_teacher());
 alter policy courses_update on public.courses using (owner_id = auth.uid() and public.is_teacher()) with check (owner_id = auth.uid());
 
--- Daftar pengguna untuk halaman admin (termasuk email dari auth.users)
+-- User list for the admin page (including emails from auth.users)
 create or replace function public.admin_list_users()
 returns table (id uuid, display_name text, email text, role text, created_at timestamptz)
 language plpgsql stable security definer set search_path = public as $$
@@ -37,7 +37,7 @@ begin
     from public.profiles p join auth.users u on u.id = p.id order by p.created_at desc;
 end $$;
 
--- Mengubah peran (tidak bisa menghapus admin terakhir)
+-- Change a role (the last admin cannot be removed)
 create or replace function public.admin_set_role(p_user uuid, p_role text) returns void
 language plpgsql security definer set search_path = public as $$
 begin

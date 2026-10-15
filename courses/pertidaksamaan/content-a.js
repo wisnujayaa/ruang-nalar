@@ -1,9 +1,9 @@
-/* Batas — konten bagian A: peta, katalog jebakan, prasyarat, Bagian 0 */
+/* Pertidaksamaan — content part A: map, trap catalog, prerequisites, Section 0 */
 (function (G) {
   'use strict';
   const C = G.BC = G.BC || {};
 
-  /* ---------------- Peta bagian ---------------- */
+  /* ---------------- Section map ---------------- */
   C.SECTIONS = [
     { id: 1, short: 'Konsep & sifat', title: 'Konsep dasar, sifat, dan notasi interval', jalur: 'sekolah', glyph: 'a<b', concepts: ['sifat-dasar', 'notasi-interval'] },
     { id: 2, short: 'Linear', title: 'Pertidaksamaan linear dan bentuk berantai', jalur: 'sekolah', glyph: 'ax+b', concepts: ['linear', 'berantai', 'soal-cerita'] },
@@ -26,7 +26,7 @@
     'irasional': 'Irasional', 'syarat-akar': 'Syarat isi akar', 'mutlak': 'Nilai mutlak', 'eksponen': 'Eksponen', 'logaritma': 'Logaritma', 'sptldv': 'SPtLDV'
   };
 
-  /* ---------------- Katalog jebakan ---------------- */
+  /* ---------------- Trap catalog ---------------- */
   C.TRAPS = {
     'balik-tanda': { name: 'Lupa membalik tanda', sec: 1, wrong: '$-2x<6 \\Rightarrow x<-3$', right: '$-2x<6 \\Rightarrow x>-3$', tip: 'Setiap kali mengali atau membagi dengan bilangan negatif, lingkari tandanya dan balik saat itu juga.' },
     'kali-variabel': { name: 'Mengali/membagi dengan variabel', sec: 1, wrong: '$\\frac{1}{x}<2 \\Rightarrow 1<2x$', right: 'Pindahkan ruas: $\\frac{1}{x}-2<0 \\Rightarrow \\frac{1-2x}{x}<0$', tip: 'Tanda $x$ belum diketahui, jadi kamu tidak tahu harus membalik tanda atau tidak. Jangan kalikan/bagi dengan ekspresi bervariabel.' },
@@ -61,7 +61,7 @@
     'aritmetika': { name: 'Salah hitung / salah salin tanda', sec: 0, wrong: '$-3-5=2$', right: '$-3-5=-8$', tip: 'Lakukan uji balik: masukkan satu titik dari jawabanmu ke soal asli.' }
   };
 
-  /* ---------------- Prasyarat ---------------- */
+  /* ---------------- Prerequisites ---------------- */
   C.PREREQ = [
     { id: 'P1', title: 'Garis bilangan & urutan', concept: 'urutan',
       why: 'Jawaban pertidaksamaan adalah <b>daerah</b> di garis bilangan. Kalau urutan bilangan negatif masih ragu, semua langkah berikutnya goyah.',
@@ -116,7 +116,7 @@ $$\\frac{1}{x}-\\frac{2}{x+1}=\\frac{(x+1)-2x}{x(x+1)}=\\frac{1-x}{x(x+1)}$$
 <p>Syarat: basis $a>0$, $a\\ne1$, dan numerus $b>0$.</p>` }
   ];
 
-  /* ---------------- Bagian 0 ---------------- */
+  /* ---------------- Section 0 ---------------- */
   C.INTRO = [
     { k: 'text', tag: 'Mulai di sini', title: 'Dunia jarang bertanya "berapa tepatnya?"', html: `<p>Persamaan menjawab pertanyaan "berapa <b>tepatnya</b>?" Jawabannya biasanya satu titik: $x=4$.</p>
 <p>Tapi hidup lebih sering bertanya "berapa <b>batasnya</b>?" Berapa paling banyak yang bisa kubeli? Berapa paling sedikit nilai yang kubutuhkan? Sampai jarak berapa tarif ini lebih murah? Jawabannya bukan satu titik, melainkan <b>satu wilayah</b> yang aman.</p>

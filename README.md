@@ -1,129 +1,134 @@
 # Ruang Nalar
 
-Platform e-learning sumber terbuka untuk belajar **sampai paham ke akarnya**: materi yang dimulai dari intuisi, widget interaktif, latihan bertingkat sampai level UTBK dan olimpiade, review berjarak (*spaced repetition*), flashcard, plus **kelas, tugas, dan forum diskusi**.
+An open-source e-learning platform for learning things **down to their roots**: lessons that start from intuition, interactive widgets, graded practice up to university-entrance and olympiad level, spaced repetition, flashcards, plus **classes, assignments, and discussion forums**.
 
-Kursus pertama: **Pertidaksamaan** (SMA kelas X → UTBK → olimpiade/kuliah). Kursus lain bisa ditambahkan sebagai folder baru tanpa menyentuh kode inti.
+**Live site:** https://ruang-nalar.pages.dev
 
-> Situs statis murni: HTML + CSS + JavaScript biasa, **tanpa build step**. Bisa langsung di-host di hosting statis mana pun (Cloudflare Pages, Netlify, GitHub Pages).
+The first course is **Pertidaksamaan** (inequalities): from Indonesian high-school grade 10 to UTBK (the national university entrance test) to olympiad/college level. More courses can be added as new folders without touching the core code.
 
-## Fitur
+> The app's interface and course content are in **Indonesian**, because the learners are Indonesian. The code, comments, docs, and tests are in English.
 
-**Untuk siswa**
-- Materi per bagian: intuisi → penjelasan formal → contoh bertahap (langkah disembunyikan) → jebakan umum → latihan → tiket keluar
-- 25+ widget interaktif dengan "tebak dulu sebelum mencoba"
-- 250+ soal buatan tangan + 25 generator soal acak, 6 level (Mekanik → Olimpiade), mode Ulangan/UTBK/Mandiri/Olimpiade, soal lintas bab
-- 6 tipe soal: pilihan ganda, isian interval (dengan pratinjau garis bilangan), isian angka, benar/salah, cari langkah yang salah, **susun langkah bukti**
-- Diagnosis otomatis jawaban interval yang salah ("coba x = 4: titik ini memenuhi soal, tapi tidak ada di jawabanmu")
-- Review harian berjarak, flashcard, buku kesalahan, radar jebakan, cek 5 detik, rating keyakinan, brain dump, tryout berwaktu
-- **Dasbor statistik**: cincin penguasaan, runtutan hari belajar, peta aktivitas, konsep terkuat/terlemah, akurasi per level
-- **Pusat bantuan** (`#bantuan`): 38 artikel yang bisa dicari, tur kenalan 8 langkah, kartu sambutan untuk pengguna baru
-- **Laporkan masalah** dari setiap soal/materi (bug, kunci salah, pembahasan keliru); admin menerima email lewat Edge Function
-- Alur akun lengkap: konfirmasi email, kirim ulang tautan, lupa/ganti sandi, tautan kedaluwarsa, halaman selamat datang
-- Bisa dipasang sebagai aplikasi (PWA), banner saat offline, judul halaman per tampilan, kontras warna sesuai WCAG AA
+> Pure static site: plain HTML + CSS + JavaScript, **no build step**. It runs on any static host (Cloudflare Pages, Netlify, GitHub Pages).
 
-**Untuk guru/kakak**
-- Kelas dengan kode gabung dan tautan undangan (`#gabung=KODE`)
-- Tugas dengan tenggat; **status per siswa dihitung otomatis dari progres** (tidak perlu siswa menekan "selesai")
-- Forum diskusi per kelas: utas, balasan, rumus `$…$`, sematkan, tandai terjawab, moderasi
-- Laporan per siswa dan per kelas: konsep terlemah, jebakan paling umum, salah-padahal-yakin, aktivitas terakhir
-- Pesan ke siswa / seluruh kelas, bisa ditautkan langsung ke materi atau latihan
-- **Studio kursus** (khusus akun guru): buat kursus lewat formulir (materi, contoh bertahap, 6 tipe soal dengan pratinjau, flashcard, jebakan, widget grafik/garis bilangan/Desmos/GeoGebra/PhET/YouTube), terbitkan sebagai draf, **khusus kelas** (terkunci, hanya anggota kelasmu), lewat tautan, atau publik. Tanpa menulis kode
-- **Peran akun**: siswa, guru, admin. Admin mengangkat guru dari halaman *Kelola pengguna*
+## Features
 
-**Keamanan**
-- Row Level Security di semua tabel, hak kolom paling minim, batas ukuran data, batas percobaan kode kelas (`supabase/hardening.sql`)
-- Content Security Policy ketat lewat `_headers` (Netlify): tidak ada skrip inline, tidak ada skrip dari domain lain
-- Semua progres dari server/kode progres melewati pembersih (`BA.sanitize`) sebelum dipakai, sehingga data siswa tidak bisa menyisipkan skrip ke tampilan guru
-- Templat email Supabase berbahasa Indonesia di `supabase/email-templates/` (panduan: [docs/EMAIL.md](docs/EMAIL.md))
+**For students**
+- Lessons per section: intuition → formal explanation → worked examples (steps revealed one at a time) → common traps → practice → exit ticket
+- 25+ interactive widgets with "predict before you try"
+- 250+ hand-written questions + 25 random question generators, 6 levels (mechanics → olympiad), school / UTBK / entrance-exam / olympiad modes, cross-chapter questions
+- 6 question types: multiple choice, interval answers (with a number-line preview), numeric, true/false, find-the-wrong-step, **order the proof steps**
+- Automatic diagnosis of wrong interval answers ("try x = 4: this point satisfies the question but isn't in your answer")
+- Daily spaced review, flashcards, mistake notebook, trap radar, 5-second checks, confidence ratings, brain dumps, timed tryouts
+- **Stats dashboard**: mastery ring, daily streak, activity calendar, strongest/weakest concepts, accuracy per level
+- **Help center** (`#bantuan`): 38 searchable articles, an 8-step guided tour, a welcome card for new users
+- **Report a problem** from any question or lesson (bugs, wrong keys, wrong explanations); the admin is notified by email via an Edge Function
+- Accounts: **sign in with Google**, or email + password with a **6-digit activation code** (no fragile links), password reset by code, change password, welcome page
+- Installable as an app (PWA), offline banner, per-page titles, WCAG AA color contrast
 
-## Tiga mode penyimpanan
+**For teachers / tutors**
+- Classes with a join code and invite link (`#gabung=CODE`)
+- Assignments with due dates; **per-student status is computed from progress** (students never press "done")
+- Per-class discussion forum: threads, replies, `$…$` math, pinning, mark as answered, moderation
+- Per-student and per-class reports: weakest concepts, most common traps, wrong-but-confident answers, recent activity
+- Messages to one student or the whole class, linkable straight to a lesson or practice set
+- **Course Studio** (teacher accounts): build a course with forms (lessons, worked examples, 6 question types with preview, flashcards, traps, graph / number-line / Desmos / GeoGebra / PhET / YouTube widgets), publish as draft, **class-only** (locked to your classes' members), unlisted, or public. No code needed
+- **Roles**: student, teacher, admin. Admins promote teachers on the *Manage users* page
 
-| Mode | Kapan aktif | Akun | Kelas & forum |
+**Security**
+- Row Level Security on every table, least-privilege column grants, size limits, class-code attempt limits (`supabase/hardening.sql`)
+- Strict Content Security Policy via `_headers`: no inline scripts, no third-party scripts
+- All progress from the server or progress codes passes through a sanitizer (`BA.sanitize`) before use, so student data can't inject scripts into a teacher's screen
+- Supabase email templates (code-only, in Indonesian) in `supabase/email-templates/` (guide: [docs/EMAIL.md](docs/EMAIL.md))
+
+## Three storage modes
+
+| Mode | When | Accounts | Classes & forums |
 |---|---|---|---|
-| **Tanpa server** | `config.js` kosong (bawaan) | – | Hanya di browser itu (cocok untuk mencoba; guru bisa memantau lewat *kode progres*) |
-| **Supabase** | `config.js` berisi URL & anon key | Email + sandi | Online, multi-perangkat, aman dengan Row Level Security |
-| **Claude Artifact** | Dibuka sebagai artifact di claude.ai | Akun Claude | Online di dalam claude.ai |
+| **Serverless** | `config.js` empty (default) | – | Only in that browser (good for trying it out; teachers can follow students via *progress codes*) |
+| **Supabase** | `config.js` has the URL & anon key | Google, or email + password | Online, multi-device, protected by Row Level Security |
+| **Claude Artifact** | Opened as an artifact on claude.ai | Claude account | Online inside claude.ai |
 
-## Mulai cepat
+## Quick start
 
 ```bash
-git clone https://github.com/<username>/ruang-nalar.git
+git clone https://github.com/wisnujayaa/ruang-nalar.git
 cd ruang-nalar
-python3 -m http.server 8765      # atau: npm run serve
-# buka http://localhost:8765
+python3 -m http.server 8765      # or: npm run serve
+# open http://localhost:8765
 ```
 
-Harus lewat server lokal (bukan membuka `index.html` langsung), karena kursus dimuat dinamis.
+It must be served (not opened as a `file://`), because courses are loaded dynamically.
 
-## Terbitkan (Cloudflare Pages, gratis)
+## Deploy (Cloudflare Pages, free)
 
-Situs ini statis (tanpa build step), jadi cocok di hosting statis mana pun. Yang dipakai: **Cloudflare Pages**
-(gratis, deploy tidak memakai kredit; batas 500 build/bulan).
+1. dash.cloudflare.com → **Workers & Pages → Create → Pages → Connect to Git** → pick this repo.
+   (If the dashboard offers a *Worker* first, use the "Looking to deploy Pages?" link.)
+2. Production branch `main` · Framework preset **None** · Build command **empty** · Build output directory `/`.
+3. Environment variable `SKIP_DEPENDENCY_INSTALL` = `true` (Playwright is only for local tests).
+4. **Save and Deploy**. Every push to `main` is published automatically, and `_headers` (CSP & security headers) applies as is.
+5. When the site address changes, update **Supabase → Authentication → URL Configuration** (Site URL + Redirect URLs)
+   and, if you use Google sign-in, the **Authorized JavaScript origins** in Google Cloud (see [docs/EMAIL.md](docs/EMAIL.md)).
 
-1. dash.cloudflare.com → **Workers & Pages → Create → Pages → Connect to Git** → pilih repo ini.
-2. Production branch `main` · Framework preset **None** · Build command **kosong** · Build output directory `/`.
-3. Environment variable `SKIP_DEPENDENCY_INSTALL` = `true` (Playwright hanya untuk uji lokal, tidak perlu dipasang saat deploy).
-4. **Save and Deploy**. Setiap push ke `main` otomatis terbit. File `_headers` (CSP & header keamanan) langsung berlaku.
-5. Setelah alamat situs berubah: perbarui **Supabase → Authentication → URL Configuration** (Site URL + Redirect URLs)
-   dan, bila memakai Masuk dengan Google, **Authorized JavaScript origins** di Google Cloud (lihat docs/EMAIL.md).
+Netlify works too (same `_headers` format), but Netlify's newer free plan charges credits per deploy.
 
-Netlify juga bisa (`_headers` formatnya sama), tetapi paket gratis Netlify yang baru menghitung setiap deploy sebagai kredit.
+## Enable accounts, online classes, and forums (Supabase, free)
 
-## Aktifkan akun, kelas online, dan forum (Supabase, gratis)
+In short: create a Supabase project → run `supabase/schema.sql`, `courses.sql`, `roles.sql`, `course-access.sql`, `reports.sql`, then `hardening.sql` in the SQL Editor → make your account admin → put the Project URL and **anon** key in `config.js` → set the Site URL. Step by step: [docs/SUPABASE.md](docs/SUPABASE.md).
 
-Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql`, `supabase/courses.sql`, `supabase/roles.sql`, `supabase/course-access.sql`, `supabase/reports.sql`, lalu `supabase/hardening.sql` di SQL Editor → jadikan akunmu admin → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
+## Adding courses
 
-## Menambah kursus
+Without code: **Account → Course Studio**. With code (custom widgets & question generators): copy `courses/contoh-kursus/`, change the content, and register it in `courses/index.js`. The full guide with every block and question format: [docs/ADDING-COURSES.md](docs/ADDING-COURSES.md).
 
-Tanpa kode: **Akun → Studio kursus**. Dengan kode (bisa memakai widget interaktif & generator soal): salin `courses/contoh-kursus/`, ubah isinya, daftarkan di `courses/index.js`. Panduan lengkap beserta format setiap blok dan tipe soal: [docs/MENAMBAH-KURSUS.md](docs/MENAMBAH-KURSUS.md).
-
-## Struktur
+## Project layout
 
 ```
-index.html              kerangka halaman
-config.js               konfigurasi situs (Supabase opsional)
-assets/                 CSS & ikon
+index.html              page shell
+privasi.html            privacy policy (Indonesian, linked from sign-in and Google OAuth)
+config.js               site configuration (Supabase optional; public anon key only)
+_headers                security headers & CSP (Cloudflare Pages / Netlify)
+manifest.webmanifest    PWA manifest
+assets/                 CSS & icons
 js/
-  math.js               mesin interval, parser jawaban, mini-TeX, garis bilangan
-  registry.js           pemuat kursus (window.BC = kursus aktif)
-  backend.js            adaptor penyimpanan: lokal / Claude / Supabase
-  core.js               progres per kursus, review berjarak, statistik, sinkronisasi
-  ui.js                 halaman belajar: materi, soal, review, flashcard, statistik
-  platform.js           beranda katalog, akun, kelas, tugas, forum, laporan
-  stats.js              dasbor statistik
-  help.js               pusat bantuan & tur kenalan
-  report.js             formulir laporan masalah & kotak masuk admin
-  site.js               nama situs dari config.js (dipisah dari HTML demi CSP)
-  editor.js             Studio kursus (editor tanpa kode)
-  widget-lib.js         pustaka widget untuk Studio (lihat docs/WIDGET.md)
-  expr.js               parser rumus aman untuk widget
-  course-safe.js        pembersih & kompilasi kursus buatan guru
+  math.js               interval engine, answer parser, mini-TeX, number line
+  registry.js           course loader (window.BC = active course)
+  backend.js            storage adapters: local / Claude / Supabase
+  core.js               per-course progress, spaced repetition, stats, sync, sanitizer
+  ui.js                 learning pages: lessons, questions, review, flashcards, routing
+  platform.js           catalog home, account, classes, assignments, forum, reports
+  stats.js              stats dashboard
+  help.js               help center & guided tour
+  report.js             problem-report form & admin inbox
+  site.js               site name from config.js (kept out of HTML for the CSP)
+  editor.js             Course Studio (no-code editor)
+  widget-lib.js         widget library for the Studio (see docs/WIDGETS.md)
+  expr.js               safe formula parser for widgets
+  course-safe.js        sanitizer & compiler for teacher-made courses
 courses/
-  index.js              daftar kursus
-  pertidaksamaan/       kursus utama
-  contoh-kursus/        templat kursus
-supabase/               skema database + uji keamanan
-tests/                  verifikasi kunci jawaban, uji UI, uji RLS
-docs/                   arsitektur, panduan kursus, widget, Supabase
-tools/                  studio-to-file.js: pindahkan kursus Studio ke kode
+  index.js              course list
+  pertidaksamaan/       main course (inequalities)
+  contoh-kursus/        example/template course
+supabase/               database schema, security tests, Edge Function, email templates
+tests/                  answer-key verification, UI flows, RLS tests
+docs/                   architecture, course guide, widgets, Supabase, email, reports
+tools/                  studio-to-file.js: move a Studio course into code
 ```
 
-Penjelasan alur data: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+How data flows: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Pengujian
+## Testing
 
 ```bash
-npm test             # kunci jawaban, pembersih kursus & progres, merge/streak/SRS, fuzz 40 ribu input,
-                     # verifikasi independen 17 generator soal, Edge Function laporan (Node, tanpa dependensi)
-npm run test:ui      # uji asap antarmuka dengan Playwright (jalankan `npm run serve` dulu)
-npm run test:flow    # alur guru & siswa mode Supabase (Supabase palsu di memori)
-npm run test:editor  # guru membuat kursus di Studio → siswa mengerjakan
-npm run test:auth    # daftar, konfirmasi email, kirim ulang, lupa & ganti sandi
-npm run test:help    # pusat bantuan, pencarian, tur kenalan
-npm run test:csp     # CSP dari _headers diterapkan; skrip sisipan harus diblokir
-PGHOST=localhost PGUSER=postgres npm run test:rls   # uji kebijakan keamanan di Postgres LOKAL
+npm test             # answer keys, course & progress sanitizers, merge/streak/SRS, 40k-input fuzzing,
+                     # independent verification of 17 generators, report Edge Function (Node, no deps)
+npm run test:ui      # UI smoke test with Playwright (run `npm run serve` first)
+npm run test:flow    # teacher & student flows in Supabase mode (in-memory fake Supabase)
+npm run test:editor  # a teacher builds a course in the Studio → a student works through it
+npm run test:auth    # sign-up, activation code, resend, password reset & change, Google sign-in
+npm run test:help    # help center, search, guided tour
+npm run test:csp     # the _headers CSP is applied and injected scripts are blocked
+PGHOST=localhost PGUSER=postgres npm run test:rls   # security policy tests on a LOCAL Postgres
 ```
 
-## Lisensi
+## License
 
-Kode: MIT (lihat `LICENSE`). Tautan sumber belajar eksternal di dalam materi tetap milik pemiliknya masing-masing.
+Code: MIT (see `LICENSE`). External learning resources linked from the lessons belong to their respective owners.

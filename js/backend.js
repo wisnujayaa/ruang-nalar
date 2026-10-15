@@ -1,9 +1,9 @@
-/* Ruang Nalar — lapisan backend.
-   Satu antarmuka, tiga implementasi:
-   - supabase : dipakai jika config.js berisi supabaseUrl & supabaseAnonKey (untuk GitHub Pages / hosting sendiri)
-   - claude   : dipakai jika halaman berjalan sebagai Artifact di claude.ai
-   - local    : cadangan; semua data di browser ini saja (mode demo / tanpa akun)
-   Antarmuka yang dipakai UI:
+/* Ruang Nalar — backend layer.
+   One interface, three implementations:
+   - supabase : used when config.js has supabaseUrl & supabaseAnonKey (any static host)
+   - claude   : used when the page runs as an Artifact on claude.ai
+   - local    : fallback; all data stays in this browser (demo mode / no accounts)
+   Interface used by the UI:
      init(), mode, online, user {id,name,email}, isAdmin, auth.{signUp,signIn,signOut,needsLogin}
      progress.{load,save,watch}, classes.{mine,create,join,remove,leave,members,kick,memberProgress,setMembers,candidates,canCreate,usesCode}
      assign.{list,create,remove}, forum.{threads,create,posts,reply,update,remove,removePost}
@@ -15,13 +15,13 @@
   const uid8 = () => Math.random().toString(36).slice(2, 10) + now().toString(36).slice(-4);
   const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
   const err = (m, code) => { const e = new Error(m); if (code) e.code = code; return e; };
-  /* Kursus buatan guru: metadata yang boleh diubah lewat editor */
-  /* Visibilitas kursus Studio: draft (hanya pemilik), class (anggota kelas pemilik), unlisted (lewat tautan), public (katalog) */
+  /* Teacher-made courses: metadata fields the editor may change */
+  /* Studio course visibility: draft (owner only), class (members of the owner's classes), unlisted (by link), public (catalog) */
   const VIS = ['draft', 'class', 'unlisted', 'public'];
   const COURSE_FIELDS = ['title', 'subject', 'level', 'blurb', 'glyph', 'color', 'visibility'];
   const pickMeta = (m) => { const o = {}; COURSE_FIELDS.forEach(k => { if (m && m[k] != null) o[k] = String(m[k]); }); o.title = (o.title || 'Kursus tanpa judul').slice(0, 80); if (!VIS.includes(o.visibility)) o.visibility = 'draft'; if (!['accent', 'sol'].includes(o.color)) o.color = 'accent'; return o; };
   const courseMeta = (row, me) => ({ id: row.id, title: row.title, subject: row.subject || '', level: row.level || '', blurb: row.blurb || '', glyph: row.glyph || '', color: row.color || 'accent', visibility: row.visibility || 'draft', ownerId: row.owner_id || row.owner || null, mine: !!me && (row.owner_id || row.owner) === me, updated: row.updated_at ? Date.parse(row.updated_at) : (row.u || row.t || null), db: true });
-  /* Laporan kendala: jenis yang dikenal, pembersih isian, dan bentuk baris yang dipakai UI */
+  /* Problem reports: known kinds, input sanitizer, and the row shape the UI uses */
   const REPORT_KINDS = ['bug', 'soal', 'materi', 'saran', 'lain'];
   const REPORT_STATUS = ['baru', 'diproses', 'selesai'];
   const uuid = () => (G.crypto && G.crypto.randomUUID) ? G.crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
@@ -40,7 +40,7 @@
   function LocalBackend() {
     const K = { cls: 'nalar-local-classes', stu: 'nalar-local-students', asg: 'nalar-local-assign', thr: 'nalar-local-threads', pst: 'nalar-local-posts', me: 'nalar-local-me', crs: 'nalar-local-courses' };
     const me = ls.get(K.me, null) || (() => { const m = { id: 'local', name: 'Kamu' }; ls.set(K.me, m); return m; })();
-    me.role = 'admin';   // satu pengguna di browser ini = pemilik penuh
+    me.role = 'admin';   // the single user of this browser owns everything
     const B = {
       mode: 'local', online: false, isAdmin: true, user: me,
       async init() { return B; },
@@ -204,13 +204,13 @@
     return B;
   }
 
-  /* Alamat situs untuk tautan di email (tanpa #hash). Harus terdaftar di Supabase → Authentication → URL Configuration. */
+  /* Site address for links in emails (without #hash). Must be listed in Supabase → Authentication → URL Configuration. */
   const siteUrl = () => location.origin + location.pathname;
   /* =========================== SUPABASE =========================== */
   function SupabaseBackend() {
     const sb = G.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } });
-    /* Jika server menolak karena tidak ada izin padahal UI mengira sudah masuk, berarti token sesi
-       tidak ikut terkirim (sesi hilang/kedaluwarsa). Periksa ulang lalu minta pengguna masuk lagi. */
+    /* If the server denies permission while the UI believes the user is signed in, the session token
+       was not sent (session lost/expired). Re-check, then ask the user to sign in again. */
     let rechecking = false;
     async function recheckSession() {
       if (rechecking) return; rechecking = true;
@@ -236,7 +236,7 @@
         await setUser(data && data.session ? data.session.user : null);
         sb.auth.onAuthStateChange((ev, session) => {
           const u = session ? session.user : null;
-          // Tautan "lupa sandi" membuka sesi khusus pemulihan: aplikasi harus menampilkan formulir sandi baru
+          // A "forgot password" link opens a recovery session: the app must show the new-password form
           if (ev === 'PASSWORD_RECOVERY') { B.recovery = true; try { G.dispatchEvent(new CustomEvent('nalar-auth', { detail: 'recovery' })); } catch (e) { } }
           if ((u && u.id) !== (B.user && B.user.id)) setUser(u).then(() => G.BA && G.BA.emit && G.BA.emit('auth'));
         });
@@ -245,20 +245,20 @@
       auth: {
         get needsLogin() { return !B.user; },
         async signUp(email, password, name) { const r = await sb.auth.signUp({ email, password, options: { data: { display_name: name }, emailRedirectTo: siteUrl() } }); chk(r); return r.data; },
-        /* Kirim ulang email konfirmasi pendaftaran */
+        /* Resend the sign-up confirmation email */
         async resend(email) { chk(await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: siteUrl() } })); },
-        /* Ganti sandi (saat masuk, atau setelah membuka tautan "lupa sandi") */
+        /* Change password (while signed in, or after opening a "forgot password" link) */
         async updatePassword(password) { chk(await sb.auth.updateUser({ password })); B.recovery = false; },
         canEmail: true,
         async signIn(email, password) { chk(await sb.auth.signInWithPassword({ email, password })); },
         async signOut() { await sb.auth.signOut(); await setUser(null); },
         async resetPassword(email) { chk(await sb.auth.resetPasswordForEmail(email, { redirectTo: siteUrl() })); },
-        /* Kode dari email (aktivasi / lupa sandi). Kode tidak bisa "terpakai" oleh pemindai tautan email,
-           dan email tanpa tautan jauh lebih jarang dianggap spam. kind: 'signup' | 'recovery' */
+        /* One-time code from email (activation / password reset). Unlike links, codes cannot be "used up" by
+           email link scanners, and link-free emails are far less likely to be flagged as spam. kind: 'signup' | 'recovery' */
         async verifyCode(email, code, kind) {
           const type = kind === 'recovery' ? 'recovery' : 'signup';
           let r = await sb.auth.verifyOtp({ email, token: code, type });
-          // Kode dari email "tautan masuk" (dikirim dari dasbor) memakai jenis 'email'
+          // Codes from "magic link" emails (sent from the dashboard) use type 'email'
           if (r.error && type === 'signup') { const r2 = await sb.auth.verifyOtp({ email, token: code, type: 'email' }); if (!r2.error) r = r2; }
           chk(r);
           const s = r.data && r.data.session; if (!s) throw err('Kode tidak bisa dipakai. Minta kode baru.', 'otp');
@@ -266,7 +266,7 @@
           await setUser(s.user); G.BA && G.BA.emit && G.BA.emit('auth');
           return r.data;
         },
-        /* Masuk dengan Google: tampil otomatis bila penyedia Google diaktifkan di Supabase */
+        /* Sign in with Google: shown automatically when the Google provider is enabled in Supabase */
         async providers() {
           if (provCache) return provCache;
           try {
@@ -292,11 +292,11 @@
         canCreate: true, usesCode: true, manual: false,
         async mine() { const r = chk(await sb.from('classes').select('id,name,course_id,owner_id,join_code,created_at').order('created_at')); return r.map(c => ({ id: c.id, name: c.name, course: c.course_id, ownerId: c.owner_id, isOwner: c.owner_id === B.user.id, code: c.join_code })); },
         async create(c) { const r = chk(await sb.from('classes').insert({ name: c.name, course_id: c.course, owner_id: B.user.id }).select().single()); return { id: r.id, code: r.join_code }; },
-        /* Kode salah → server mengembalikan NULL (bukan error) supaya percobaan tercatat untuk batas anti-tebak */
+        /* Wrong code → the server returns NULL (not an error) so the attempt is recorded for the anti-guessing limit */
         async join(code) { const id = chk(await sb.rpc('join_class', { p_code: code })); if (!id) throw err('Kode kelas tidak ditemukan. Periksa lagi hurufnya (huruf O dan angka 0, huruf I dan angka 1 tidak dipakai).', 'notfound'); return id; },
         async remove(id) { chk(await sb.from('classes').delete().eq('id', id)); },
         async update(id, patch) { const p = {}; if (patch.name) p.name = String(patch.name).slice(0, 60); if (patch.course) p.course_id = patch.course; chk(await sb.from('classes').update(p).eq('id', id)); },
-        /* Kode baru: tautan/kode lama tidak berlaku lagi (anggota yang sudah masuk tetap) */
+        /* New code: the old link/code stops working (existing members stay) */
         async newCode(id) {
           const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
           for (let i = 0; i < 5; i++) {
@@ -339,7 +339,7 @@
         get canEdit() { return !!B.user && ['teacher', 'admin'].includes(B.user.role); },
         async list() {
           let q = sb.from('courses').select('id,title,subject,level,blurb,glyph,color,visibility,owner_id,updated_at').order('updated_at', { ascending: false }).limit(200);
-          // 'class' ikut diminta: RLS di server hanya mengembalikan kursus khusus kelas yang memang boleh kubuka (dari kelasku)
+          // 'class' is requested too: server-side RLS only returns class-only courses I'm allowed to open (from my classes)
           q = B.user ? q.or('visibility.in.(public,class),owner_id.eq.' + B.user.id) : q.eq('visibility', 'public');
           const r = await q; if (r.error) return []; return r.data.map(c => courseMeta(c, B.user && B.user.id));
         },
@@ -354,7 +354,7 @@
       },
       reports: {
         canNotify: true,
-        /* id dibuat di browser: pengunjung tanpa akun tidak boleh membaca tabel, jadi tidak bisa memakai "insert … returning" */
+        /* The id is generated in the browser: anonymous visitors may not read the table, so "insert … returning" is not possible */
         async send(r) { const id = uuid(); chk(await sb.from('reports').insert(Object.assign({ id }, cleanReport(r)))); return id; },
         async mine() { if (!B.user) return []; return chk(await sb.from('reports').select('*').eq('user_id', B.user.id).order('created_at', { ascending: false }).limit(50)).map(x => repRow(x, B.user.name)); },
         async all() {
@@ -364,7 +364,7 @@
         },
         async setStatus(id, status, note) { if (!REPORT_STATUS.includes(status)) throw err('Status tidak dikenal.'); const p = { status }; if (note != null) p.admin_note = String(note).slice(0, 1000); chk(await sb.from('reports').update(p).eq('id', id)); },
         async remove(id) { chk(await sb.from('reports').delete().eq('id', id)); },
-        /* Minta Edge Function mengirim email/WA ke admin. Gagal di sini tidak membatalkan laporan. */
+        /* Ask the Edge Function to notify the admin. A failure here does not cancel the report. */
         async notify(id) { try { const r = await sb.functions.invoke('notify-report', { body: { id } }); return r.error ? null : r.data; } catch (e) { return null; } }
       },
       async profiles(ids) { const out = {}; ids = Array.from(new Set(ids.filter(Boolean))); if (!ids.length) return out; const r = chk(await sb.from('profiles').select('id,display_name').in('id', ids)); r.forEach(p => { out[p.id] = p.display_name; }); return out; }
@@ -379,7 +379,7 @@
       let name = md.display_name || md.full_name || md.name || (u.email || '').split('@')[0], role = 'student';
       try {
         let r = await sb.from('profiles').select('display_name, role').eq('id', u.id).maybeSingle();
-        if (r.error) r = await sb.from('profiles').select('display_name').eq('id', u.id).maybeSingle();   // skema lama tanpa kolom role
+        if (r.error) r = await sb.from('profiles').select('display_name').eq('id', u.id).maybeSingle();   // older schema without the role column
         if (r.data) { name = r.data.display_name; role = r.data.role || 'student'; }
       } catch (e) { }
       B.user = { id: u.id, name, email: u.email, role, created: Date.parse(u.created_at) || 0 }; B.isAdmin = role === 'admin'; B.online = true; pollNotes();
@@ -387,7 +387,7 @@
     return B;
   }
 
-  /* Pilih backend */
+  /* Pick the backend */
   let chosen;
   if (CFG.supabaseUrl && CFG.supabaseAnonKey && G.supabase && G.supabase.createClient) chosen = SupabaseBackend();
   else if (G.claude && G.claude.use) chosen = ClaudeBackend();

@@ -1,4 +1,4 @@
-/* Ruang Nalar — inti aplikasi: state per kursus, simpan lokal, sinkronisasi, jadwal ulang berjarak, statistik */
+/* Ruang Nalar — app core: per-course state, local storage, sync, spaced repetition, statistics */
 (function (G) {
   'use strict';
   const B = G.BM, C = G.BC, A = G.BA = {};
@@ -15,10 +15,10 @@
   }
   A.fresh = fresh;
 
-  /* ---------- pembersih state ----------
-     Progres bisa datang dari luar: server (perangkat lain), kode progres, atau progres siswa yang dibuka guru.
-     Semua field dipaksa ke tipe & batas yang benar supaya (1) data rusak tidak membuat aplikasi macet, dan
-     (2) progres yang sengaja direkayasa tidak bisa menyisipkan HTML/skrip ke layar orang lain. */
+  /* ---------- state sanitizer ----------
+     Progress can come from outside: the server (other devices), progress codes, or student progress opened by a teacher.
+     Every field is coerced to the right type & bounds so that (1) corrupt data cannot crash the app, and
+     (2) crafted progress cannot inject HTML/script into someone else's screen. */
   const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const num = (v, d, lo, hi) => { let n = typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' ? +v : NaN); if (!isFinite(n)) n = d; if (lo != null && n < lo) n = lo; if (hi != null && n > hi) n = hi; return n; };
   const int = (v, d, lo, hi) => Math.round(num(v, d, lo, hi));
@@ -54,22 +54,22 @@
     o.created = num(j.created, now(), 0, T_MAX); if (j.updated != null) o.updated = num(j.updated, 0, 0, T_MAX);
     return o;
   };
-  /* Teks JSON/objek dari luar → state bersih; null bila tidak terbaca */
+  /* External JSON text/object → clean state; null if unreadable */
   A.parseState = function (remote) { try { const j = typeof remote === 'string' ? JSON.parse(remote) : remote; return isObj(j) ? A.sanitize(j) : null; } catch (e) { return null; } };
-  /* ---------- simpan lokal ---------- */
+  /* ---------- local storage ---------- */
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
   function readState(id) {
     try {
       let raw = lsGet(keyOf(id));
-      if (!raw && id === 'pertidaksamaan') raw = lsGet('batas-state-v1'); // migrasi dari versi lama
+      if (!raw && id === 'pertidaksamaan') raw = lsGet('batas-state-v1'); // migrate from the old version
       const j = JSON.parse(raw || 'null'); if (j && j.v === 1) return A.sanitize(j);
     } catch (e) { }
     return fresh();
   }
   A.S = fresh();
   A.readState = readState;
-  /* Pindah kursus aktif: simpan yang lama, muat yang baru, lalu sinkronkan */
+  /* Switch the active course: save the old one, load the new one, then sync */
   A.useCourse = function (id) {
     if (A.course === id) return;
     if (A.course) { A.flush(); A.sync.push(A.course, A.S); }
@@ -85,7 +85,7 @@
   };
   A.flush = () => { clearTimeout(saveT); if (A.course) lsSet(keyOf(A.course), JSON.stringify(A.S)); };
 
-  /* ---------- waktu belajar ---------- */
+  /* ---------- study time ---------- */
   let lastTick = 0;
   A.tick = function () {
     const t = now();
@@ -93,9 +93,9 @@
     lastTick = t;
   };
   A.minutesToday = () => Math.round((A.S.daily[A.today()] || 0) / MIN);
-  /* Hari beruntun: hari aktif = belajar ≥ 3 menit atau menjawab ≥ 1 soal. Streak tetap hidup sampai hari ini berakhir.
-     Kumpulan hari aktif dihitung sekali (bukan per hari × per jawaban), lalu mundur per tanggal kalender
-     (setDate, jam 12 siang) supaya aman dari pergeseran jam musim panas. */
+  /* Streak: an active day = studied ≥ 3 minutes or answered ≥ 1 question. The streak stays alive until today ends.
+     The set of active days is built once (not per day × per answer), then we step back by calendar date
+     (setDate, at noon) so daylight-saving shifts can't break it. */
   A.streak = function () {
     const days = new Set();
     for (const [d, v] of Object.entries(A.S.daily || {})) if (v >= 3 * MIN) days.add(d);
@@ -106,9 +106,9 @@
     return s;
   };
 
-  /* ---------- jadwal ulang berjarak (ala SM-2, disederhanakan) ----------
-     grade: 0 lupa/salah, 1 susah/menebak, 2 ingat, 3 mudah/yakin */
-  const IV_MAX = 365;   // jarak review terpanjang (hari)
+  /* ---------- spaced repetition (simplified SM-2) ----------
+     grade: 0 forgot/wrong, 1 hard/guessed, 2 remembered, 3 easy/confident */
+  const IV_MAX = 365;   // longest review interval (days)
   A.schedule = function (map, key, grade, extra) {
     const t = now();
     const s = map[key] || { iv: 0, ef: 2.4, n: 0, lapses: 0, due: t, last: 0 };
@@ -123,7 +123,7 @@
   };
   A.isDue = (s) => s && s.due <= now();
 
-  /* ---------- item: ambil dari bank atau generator ---------- */
+  /* ---------- items: from the question bank or a generator ---------- */
   A.item = function (ref) {
     if (!ref) return null;
     if (typeof ref === 'string') {
@@ -136,7 +136,7 @@
   A.schedKey = (it) => it.gen ? 'g:' + it.gen : it.id;
   A.newSeed = () => (Math.floor(Math.random() * 2 ** 31) ^ (now() & 0xffff)) >>> 0;
 
-  /* ---------- mencatat jawaban ---------- */
+  /* ---------- recording answers ---------- */
   A.record = function (it, res) {
     // res: {ok, conf(1..3), ms, ans, trapHit, src}
     const a = { t: now(), i: it.id, s: it.sec || 0, l: it.lvl || 0, ok: res.ok ? 1 : 0, c: res.conf || 2, ms: Math.min(res.ms || 0, 30 * MIN), k: it.concepts || [], src: res.src || 'latihan' };
@@ -155,7 +155,7 @@
     return a;
   };
 
-  /* ---------- statistik turunan (dihitung dari log, tidak disimpan) ---------- */
+  /* ---------- derived statistics (computed from the log, never stored) ---------- */
   A.stats = function (S) {
     S = S || A.S;
     const conc = {}, traps = {};
@@ -189,7 +189,7 @@
     if (A.S.diag.done) { const r = A.S.diag.res[P]; if (r) return r.ok === r.n ? 'lulus' : 'latih'; }
     return 'belum';
   };
-  /* Hanya item yang masih ada di kursus: soal/generator yang sudah dihapus tidak dihitung "jatuh tempo" selamanya */
+  /* Only items that still exist in the course: deleted questions/generators must not stay "due" forever */
   A.itemExists = (k) => k.startsWith('g:') ? !!(C.GEN && C.GEN[k.slice(2)]) : !!(C.BANK && C.BANK[k]);
   A.dueItems = function () { return Object.keys(A.S.items).filter(k => A.isDue(A.S.items[k]) && A.itemExists(k)); };
   A.dueCards = function (pool) { return (pool || G.BC.CARDS).filter(c => !A.S.cards[c.id] || A.isDue(A.S.cards[c.id])); };
@@ -198,7 +198,7 @@
     return C.CARDS.filter(c => A.secProgress(c.sec).started);
   };
 
-  /* ---------- ekspor / impor ---------- */
+  /* ---------- export / import ---------- */
   A.exportCode = function () { const j = JSON.stringify(A.S); return 'BATAS1.' + btoa(unescape(encodeURIComponent(j))); };
   A.decodeCode = function (code) {
     code = String(code || '').trim(); if (!code.startsWith('BATAS1.')) throw new Error('Kode tidak dikenali. Kode diawali dengan BATAS1.');
@@ -206,9 +206,9 @@
     if (!j || j.v !== 1) throw new Error('Isi kode rusak.'); return A.sanitize(j);
   };
 
-  /* ---------- gabung dua state (HP + laptop) ---------- */
-  /* Sisi yang belum mengalami reset terbaru hanya boleh menyumbang data yang lebih baru dari reset itu.
-     Tanpa ini, perangkat lain yang masih menyimpan data lama akan "menghidupkan" kembali progres yang sudah dihapus. */
+  /* ---------- merge two states (phone + laptop) ---------- */
+  /* A side that hasn't seen the latest reset may only contribute data newer than that reset.
+     Otherwise another device still holding old data would "resurrect" progress that was deleted. */
   function afterReset(x, R) {
     if ((x.resetAt || 0) >= R) return x;
     const y = fresh(); y.resetAt = x.resetAt || 0; y.nick = x.nick; y.nickT = x.nickT; y.updated = x.updated; y.created = x.created;
@@ -246,10 +246,10 @@
     return o;
   };
 
-  /* ---------- sinkronisasi lewat backend (lokal / Claude / Supabase) ---------- */
+  /* ---------- sync through the backend (local / Claude / Supabase) ---------- */
   const sync = A.sync = { status: 'lokal', busy: false, pending: false, timer: null, listeners: [], lastPushed: '', notes: [] };
-  const pushed = {};          // teks terakhir yang berhasil dikirim, per kursus
-  let chain = Promise.resolve();   // pengiriman diantrikan berurutan, jadi tidak ada yang terlewat saat pindah kursus
+  const pushed = {};          // last successfully pushed text, per course
+  let chain = Promise.resolve();   // pushes are queued in order, so nothing is lost when switching courses
   const BB = () => G.BB;
   sync.on = (fn) => sync.listeners.push(fn);
   const emit = () => sync.listeners.forEach(f => { try { f(); } catch (e) { } });
@@ -267,11 +267,11 @@
     if (!sync.online || !A.course) return;
     sync.pending = true; clearTimeout(sync.timer); sync.timer = setTimeout(sync.push, 2500);
   };
-  /* Kirim progres kursus tertentu (bawaan: kursus aktif). State & kursus diambil saat dipanggil, lalu diantrikan. */
+  /* Push progress for a course (default: the active one). State & course are captured at call time, then queued. */
   sync.push = function (course, src) {
     course = typeof course === 'string' ? course : A.course; src = src || (course === A.course ? A.S : null);
     if (!sync.online || !course || !src) return chain;
-    if (sync.lastPushed === '') delete pushed[course];   // dipaksa kirim ulang (mis. setelah reset)
+    if (sync.lastPushed === '') delete pushed[course];   // force a re-push (e.g. after a reset)
     const s = packState(src);
     if (s === pushed[course]) { if (course === A.course) sync.pending = false; return chain; }
     chain = chain.then(async () => {
@@ -283,7 +283,7 @@
     });
     return chain;
   };
-  /* Ambil progres dari server lalu gabungkan dengan yang ada di perangkat */
+  /* Pull progress from the server and merge it with what's on this device */
   sync.pull = async function () {
     if (!sync.online || !A.course) { sync.status = sync.online ? 'tersinkron' : 'lokal'; emit(); return; }
     const course = A.course;

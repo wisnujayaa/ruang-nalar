@@ -1,5 +1,5 @@
-/* Layout: satu kolom fokus (maks 760px), navigasi bawah di HP, di atas di layar lebar.
-   Motif: garis bilangan — titik penuh/kosong dan ruas solusi berwarna teal. */
+/* Layout: one focused column (max 760px), bottom nav on phones, top nav on wide screens.
+   Motif: the number line — closed/open dots and teal solution segments. */
 :root{
   --bg:#F3F4F9; --surface:#FFFFFF; --surface-2:#E9EBF4; --ink:#12162B; --ink-2:#434A68; --muted:#5B6281; --line:#DCDFEB;
   --accent:#3442E8; --accent-ink:#FFFFFF; --accent-soft:#E3E5FF;
@@ -43,7 +43,7 @@ a{color:var(--accent)}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .top .wrapx{display:flex;align-items:center;gap:12px}
 .brand{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:800;font-size:1.3rem;letter-spacing:-.02em;color:var(--ink);text-decoration:none;background:none;border:0;padding:0;cursor:pointer}
-/* Logo: kotak = ruang; jalur bertahap berbentuk N = nalar; dari titik kosong (belum tahu) ke titik penuh (paham) */
+/* Logo: the box = "ruang" (space); the stepped N-shaped path = "nalar" (reasoning); from an open dot (not yet known) to a closed dot (understood) */
 .brand svg.mark{width:28px;height:28px;flex:none}
 .mark .m-tile{fill:var(--accent)}
 .mark .m-path{fill:none;stroke:var(--accent-ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
@@ -69,7 +69,7 @@ a{color:var(--accent)}
 }
 main{padding-top:18px}
 
-/* ---- dasar komponen ---- */
+/* ---- base components ---- */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin:14px 0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;cursor:pointer;transition:transform .12s,background .15s,border-color .15s}
 .btn:hover{border-color:var(--accent)}
@@ -110,7 +110,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .les-h{display:flex;gap:12px;align-items:flex-start;margin:4px 0 10px}
 .les-h h1{font-size:clamp(1.3rem,4vw,1.7rem)}
 
-/* ---- beranda ---- */
+/* ---- home ---- */
 .hello{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 4px}
 .ring{position:relative;width:86px;height:86px;flex:none}
 .ring svg{width:86px;height:86px;transform:rotate(-90deg)}
@@ -134,7 +134,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .trapcard b{color:var(--flip)}
 .foot{text-align:center;margin-top:24px}
 
-/* ---- peta ---- */
+/* ---- learning map ---- */
 .path{list-style:none;padding:0;margin:14px 0;position:relative}
 .path::before{content:"";position:absolute;left:21px;top:20px;bottom:40px;width:2px;background:var(--line)}
 .path li{position:relative;margin:10px 0}
@@ -158,7 +158,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .pre-b.s-latih{border-color:var(--flip);background:var(--flip-soft)} .pre-b.s-latih em{color:var(--flip)}
 @media (max-width:480px){.sec-g{display:none}.path li.pre,.path li.end{padding-left:0}.path::before{display:none}}
 
-/* ---- materi ---- */
+/* ---- lessons ---- */
 .dots{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 4px}
 .dot{width:26px;height:8px;border-radius:4px;border:0;background:var(--surface-2);cursor:pointer;padding:0}
 .dot.past{background:var(--sol)} .dot[aria-selected="true"]{background:var(--accent);width:38px}
@@ -220,7 +220,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .donebox .row{justify-content:center}
 .widget{margin-top:6px}
 
-/* ---- soal ---- */
+/* ---- questions ---- */
 .q{display:flex;flex-direction:column;gap:10px}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .tag{font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
@@ -278,7 +278,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .sol{margin-top:8px} .sol summary{cursor:pointer;font-weight:700}
 .q.pop .fbx.good{animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
 
-/* ---- sesi ---- */
+/* ---- sessions ---- */
 .run-h{display:flex;align-items:center;gap:10px;margin:2px 0 10px}
 .bar{flex:1;height:10px;background:var(--surface-2);border-radius:5px;overflow:hidden}
 .bar span{display:block;height:100%;width:0;background:var(--sol);border-radius:5px;transition:width .35s ease}
@@ -303,7 +303,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .done-msg{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--sol-ink)}
 .done-msg .ic{fill:none}
 
-/* ---- flashcard ---- */
+/* ---- flashcards ---- */
 .flash{display:flex;align-items:center;justify-content:center;width:100%;min-height:240px;border-radius:20px;border:1.5px solid var(--line);background:var(--surface);padding:24px;cursor:pointer;text-align:center;font-size:1.18rem;line-height:1.5;margin:8px 0}
 .flash .ff{display:flex;flex-direction:column;gap:14px}
 .flash.flipped{cursor:default;background:var(--accent-soft);border-color:transparent;animation:flipin .35s ease}
@@ -312,7 +312,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .rate{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .rate .r0{color:var(--bad)} .rate .r1{color:var(--warn)} .rate .r2{color:var(--sol-ink)} .rate .r3{color:var(--accent)}
 
-/* ---- kesalahan, ringkasan ---- */
+/* ---- mistakes, summary ---- */
 .mlist{list-style:none;padding:0}
 .mh{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .mq{margin:8px 0}
@@ -325,7 +325,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;
 .cq{position:absolute;right:12px;bottom:10px;font-size:.8rem;color:var(--accent);font-weight:600}
 .cover.open{border-style:solid;background:var(--surface);cursor:default} .cover.open .cv{visibility:visible;animation:rise .3s ease} .cover.open .cq{display:none}
 
-/* ---- statistik ---- */
+/* ---- stats ---- */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}
 .kpis div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
 .kpis b{display:block;font-family:var(--f-display);font-size:1.8rem;font-variant-numeric:tabular-nums;line-height:1.1}
@@ -433,7 +433,7 @@ blockquote{margin:10px 0;padding:10px 14px;border-left:3px solid var(--sol);back
 .w-probe-pt{stroke:var(--surface);stroke-width:3;cursor:grab} .w-probe-pt.ok{fill:var(--ok)} .w-probe-pt.bad{fill:var(--bad)}
 .w-read .ok,.w-read span.ok{color:var(--ok)} .w-read span.bad{color:var(--bad)}
 
-/* ---- garis bilangan ---- */
+/* ---- number line ---- */
 .nl{width:100%;height:auto;display:block;max-width:520px;margin:6px auto}
 .nl-ax,.nl-tk{stroke:var(--ink-2);stroke-width:1.6}
 .nl-arr{fill:var(--ink-2)}
@@ -444,7 +444,7 @@ blockquote{margin:10px 0;padding:10px 14px;border-left:3px solid var(--sol);back
 .nl-lb{fill:var(--ink);font-size:17px;text-anchor:middle;font-family:var(--f-mono)}
 .nl-forbid{stroke:var(--bad);stroke-width:2;stroke-dasharray:3 3}
 
-/* ---- rumus ---- */
+/* ---- math ---- */
 .m{font-family:var(--f-math);font-size:1.08em;white-space:nowrap;letter-spacing:.01em}
 .m i{font-style:italic;padding-right:.04em}
 .mr{margin:0 .28em} .mb{margin:0 .18em} .mu{margin-right:.04em}
@@ -463,7 +463,7 @@ blockquote{margin:10px 0;padding:10px 14px;border-left:3px solid var(--sol);back
 .q-text .m,.problem .m{font-size:1.1em}
 
 
-/* ---- tata letak materi (daftar isi) ---- */
+/* ---- lesson layout (table of contents) ---- */
 body[data-view="lesson"] main.wrapx,body[data-view="intro"] main.wrapx,body[data-view="dash"] main.wrapx{max-width:1120px}
 .les-ht{flex:1;min-width:0}
 .les-prog{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
@@ -509,7 +509,7 @@ body[data-view="lesson"] main.wrapx,body[data-view="intro"] main.wrapx,body[data
 .rt-video{background:var(--bad-soft);color:var(--bad)} .rt-artikel{background:var(--accent-soft);color:var(--accent)} .rt-alat{background:var(--sol-soft);color:var(--sol-ink)} .rt-buku{background:var(--warn-soft);color:var(--warn)}
 .rti{font-weight:600;line-height:1.35} .rs{font-size:.82rem;color:var(--muted)}
 .tag.t-l6{background:var(--ink);color:var(--bg)} .tag.t-olim{background:var(--ink);color:var(--bg)} .tag.t-lintas{background:var(--accent-soft);color:var(--accent)}
-/* ---- widget tambahan ---- */
+/* ---- extra widgets ---- */
 .w-arcA{stroke:var(--accent);stroke-width:2} .w-arcB{stroke:var(--curve2);stroke-width:2}
 .w-ghostA{fill:none;stroke:var(--accent);stroke-width:2.5} .w-ghostB{fill:none;stroke:var(--curve2);stroke-width:2.5}
 .w-truth{display:grid;gap:6px;margin:8px 0}
@@ -535,7 +535,7 @@ body[data-view="lesson"] main.wrapx,body[data-view="intro"] main.wrapx,body[data
 .w-tl.lg{font-size:20px;font-weight:600}
 .w-ghostbox{fill:none;stroke:var(--muted);stroke-dasharray:5 4}
 .w-stepA{stroke:var(--accent);stroke-width:5;stroke-linecap:round;fill:none} .w-stepB{stroke:var(--curve2);stroke-width:5;stroke-linecap:round;fill:none} .w-stepS{stroke:var(--sol);stroke-width:3;stroke-dasharray:6 4}
-/* ---- dashboard & kelas ---- */
+/* ---- dashboard & classes ---- */
 .av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-weight:800;flex:none}
 .kh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .kform{border-top:1px solid var(--line);margin-top:12px;padding-top:4px}
@@ -571,7 +571,7 @@ code{font-family:var(--f-mono);font-size:.88em;background:var(--surface-2);paddi
 .nudge{background:var(--accent-soft);border-color:transparent}
 .card.slim{padding:10px 14px}
 .glyph-t{font-family:var(--f-math);font-size:2.4rem;font-style:italic;opacity:.35;right:16px;bottom:4px;width:auto}
-/* katalog kursus */
+/* course catalog */
 .catalog,.clist,.cprog{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .ccard{display:flex;flex-direction:column;gap:8px;align-items:flex-start;text-align:left;padding:18px;border-radius:18px;border:1px solid var(--line);background:var(--surface);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,border-color .15s}
 .ccard:hover{border-color:var(--accent);transform:translateY(-2px)}
@@ -583,12 +583,12 @@ code{font-family:var(--f-mono);font-size:.88em;background:var(--surface-2);paddi
 .klas-card{flex-direction:row;align-items:center}
 .cprog .card{margin:0}
 .kpis.small b{font-size:1.3rem}.kpis.small div{padding:10px}
-/* akun */
+/* account */
 .acct{display:flex;align-items:center;gap:14px}
 .av.big{width:56px;height:56px;font-size:1.4rem}
 form.inline{display:flex;gap:8px}
 form.inline input{flex:1}
-/* kelas */
+/* classes */
 @media (min-width:960px){body[data-view="klas"] main.wrapx,body[data-view="student"] main.wrapx,body[data-view="thread"] main.wrapx{max-width:980px}}
 .codebox{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;background:var(--sol-soft);border-color:transparent}
 .codebox.hi{animation:pop .6s}
@@ -627,7 +627,7 @@ details.card[open]>summary{margin-bottom:6px}
 .post.by-t{border-left:4px solid var(--sol)}
 .post .ic{width:15px;height:15px;fill:none;vertical-align:-2px}
 .preview-f{border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--surface-2)}
-/* soal menyusun bukti */
+/* proof-ordering questions */
 .ord .lbl{margin-top:10px}
 .ord-ans,.ord-key{padding-left:0;list-style:none;margin:6px 0;display:grid;gap:6px}
 .ord-key{list-style:decimal;padding-left:1.4em}
@@ -647,7 +647,7 @@ details.card[open]>summary{margin-bottom:6px}
 @media (max-width:420px){.tabs3 button .ic{display:none}}
 .post h2.tt{overflow-wrap:anywhere}
 
-/* =================== Studio / editor kursus =================== */
+/* =================== Studio / course editor =================== */
 @media (min-width:960px){body[data-view="editor"] main.wrapx,body[data-view="studio"] main.wrapx{max-width:980px}}
 .studio-cta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .studio-cta h2 .ic{fill:none;color:var(--accent);vertical-align:-3px}
@@ -709,7 +709,7 @@ details.card[open]>summary{margin-bottom:6px}
 .ed-tabs{flex-wrap:wrap}
 .chip.role-admin{background:var(--flip-soft);color:var(--flip)} .chip.role-teacher{background:var(--sol-soft);color:var(--sol-ink)}
 .adm select{width:auto;min-height:36px;padding:4px 8px}
-/* pustaka widget */
+/* widget library */
 .wl-plot .wl-grid{stroke:var(--line);stroke-width:1}
 .wl-plot .wl-axis{stroke:var(--ink-2);stroke-width:1.5}
 .wl-plot .wl-tick{fill:var(--muted);font-size:12px;text-anchor:middle;font-family:var(--f-mono)}
@@ -738,14 +738,14 @@ details.card[open]>summary{margin-bottom:6px}
 .inline-f input{flex:1;min-width:0}
 .danger-zone{border-color:var(--bad-soft)}
 .danger-zone h2{color:var(--bad)}
-/* Status akses kursus di halaman kelas */
+/* Course access status on the class page */
 .warnbox{background:var(--warn-soft);border-color:transparent}
 .warnbox p{margin:.2rem 0}
 .acc-note{display:flex;align-items:center;gap:6px;margin:.2rem 0 .8rem}
 .locked{text-align:center;max-width:520px;margin:2rem auto}
 .locked .lk-ic{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--accent-soft);color:var(--accent);margin-bottom:.5rem}
 .locked .row{justify-content:center}
-/* Laporan kendala */
+/* Problem reports */
 .fb-rep{margin:.6rem 0 0;font-size:.85rem}
 .fb-rep .linkbtn{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-weight:600}
 .fb-rep .linkbtn:hover{color:var(--accent)}
@@ -762,7 +762,7 @@ details.card[open]>summary{margin-bottom:6px}
 .lk-ic{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--accent-soft);color:var(--accent);margin-bottom:.5rem}
 .rep-ok .lk-ic{background:var(--ok-soft);color:var(--ok)}
 .help-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-top:1rem}
-/* ===== Dashboard statistik (js/stats.js) ===== */
+/* ===== Stats dashboard (js/stats.js) ===== */
 .st-hero{display:flex;flex-wrap:wrap;gap:18px;align-items:center}
 .st-rings{display:flex;gap:10px}
 .st-ring{width:118px;height:118px;flex:none}
@@ -821,7 +821,7 @@ details.card[open]>summary{margin-bottom:6px}
 .trap .tw,.trap .tr,.trap .tt{overflow-x:auto;overflow-y:hidden;max-width:100%;scrollbar-width:thin}
 
 .cprog .kpis.small{grid-template-columns:repeat(3,minmax(0,1fr))}
-/* Akun: kata sandi, cek email, sambutan */
+/* Account: password, check email, welcome */
 .pw{display:flex;gap:6px;align-items:stretch}
 .pw input{flex:1;min-width:0}
 .pw-eye{flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:var(--r-s);padding:0 12px;font-weight:600;cursor:pointer;font-size:.85rem}
@@ -841,7 +841,7 @@ details.card[open]>summary{margin-bottom:6px}
 .wstep{display:flex;gap:12px;align-items:flex-start;margin:0}
 .wstep h3{margin:0 0 4px}
 .ws-ic{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
-/* ===== Pusat bantuan & tur ===== */
+/* ===== Help center & tour ===== */
 .helpbtn{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font-weight:800;font-size:1rem;cursor:pointer;display:grid;place-items:center;margin-right:6px}
 .helpbtn:hover{color:var(--accent);border-color:var(--accent)}
 .help-row{display:flex;flex-wrap:wrap;gap:6px 16px;margin:.2rem 0 .8rem}

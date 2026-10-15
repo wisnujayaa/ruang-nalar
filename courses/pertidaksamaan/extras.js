@@ -1,9 +1,9 @@
-/* Batas — data pendukung UI: cek 5 detik, ringkasan, peta keputusan, info kursus */
+/* Pertidaksamaan — UI support data: 5-second checks, summary, decision map, course info */
 (function (G) {
   'use strict';
   const C = G.BC = G.BC || {};
 
-  /* Info yang dipakai UI generik */
+  /* Info used by the generic UI */
   C.INFO = {
     introTitle: 'Kenapa pertidaksamaan penting',
     diagDesc: '16 soal singkat untuk memetakan fondasimu',
@@ -11,7 +11,7 @@
     tips: 'Tips: 20 menit sehari jauh lebih ampuh daripada 3 jam sekali seminggu.'
   };
 
-  /* Daftar "cek 5 detik" per bagian, muncul di bawah setiap soal */
+  /* "5-second check" list per section, shown under every question */
   C.CHECK = {
     1: ['Sudah membalik tanda saat kali/bagi bilangan negatif?', 'Ujung ∞ pakai kurung biasa?', 'Bulat penuh untuk ≤/≥, kosong untuk < / >?'],
     2: ['Operasi dilakukan ke semua ruas?', 'Distribusi tanda minus benar?', 'Sudah uji balik dengan satu titik?'],
@@ -25,7 +25,7 @@
     10: ['Semua suku positif (syarat AM-GM)?', 'Titik kesamaan bisa dicapai di domain?', 'Sudah coba kasus kesamaan (a = b = c)?']
   };
 
-  /* Ringkasan (ditampilkan tertutup, dibuka satu per satu) & poin kunci brain dump */
+  /* Summary (shown collapsed, revealed one by one) & brain-dump key points */
   C.SUMMARY = [
     { sec: 1, type: 'Sifat dasar', first: 'Lakukan operasi yang sama ke kedua ruas', key: 'Kali/bagi negatif → balik tanda', trap: 'Lupa membalik tanda; ∞ pakai siku', points: ['a < b berarti b − a positif', 'Tambah/kurang: tanda tetap', 'Kali/bagi positif: tanda tetap', 'Kali/bagi negatif: tanda dibalik', 'Mengkuadratkan dan membalik pecahan tidak selalu aman', 'Bulat penuh = ≤/≥, kosong = < / >, ∞ selalu kurung biasa'] },
     { sec: 2, type: 'Linear & berantai', first: 'Kumpulkan x di satu ruas', key: 'Berantai: ketiga ruas sekaligus', trap: 'Hanya mengolah sebagian ruas', points: ['Hilangkan kurung dan pecahan', 'Kumpulkan x di ruas yang koefisiennya positif', 'Berantai: operasi ke tiga ruas', 'x di lebih dari satu ruas: pecah dua lalu iris', 'Kamus: paling sedikit = ≥, paling banyak = ≤', 'Uji balik dengan titik di dalam dan di luar'] },
@@ -39,6 +39,6 @@
     { sec: 10, type: 'Ketaksamaan klasik', first: 'Cari kasus kesamaan dulu', key: 'AM ≥ GM; Cauchy; segitiga', trap: 'Bilangan negatif; kesamaan tak tercapai', points: ['AM-GM: (a+b)/2 ≥ √(ab) untuk a, b ≥ 0', 'Kesamaan hanya saat a = b', 'Pilih suku yang hasil kalinya konstan', 'Cauchy–Schwarz: (a²+b²)(x²+y²) ≥ (ax+by)²', 'Segitiga: |a+b| ≤ |a|+|b|', 'Cek titik kesamaan ada di domain'] }
   ];
 
-  /* Peta keputusan di halaman ringkasan */
+  /* Decision map on the summary page */
   C.DECISION = '<h2>Peta keputusan: soal ini tipe apa?</h2><ol class="steps"><li>Ada <b>akar</b>? Tulis syarat isi akar dulu (Bagian 6).</li><li>Ada <b>nilai mutlak</b>? Baca sebagai jarak (Bagian 7).</li><li>Ada <b>log</b> atau pangkat bervariabel? Syarat numerus, samakan basis (Bagian 8).</li><li>Ada <b>x di penyebut</b>? Jangan kali silang, satukan pecahan (Bagian 5).</li><li>Polinomial? Nolkan, faktorkan, tabel tanda (Bagian 3–4).</li><li>Linear? Isolasi x, hati-hati tanda negatif (Bagian 2).</li><li>Diminta <b>membuktikan</b> atau mencari nilai minimum? Coba AM-GM, kuadrat ≥ 0, atau Cauchy (Bagian 10).</li></ol>';
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,5 +1,5 @@
-/* Ruang Nalar — Pusat Bantuan, tur pengenalan, dan tautan bantuan kontekstual.
-   Artikel ditulis di sini (konten tepercaya). Bisa dibuka lewat tombol ? di header, menu Akun, atau tautan #bantuan=topik. */
+/* Ruang Nalar — Help Center, guided tour, and contextual help links.
+   Articles are written here (trusted content, in Indonesian for users). Opened via the ? header button, the Account menu, or #bantuan=topic links. */
 (function (G) {
   'use strict';
   const A = G.BA, U = G.BU;
@@ -10,7 +10,7 @@
     ['mulai', 'Memulai', 'map'], ['belajar', 'Belajar & soal', 'book'], ['review', 'Review & latihan', 'review'], ['kelas', 'Kelas', 'users'],
     ['akun', 'Akun & sinkronisasi', 'me'], ['guru', 'Untuk guru', 'grid'], ['masalah', 'Masalah umum', 'flag'], ['privasi', 'Privasi & keamanan', 'lock']
   ];
-  /* [id, topik, pertanyaan, jawaban (HTML), kata kunci tambahan, tombol aksi [[label, view, param?]]] */
+  /* [id, topic, question, answer (HTML), extra keywords, action buttons [[label, view, param?]]] */
   const ART = [
     ['apa', 'mulai', 'Apa itu Ruang Nalar?', '<p>Ruang Nalar adalah tempat belajar dengan prinsip <b>paham sampai ke akarnya</b>: setiap konsep dijelaskan dari alasan dasarnya, lalu dilatih bertahap dari soal mekanik sampai soal olimpiade.</p><p>Di balik layar ada teknik belajar yang terbukti efektif: <b>review berjarak</b> (soal lama muncul lagi tepat sebelum lupa), <b>latihan campuran</b>, dan <b>menebak dulu sebelum melihat jawaban</b>.</p>', 'tentang situs platform', [['Lihat kursus', 'home']]],
     ['akun-perlu', 'mulai', 'Apakah saya perlu membuat akun?', '<p><b>Tidak wajib.</b> Tanpa akun kamu tetap bisa belajar penuh; progres tersimpan di browser perangkat ini saja.</p><p>Dengan akun (gratis):</p><ul><li>progres tersimpan di server dan sama di HP, laptop, maupun komputer sekolah;</li><li>bisa bergabung ke kelas, mengerjakan tugas, dan berdiskusi di forum;</li><li>progres yang sudah ada di perangkat otomatis digabung ke akun saat kamu mendaftar.</li></ul>', 'daftar register login', [['Buat akun', 'login', { t: 'daftar' }]]],
@@ -52,7 +52,7 @@
     ['aman', 'privasi', 'Tips menjaga akun tetap aman', '<ul><li>Pakai sandi unik minimal 8 karakter; jangan dipakai di situs lain.</li><li>Ruang Nalar <b>tidak pernah</b> meminta sandi lewat email, WhatsApp, atau forum.</li><li>Keluar (Akun → Keluar) bila memakai komputer bersama.</li><li>Jangan membagikan kode dari email (aktivasi atau atur ulang sandi) ke siapa pun, termasuk yang mengaku admin.</li></ul>', 'phishing keamanan sandi', []]
   ];
 
-  /* ---------- pencarian (tanpa beda huruf besar/kecil & tanda aksen) ---------- */
+  /* ---------- search (case- and accent-insensitive) ---------- */
   const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/<[^>]+>/g, ' ').replace(/[^a-z0-9∞]+/g, ' ').trim();
   const INDEX = ART.map(a => ({ a, q: norm(a[2]), k: norm(a[4]), b: norm(a[3]) }));
   function search(qs) {
@@ -84,7 +84,7 @@
     if (p.hid) setTimeout(() => { const el = document.getElementById('h-' + p.hid); if (el) { el.open = true; el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, 60);
   };
 
-  /* ---------- tur pengenalan ---------- */
+  /* ---------- guided tour ---------- */
   const STEPS = [
     { sel: null, t: 'Selamat datang di Ruang Nalar! 👋', b: 'Tur singkat ini mengenalkan menu utama. Hanya sekitar 1 menit. Kamu bisa melewatinya kapan saja.' },
     { sel: '.tabs a[data-go="home"]', t: 'Beranda', b: 'Daftar kursus, tugas dari kelasmu, dan pesan dari guru ada di sini.' },
@@ -132,12 +132,12 @@
     tourGo(0);
   }
 
-  /* ---------- kartu sambutan untuk pengunjung baru (dipanggil dari Beranda) ---------- */
+  /* ---------- welcome card for new visitors (called from Home) ---------- */
   function welcomeCard() {
     if (A.set.tourDone || A.set.welcomeHidden) return '';
     return '<div class="card welcome-k"><div><p class="eyebrow">Baru di sini?</p><h2>Kenali Ruang Nalar dalam 1 menit</h2><p class="muted small">Tur singkat tentang menu utama, atau baca panduan memulai.</p></div><div class="row"><button class="btn primary small" data-hact="tour">Mulai tur</button><button class="btn small" data-go="bantuan" data-topik="mulai">Panduan memulai</button><button class="btn ghost small" data-hact="hide-welcome">Nanti saja</button></div></div>';
   }
-  /* Tautan bantuan kecil untuk ditaruh di halaman lain */
+  /* Small help link to place on other pages */
   const link = (hid, text) => '<button class="linkbtn small help-l" data-hact="go" data-v="bantuan" data-p="' + esc(JSON.stringify({ hid })) + '">' + ic('bulb') + ' ' + esc(text) + '</button>';
 
   document.addEventListener('click', (e) => {

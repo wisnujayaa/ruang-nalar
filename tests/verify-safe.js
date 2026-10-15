@@ -1,4 +1,4 @@
-/* Uji pembersih kursus buatan guru (js/course-safe.js): tidak boleh ada HTML/JS yang lolos. Jalankan: node tests/verify-safe.js */
+/* Tests the teacher-course sanitizer (js/course-safe.js): no HTML/JS may get through. Run: node tests/verify-safe.js */
 const path = require('path'); const ROOT = path.join(__dirname, '..');
 global.window = global; ['js/math.js', 'js/expr.js', 'js/widget-lib.js', 'js/course-safe.js'].forEach(f => require(path.join(ROOT, f)));
 const S = global.NalarSafe, B = global.BM; let bad = 0;
@@ -19,7 +19,7 @@ const raw = {
   RES: { 1: [{ type: 'video', title: PAY[0], url: 'javascript:alert(1)' }, { type: 'artikel', title: 'ok', url: 'https://example.com/a?b=1' }, { title: 'x', url: 'https://x.com/"onmouseover=1' }] }
 };
 const C = S.compile(raw);
-// Simulasikan semua cara UI merender: rich() untuk teks kaya, esc() untuk teks polos
+// Simulate every way the UI renders: rich() for rich text, esc() for plain text
 const rendered = [];
 const R = (s) => rendered.push(B.rich(s)), E = (s) => rendered.push(B.esc(s));
 C.SECTIONS.forEach(s => { E(s.short); E(s.title); E(s.glyph); });
@@ -32,27 +32,27 @@ const html = rendered.join('\n');
 const tags = html.match(/<\/?([a-z0-9]+)/gi).map(t => t.replace(/[<\/]/g, '').toLowerCase());
 const allowed = new Set(['span', 'i', 'b', 'p', 'br', 'ul', 'ol', 'li', 'a', 'sup', 'sub', 'em', 'strong']);
 const badTags = [...new Set(tags.filter(t => !allowed.has(t)))];
-if (badTags.length) { console.log('GAGAL: tag tak terduga:', badTags); bad++; }
-if (/\son[a-z]+\s*=/i.test(html.replace(/&[a-z#0-9]+;/g, ''))) { const m = html.match(/<[^>]*\son[a-z]+\s*=[^>]*>/i); if (m) { console.log('GAGAL: atribut event di dalam tag:', m[0]); bad++; } }
-if (/javascript:/i.test(html.match(/href="[^"]*"/g).join(''))) { console.log('GAGAL: tautan javascript: lolos'); bad++; }
-if ((C.RES[1] || []).length !== 1) { console.log('GAGAL: tautan tidak aman harus dibuang, sisa', C.RES[1]); bad++; }
+if (badTags.length) { console.log('FAILED: unexpected tag:', badTags); bad++; }
+if (/\son[a-z]+\s*=/i.test(html.replace(/&[a-z#0-9]+;/g, ''))) { const m = html.match(/<[^>]*\son[a-z]+\s*=[^>]*>/i); if (m) { console.log('FAILED: event attribute inside a tag:', m[0]); bad++; } }
+if (/javascript:/i.test(html.match(/href="[^"]*"/g).join(''))) { console.log('FAILED: javascript: link got through'); bad++; }
+if ((C.RES[1] || []).length !== 1) { console.log('FAILED: unsafe links must be dropped, left', C.RES[1]); bad++; }
 const ws = C.LESSONS[1].filter(b => b.k === 'widget');
-if (ws.some(b => !b.lib)) { console.log('GAGAL: widget kode kustom (tanpa pustaka) harus dibuang'); bad++; }
-if (ws.length !== 2) { console.log('GAGAL: harus tersisa 2 widget pustaka (grafik & sematan), dapat', ws.length); bad++; }
+if (ws.some(b => !b.lib)) { console.log('FAILED: custom-code widgets (not from the library) must be dropped'); bad++; }
+if (ws.length !== 2) { console.log('FAILED: expected 2 library widgets (graph & embed), got', ws.length); bad++; }
 const g = ws.find(b => b.lib === 'grafik');
-if (g.params.vars.some(v => v.name === 'x' || v.name === '<b>') || g.params.vars[0].min > g.params.vars[0].max || g.params.shade !== 'gt' || !isFinite(g.params.xmin)) { console.log('GAGAL: parameter grafik tidak dibersihkan', g.params); bad++; }
-if (g.predict.ans !== 1 || /<img/.test(B.rich(g.predict.q))) { console.log('GAGAL: prediksi widget', g.predict); bad++; }
-if (global.NalarWidgets.embedUrl('javascript:alert(1)') || global.NalarWidgets.embedUrl('https://evil.com/?https://www.desmos.com/calculator/abcd') || global.NalarWidgets.embedUrl('https://www.desmos.com.evil.com/calculator/abcd')) { console.log('GAGAL: sematan menerima situs asing'); bad++; }
-if (!global.NalarWidgets.embedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ') || !global.NalarWidgets.embedUrl('https://www.geogebra.org/m/abcd1234')) { console.log('GAGAL: sematan resmi ditolak'); bad++; }
-const vw = S.validate(raw); if (!vw.some(x => /grafik/.test(x.msg)) || !vw.some(x => /sematan/.test(x.msg))) { console.log('GAGAL: validasi widget', vw.filter(x => /Widget/.test(x.msg))); bad++; }
-if (C.BANK['"><x'] || C.BANK['q-4']) { console.log('GAGAL: soal ber-id jahat / tanpa kunci harus dibuang'); bad++; }
-if (!C.BANK['q-2'] || !B.same(C.BANK['q-2'].ansSet, B.parseSet('(-2,2)'))) { console.log('GAGAL: kunci interval'); bad++; }
-if (C.BANK['q-3'].ans !== 1.5) { console.log('GAGAL: kunci pecahan'); bad++; }
-if (C.LESSONS[1].find(b => b.k === 'exit').qs.join() !== 'q-1') { console.log('GAGAL: tiket keluar harus membuang soal yang tidak ada'); bad++; }
-// Rumus tetap dirender dengan benar
-const mathOk = B.rich(S.text('Jika $x<3$ dan **tebal**, maka $$y>2$$')); if (!/class="m"/.test(mathOk) || !/<b>tebal<\/b>/.test(mathOk) || !/&lt;/.test(mathOk)) { console.log('GAGAL: format/rumus tidak dirender:', mathOk); bad++; }
-const md = S.md('Paragraf $a<b$\n\n- satu\n- dua $x$\n\n1. a\n2. b'); if (!/<ul><li>satu<\/li>/.test(md) || !/<ol>/.test(md)) { console.log('GAGAL: md', md); bad++; }
-// Validasi memberi pesan yang tepat
-const v = S.validate(raw); if (!v.some(x => /q-4|tanpa kunci/.test(x.q + x.msg))) { console.log('GAGAL: validasi tidak menangkap soal tanpa kunci', v); bad++; }
-console.log(bad ? 'ADA YANG GAGAL' : 'PEMBERSIH KURSUS LULUS (' + rendered.length + ' potongan teks dirender, tag yang muncul: ' + [...new Set(tags)].join(', ') + ')');
+if (g.params.vars.some(v => v.name === 'x' || v.name === '<b>') || g.params.vars[0].min > g.params.vars[0].max || g.params.shade !== 'gt' || !isFinite(g.params.xmin)) { console.log('FAILED: graph parameters not sanitized', g.params); bad++; }
+if (g.predict.ans !== 1 || /<img/.test(B.rich(g.predict.q))) { console.log('FAILED: widget prediction', g.predict); bad++; }
+if (global.NalarWidgets.embedUrl('javascript:alert(1)') || global.NalarWidgets.embedUrl('https://evil.com/?https://www.desmos.com/calculator/abcd') || global.NalarWidgets.embedUrl('https://www.desmos.com.evil.com/calculator/abcd')) { console.log('FAILED: embed accepted a foreign site'); bad++; }
+if (!global.NalarWidgets.embedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ') || !global.NalarWidgets.embedUrl('https://www.geogebra.org/m/abcd1234')) { console.log('FAILED: official embed rejected'); bad++; }
+const vw = S.validate(raw); if (!vw.some(x => /grafik/.test(x.msg)) || !vw.some(x => /sematan/.test(x.msg))) { console.log('FAILED: widget validation', vw.filter(x => /Widget/.test(x.msg))); bad++; }
+if (C.BANK['"><x'] || C.BANK['q-4']) { console.log('FAILED: questions with malicious ids / no key must be dropped'); bad++; }
+if (!C.BANK['q-2'] || !B.same(C.BANK['q-2'].ansSet, B.parseSet('(-2,2)'))) { console.log('FAILED: interval key'); bad++; }
+if (C.BANK['q-3'].ans !== 1.5) { console.log('FAILED: fraction key'); bad++; }
+if (C.LESSONS[1].find(b => b.k === 'exit').qs.join() !== 'q-1') { console.log('FAILED: exit ticket must drop missing questions'); bad++; }
+// Math still renders correctly
+const mathOk = B.rich(S.text('Jika $x<3$ dan **tebal**, maka $$y>2$$')); if (!/class="m"/.test(mathOk) || !/<b>tebal<\/b>/.test(mathOk) || !/&lt;/.test(mathOk)) { console.log('FAILED: formatting/math not rendered:', mathOk); bad++; }
+const md = S.md('Paragraf $a<b$\n\n- satu\n- dua $x$\n\n1. a\n2. b'); if (!/<ul><li>satu<\/li>/.test(md) || !/<ol>/.test(md)) { console.log('FAILED: md', md); bad++; }
+// Validation gives the right messages
+const v = S.validate(raw); if (!v.some(x => /q-4|tanpa kunci/.test(x.q + x.msg))) { console.log('FAILED: validation missed a question without a key', v); bad++; }
+console.log(bad ? 'SOMETHING FAILED' : 'COURSE SANITIZER PASSED (' + rendered.length + ' text fragments rendered, tags seen: ' + [...new Set(tags)].join(', ') + ')');
 if (bad) process.exitCode = 1;

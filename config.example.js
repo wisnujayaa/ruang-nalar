@@ -1,15 +1,15 @@
-/* Salin file ini menjadi config.js lalu isi.
-   Tanpa Supabase, situs tetap berjalan penuh dalam "mode tanpa server":
-   progres tersimpan di browser, dan kelas/forum hanya lokal.
-   Kunci "anon" Supabase memang aman untuk dipublikasikan: keamanan data dijaga
-   oleh Row Level Security di supabase/schema.sql. JANGAN pernah memasukkan kunci service_role. */
+/* Copy this file to config.js and fill it in.
+   Without Supabase the site still works fully in "serverless mode":
+   progress is stored in the browser, and classes/forums are local only.
+   The Supabase "anon" key is safe to publish: data security is enforced
+   by Row Level Security in supabase/schema.sql. NEVER put a service_role key here. */
 window.NALAR_CONFIG = {
   siteName: 'Ruang Nalar',
-  // Nomor WA untuk tombol "Kirim lewat WhatsApp" setelah melapor (opsional, TERLIHAT PUBLIK). Contoh: '62812xxxxxxx'
+  // WhatsApp number for the "Send via WhatsApp" button after reporting (optional, PUBLICLY VISIBLE). Example: '62812xxxxxxx'
   reportWhatsApp: '',
-  // Repositori kode situs (untuk tautan "Buka di GitHub" di Studio). Kosongkan bila tidak ingin ditampilkan.
+  // Source repository (for the "Open on GitHub" links in the Studio). Leave empty to hide them.
   repoUrl: '',
   tagline: 'Belajar sedikit tiap hari, paham sampai ke akarnya.',
-  supabaseUrl: '',      // contoh: 'https://abcdefgh.supabase.co'
+  supabaseUrl: '',      // e.g. 'https://abcdefgh.supabase.co'
   supabaseAnonKey: ''   // Project Settings → API → anon public key
 };

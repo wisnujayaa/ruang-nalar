@@ -1,5 +1,5 @@
-/* Ruang Nalar — halaman platform: beranda katalog, akun, kelas, tugas, forum diskusi, laporan siswa.
-   Semua data lewat G.BB (backend.js), jadi halaman ini sama untuk mode lokal, Claude, dan Supabase. */
+/* Ruang Nalar — platform pages: catalog home, account, classes, assignments, discussion forum, student reports.
+   All data goes through G.BB (backend.js), so these pages work the same in local, Claude and Supabase modes. */
 (function (G) {
   'use strict';
   const A = G.BA, C = G.BC, U = G.BU, NR = G.NR;
@@ -19,14 +19,14 @@
   const stateFor = (course) => A.course === course ? A.S : A.readState(course);
   const readNotes = () => { A.set.readNotes = A.set.readNotes || {}; return A.set.readNotes; };
 
-  /* Progres anggota kelas selalu dibersihkan dulu: datanya ditulis oleh siswa, jadi tidak boleh dipercaya begitu saja */
+  /* Class members' progress is always sanitized first: students write it, so it must not be trusted as-is */
   async function memberProg(c) { return (await bb().classes.memberProgress(c.id, c.course)).map(p => Object.assign({}, p, { state: p.state ? A.parseState(p.state) : null })); }
   async function myClasses(force) {
     if (needLogin()) return [];
     if (!P.classes || force) { P.classes = await bb().classes.mine(); await ensureMeta(P.classes.map(c => c.course)); }
     return P.classes;
   }
-  /* Kursus buatan guru yang masih draf tidak ada di katalog; ambil metadatanya supaya judulnya tampil */
+  /* Draft teacher courses are not in the catalog; fetch their metadata so the title can be shown */
   async function ensureMeta(ids) {
     for (const id of Array.from(new Set(ids))) {
       if (!NR.isDb(id) || NR.meta(id) || !bb().courses) continue;
@@ -35,7 +35,7 @@
   }
   const findClass = async (id) => (await myClasses()).find(c => c.id === id) || (await myClasses(true)).find(c => c.id === id);
 
-  /* ============ Tugas: deskripsi & status ============ */
+  /* ============ Assignments: description & status ============ */
   const KINDS = [['lesson', 'Selesaikan materi satu bagian'], ['practice', 'Lulus latihan level tertentu'], ['prereq', 'Lulus drill prasyarat'], ['diag', 'Kerjakan tes diagnostik'], ['review', 'Review harian (jumlah soal)'], ['mixed', 'Latihan campuran'], ['tryout', 'Tryout berwaktu']];
   function targetLabel(t, course) {
     const sameCourse = course === A.course;
@@ -51,7 +51,7 @@
       default: return 'Tugas';
     }
   }
-  /* Status dihitung dari progres siswa: tidak perlu siswa menekan "selesai" */
+  /* Status is computed from student progress: students never have to press "done" */
   function statusOf(a, S) {
     const t = a.target || {}; const since = a.t || 0;
     let st = 'todo', txt = 'Belum dimulai';
@@ -75,7 +75,7 @@
     return 'Tenggat ' + (n === 0 ? 'hari ini' : n === 1 ? 'besok' : n + ' hari lagi') + ' · ' + when;
   }
   async function doTargetIn(course, target) { await openCourse(course); U.doTarget(target); }
-  /* Tautan pesan: "k:<kursus>|<target>" atau format lama "lesson:3" / "review" */
+  /* Message link: "k:<course>|<target>" or the legacy formats "lesson:3" / "review" */
   function parseLink(l) {
     if (!l) return null; let course = A.set.lastCourse || 'pertidaksamaan', rest = l;
     const m = l.match(/^k:([a-z0-9_-]+)\|(.*)$/); if (m) { course = m[1]; rest = m[2]; }
@@ -84,7 +84,7 @@
     return { course, target: { kind: rest } };
   }
 
-  /* ============ Beranda: katalog kursus ============ */
+  /* ============ Home: course catalog ============ */
   V.home = function () {
     const name = A.displayName();
     const notes = (A.sync.notes || []).slice().reverse().filter(n => !n.read && !readNotes()[n.id]);
@@ -112,7 +112,7 @@
     const vis = c.db && c.mine && c.visibility !== 'public' ? '<span class="chip st-todo">' + (c.visibility === 'class' ? ic('lock') + ' ' : '') + esc(NR.visLabel(c.visibility)) + '</span>' : c.db && c.visibility === 'class' ? '<span class="chip st-doing">' + ic('lock') + ' Dari kelasmu</span>' : '';
     return '<button class="ccard c-' + esc(c.color || 'accent') + '" data-go="course" data-course="' + esc(c.id) + '"><span class="cglyph" aria-hidden="true">' + esc(c.glyph || '') + '</span><div><p class="eyebrow">' + esc(c.subject || '') + (c.level ? ' · ' + esc(c.level) : '') + '</p><h3>' + esc(c.title) + '</h3><p class="muted small">' + esc(c.blurb || '') + '</p></div>' + vis + '<span class="chip ' + (started ? 'ok' : '') + '">' + (started ? 'Lanjutkan · ' + S.attempts.length + ' soal' : 'Mulai') + '</span></button>';
   }
-  /* Tugas yang belum selesai dari semua kelas tempat aku menjadi siswa */
+  /* Unfinished assignments from every class I'm a student in */
   async function homeTasks() {
     const box = $('#home-tasks'); if (!box || needLogin()) return;
     try {
@@ -128,7 +128,7 @@
     } catch (e) { box.innerHTML = ''; }
   }
 
-  /* ============ Akun ============ */
+  /* ============ Account ============ */
   V.me = function () {
     const b = bb(); const u = b.user; const name = A.displayName();
     const modeTxt = { local: 'Mode tanpa server · data di browser ini', claude: 'Akun Claude', supabase: u ? 'Akun ' + (u.email || '') : 'Belum masuk' }[b.mode];
@@ -148,7 +148,7 @@
     const nm = $('.acct .nm'); if (nm) nm.textContent = name || 'Tanpa nama';
   };
 
-  /* ============ Admin: kelola peran pengguna ============ */
+  /* ============ Admin: manage user roles ============ */
   V.admin = function () {
     const b = bb();
     if (!b.admin || !b.isAdmin) { view().innerHTML = page('Admin', '', '<div class="card"><p>Halaman ini hanya untuk admin.</p></div>'); return; }
@@ -172,12 +172,12 @@
     });
   };
 
-  /* ============ Akun: masuk, daftar, lupa sandi ============ */
+  /* ============ Account: sign in, sign up, forgot password ============ */
   const pwField = (id, label, auto, ph) => '<label class="lbl" for="' + id + '">' + label + '</label><div class="pw"><input id="' + id + '" type="password" minlength="8" autocomplete="' + auto + '" required placeholder="' + ph + '"><button type="button" class="pw-eye" data-pact="pw-eye" data-for="' + id + '" aria-label="Tampilkan kata sandi" aria-pressed="false">Lihat</button></div>';
   const pwHint = (pw) => { if (!pw) return ''; const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(r => r.test(pw)).length; if (pw.length < 8) return 'Terlalu pendek: minimal 8 karakter.'; if (pw.length >= 12 && kinds >= 3) return 'Kuat ✓'; if (kinds >= 2) return 'Cukup. Lebih kuat bila 12+ karakter dengan campuran huruf besar, angka, atau simbol.'; return 'Lemah: campurkan huruf dengan angka atau simbol.'; };
-  /* Kartu "cek emailmu": ketik kode dari email (aktivasi akun atau lupa sandi), plus kirim ulang (jeda 60 detik).
-     Kode dipilih alih-alih tautan: tidak bisa "terpakai" oleh pemindai email, bisa dibuka di perangkat lain,
-     dan email tanpa tautan jauh lebih jarang masuk Spam. Tautan lama tetap didukung (lihat ui.js handleLanding). */
+  /* "Check your email" card: type the code from the email (activation or password reset), plus resend (60 s cooldown).
+     Codes instead of links: they cannot be "used up" by email scanners, work across devices,
+     and link-free emails rarely land in Spam. Old links still work (see ui.js handleLanding). */
   function codeCard(email, kind) {
     const rec = kind === 'recovery';
     return '<div class="card mailcard"><span class="lk-ic">' + ic('send') + '</span><h2>' + (rec ? 'Masukkan kode atur ulang' : 'Masukkan kode aktivasi') + '</h2>' +
@@ -247,7 +247,7 @@
       btn.disabled = false;
     });
   };
-  /* Formulir sandi baru: setelah membuka tautan "lupa sandi", atau ganti sandi dari menu Akun */
+  /* New-password form: after a password-reset code/link, or "change password" from the Account menu */
   V.sandi = function (p) {
     const b = bb();
     if (b.mode !== 'supabase' || !b.auth.updatePassword) { view().innerHTML = page('Kata sandi', '', '<div class="card"><p>Fitur ini butuh akun online.</p></div>'); return; }
@@ -267,7 +267,7 @@
       catch (err) { er.textContent = authMsg(err); btn.disabled = false; }
     });
   };
-  /* Tautan email bermasalah (kedaluwarsa / sudah dipakai) */
+  /* Broken email link (expired / already used) */
   V.authinfo = function (p) {
     const code = String(p.code || ''); const expired = /otp_expired|expired|invalid/i.test(code + ' ' + (p.desc || ''));
     let h = '<div class="card"><span class="lk-ic warn">' + ic('clock') + '</span><h2>' + (expired ? 'Tautan sudah tidak berlaku' : 'Tautan tidak bisa dipakai') + '</h2>' +
@@ -279,7 +279,7 @@
     view().innerHTML = page('Ada kendala dengan tautan', siteName(), h);
     const d = $('.dsc'); if (d) d.textContent = p.desc;
   };
-  /* Sambutan setelah akun aktif */
+  /* Welcome page after the account is activated */
   V.selamat = function (p) {
     const b = bb(); const name = (b.user && b.user.name) || A.displayName() || '';
     const step = (icn, t, d, go_, label, extra) => '<div class="card wstep"><span class="ws-ic">' + ic(icn) + '</span><div><h3>' + t + '</h3><p class="muted small">' + d + '</p><button class="btn small" data-go="' + go_ + '"' + (extra || '') + '>' + label + '</button></div></div>';
@@ -306,7 +306,7 @@
     if (/fetch|network|Failed to/i.test(m)) return 'Tidak bisa terhubung ke server. Periksa koneksi internetmu, lalu coba lagi.';
     return m || 'Gagal. Coba lagi.';
   }
-  /* Kirim ulang email konfirmasi, dengan jeda supaya tidak terkena batas kirim */
+  /* Resend the confirmation email, with a cooldown to stay under the send rate limit */
   let resendAt = 0;
   async function doResend(email, msgEl, btn, kind) {
     const b = bb(); if (!b.auth.resend) return;
@@ -321,7 +321,7 @@
     return ok;
   }
 
-  /* ============ Daftar kelas ============ */
+  /* ============ Class list ============ */
   V.kelas = function (p) {
     const b = bb();
     if (needLogin()) { view().innerHTML = page('Kelas', '', '<div class="card"><p>Masuk dulu untuk membuat atau bergabung ke kelas.</p>' + (p.join ? '<p class="muted small">Kode kelas <b class="mono">' + esc(p.join) + '</b> akan diisi otomatis setelah masuk.</p>' : '') + '<button class="btn primary" data-pact="login-next" data-join="' + esc(p.join || '') + '">Masuk / daftar</button></div>', { noBack: true }); return; }
@@ -350,7 +350,7 @@
     }).catch(e => { const box = $('#clist'); if (box) box.innerHTML = fail(e); });
   };
 
-  /* ============ Halaman satu kelas ============ */
+  /* ============ Single class page ============ */
   V.klas = function (p) {
     view().innerHTML = loading;
     const tok = P.tok = {};
@@ -377,7 +377,7 @@
       } catch (e) { if (P.tok === tok) body.innerHTML = fail(e); console.error(e); }
     })().catch(e => { view().innerHTML = fail(e); });
   };
-  /* Status akses kursus kelas (khusus kursus Studio): draf belum bisa dibuka siswa; khusus kelas = terkunci untuk anggota */
+  /* Course access status for a class (Studio courses only): drafts can't be opened by students; class-only = locked to members */
   function accessCard(c, ok) {
     if (!NR.isDb(c.course)) return '';
     const m = NR.meta(c.course) || {};
@@ -391,7 +391,7 @@
   }
   const joinLink = (code) => location.origin + location.pathname + '#gabung=' + code;
 
-  /* ---------- Tab Atur (khusus guru pemilik kelas) ---------- */
+  /* ---------- Settings tab (class owner only) ---------- */
   function tabAtur(body, c) {
     const b = bb();
     let h = '<div class="card form"><h2>Nama kelas</h2><div class="inline-f"><input id="k-name" maxlength="60" value="' + esc(c.name) + '"><button class="btn primary" data-pact="k-rename">Simpan</button></div><p class="small" id="k-name-m" aria-live="polite"></p></div>';
@@ -401,7 +401,7 @@
     body.innerHTML = h;
   }
 
-  /* ---------- Tab Tugas ---------- */
+  /* ---------- Assignments tab ---------- */
   async function tabTugas(body, c) {
     const list = await bb().assign.list(c.id);
     let h = '';
@@ -464,7 +464,7 @@
     return t;
   }
 
-  /* ---------- Tab Forum ---------- */
+  /* ---------- Forum tab ---------- */
   async function tabForum(body, c) {
     const list = await bb().forum.threads(c.id);
     let h = '<details class="card" id="tnew"><summary><b>' + ic('plus') + ' Tulis pertanyaan atau diskusi baru</b></summary><form class="form" id="tform"><label class="lbl" for="t-title">Judul</label><input id="t-title" maxlength="150" placeholder="misalnya: Kenapa tanda dibalik saat dikali negatif?"><label class="lbl" for="t-body">Isi</label><textarea id="t-body" rows="4" maxlength="5000" placeholder="Jelaskan di bagian mana kamu bingung dan apa yang sudah kamu coba."></textarea><p class="muted small">Rumus: tulis di antara tanda dolar, misalnya <code>$x^2-4&lt;0$</code> menjadi ' + rich('$x^2-4<0$') + '.</p><div class="preview-f" id="t-prev" hidden></div><p class="err" role="alert" id="t-err"></p><div class="row"><button class="btn ghost" type="button" data-pact="t-prev">Pratinjau</button><button class="btn primary" type="submit">Kirim</button></div></form></details>';
@@ -507,10 +507,10 @@
       });
     })().catch(e => { view().innerHTML = fail(e); });
   };
-  /* Teks pengguna: escape dulu (tidak ada HTML), lalu render rumus $…$ dan baris baru */
+  /* User text: escape first (no HTML), then render $…$ math and line breaks */
   function safeRich(s) { return String(s || '').split(/(\$\$[^$]+\$\$|\$[^$\n]+\$)/).map((part, i) => i % 2 ? rich(part) : esc(part).replace(/\n/g, '<br>')).join(''); }
 
-  /* ---------- Tab Anggota ---------- */
+  /* ---------- Members tab ---------- */
   function summ(st) {
     const t = Date.now(), W = 7 * DAY; const a7 = st.attempts.filter(a => t - a.t < W);
     let min7 = 0; for (let i = 0; i < 7; i++) min7 += (st.daily[A.today(t - i * DAY)] || 0);
@@ -552,7 +552,7 @@
   function linkSelect(id, course) {
     return '<label class="lbl" for="' + id + '">Tautkan ke</label><select id="' + id + '"><option value="">(tidak ada)</option><option value="k:' + course + '|review">Review harian</option><option value="k:' + course + '|mistakes">Buku kesalahan</option><option value="k:' + course + '|tryout">Tryout</option>' + ((C.SECTIONS || []).map(x => '<option value="k:' + course + '|lesson:' + x.id + '">Bagian ' + x.id + ': ' + esc(x.short) + '</option>').join('')) + '</select>';
   }
-  /* Mode lokal/Claude: guru memilih anggota sendiri (siswa dari kode progres / pengguna yang pernah membuka situs) */
+  /* Local/Claude mode: the teacher picks members (students from progress codes / users who opened the site) */
   function manageMembers(c, members) {
     const b = bb();
     return '<details class="card" id="mman"><summary><b>' + ic('users') + ' Atur anggota</b></summary><div id="mcand"><p class="muted">Memuat daftar…</p></div>' +
@@ -566,7 +566,7 @@
     $$('.kmem span', box).forEach((sp, k) => { sp.textContent = cand[k].name || 'Siswa'; });
   }
 
-  /* ---------- Laporan satu siswa (untuk guru) ---------- */
+  /* ---------- Single student report (for teachers) ---------- */
   V.student = function (p) {
     const c = P.cur; const pr = (P.cache.prog || []).find(x => x.id === p.id); const m = (P.cache.members || []).find(x => x.id === p.id) || {};
     if (!c || !pr) { go('kelas', {}, { replace: true }); return; }
@@ -582,7 +582,7 @@
     try { const list = (await bb().notes.history(sid)).slice().reverse(); if (!list.length) return; box.innerHTML = '<h3>Pesan sebelumnya</h3><ul class="notes">' + list.map(n => '<li><span class="muted small">' + fmtDate(n.t, true) + (n.read ? ' · dibaca' : '') + '</span><p></p></li>').join('') + '</ul>'; $$('.notes p', box).forEach((el, k) => { el.textContent = list[k].text; }); } catch (e) { }
   }
 
-  /* ============ Aksi ============ */
+  /* ============ Actions ============ */
   document.addEventListener('click', async (e) => {
     const a = e.target.closest('[data-pact]'); if (!a || a.disabled) return;
     const d = a.dataset; const b = bb();
@@ -658,6 +658,6 @@
       }
     } catch (err) { console.error(err); const el = a.closest('.card') || view(); let m = el.querySelector('.err.pact'); if (!m) { m = document.createElement('p'); m.className = 'err pact'; m.setAttribute('role', 'alert'); el.appendChild(m); } m.textContent = (err && err.message) || 'Terjadi kesalahan.'; }
   });
-  /* Setelah masuk lewat tautan undangan, isi kode kelas otomatis */
+  /* After signing in via an invite link, prefill the class code */
   A.sync.on(() => { if (P.pendingJoin && bb().user && nav.cur.v !== 'kelas') { const j = P.pendingJoin; P.pendingJoin = null; P.classes = null; go('kelas', { join: j }); } });
 })(window);

@@ -1,10 +1,10 @@
-/* Batas — konten bagian B: materi Bagian 1–9 */
+/* Pertidaksamaan — content part B: lessons for Sections 1–9 */
 (function (G) {
   'use strict';
   const C = G.BC = G.BC || {};
   C.LESSONS = {};
 
-  /* ======================= BAGIAN 1 ======================= */
+  /* ======================= SECTION 1 ======================= */
   C.LESSONS[1] = [
     { k: 'retrieval' },
     { k: 'q', id: 's1-pre', tag: 'Coba dulu', title: 'Sebelum diajari, tebak dulu', note: 'Belum diajari? Justru itu intinya. Coba jawab, salah pun tidak apa-apa.' },
@@ -54,7 +54,7 @@
     { k: 'exit', qs: ['s1-l1-1', 's1-l2-2', 's1-l3-1'], prompt: 'Jelaskan dengan kata-katamu sendiri: kenapa tanda harus dibalik saat mengali bilangan negatif?', points: ['Menyebut contoh bilangan, misalnya 2<5 tapi −2>−5', 'Menyebut "bercermin di titik 0" atau urutan terbalik', 'Menyebut bahwa positif × negatif = negatif'] }
   ];
 
-  /* ======================= BAGIAN 2 ======================= */
+  /* ======================= SECTION 2 ======================= */
   C.LESSONS[2] = [
     { k: 'retrieval' },
     { k: 'q', id: 's2-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
@@ -97,7 +97,7 @@ $$-5<1-2x\\le7 \\;\\Rightarrow\\; -6<-2x\\le6 \\;\\Rightarrow\\; 3>x\\ge-3$$
     { k: 'exit', qs: ['s2-l1-1', 's2-l2-1', 's2-l3-2'], prompt: 'Jelaskan bagaimana cara mengerjakan bentuk berantai seperti −1 < 2x + 3 < 7, dan kapan bentuk berantai harus dipecah dua.', points: ['Operasi dilakukan ke ketiga ruas sekaligus', 'Balik kedua tanda jika membagi negatif', 'Dipecah dua jika x muncul di lebih dari satu ruas'] }
   ];
 
-  /* ======================= BAGIAN 3 ======================= */
+  /* ======================= SECTION 3 ======================= */
   C.LESSONS[3] = [
     { k: 'retrieval' },
     { k: 'q', id: 's3-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
@@ -146,7 +146,7 @@ $$-5<1-2x\\le7 \\;\\Rightarrow\\; -6<-2x\\le6 \\;\\Rightarrow\\; 3>x\\ge-3$$
     { k: 'exit', qs: ['s3-l1-1', 's3-l2-1', 's3-l3-2'], prompt: 'Jelaskan dengan gambar bukit/lembah: kapan jawaban pertidaksamaan kuadrat berada "di antara" akar dan kapan "di luar" akar?', points: ['a > 0 berarti lembah (terbuka ke atas)', 'Lembah di bawah tanah di antara akar → f < 0 di antara', 'f > 0 di luar akar', 'Jika a < 0, kebalikannya'] }
   ];
 
-  /* ======================= BAGIAN 4 ======================= */
+  /* ======================= SECTION 4 ======================= */
   C.LESSONS[4] = [
     { k: 'retrieval' },
     { k: 'q', id: 's4-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
@@ -178,7 +178,7 @@ $$-5<1-2x\\le7 \\;\\Rightarrow\\; -6<-2x\\le6 \\;\\Rightarrow\\; 3>x\\ge-3$$
     { k: 'exit', qs: ['s4-l1-1', 's4-l2-1', 's4-l3-1'], prompt: 'Kenapa tanda tidak berganti di akar yang berpangkat genap?', points: ['(x−r)² selalu ≥ 0', 'Melewati r, faktor (x−r) berganti dua kali', 'Grafik memantul, tidak menyeberang'] }
   ];
 
-  /* ======================= BAGIAN 5 ======================= */
+  /* ======================= SECTION 5 ======================= */
   C.LESSONS[5] = [
     { k: 'retrieval' },
     { k: 'q', id: 's5-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
@@ -213,7 +213,7 @@ $$-5<1-2x\\le7 \\;\\Rightarrow\\; -6<-2x\\le6 \\;\\Rightarrow\\; 3>x\\ge-3$$
     { k: 'exit', qs: ['s5-l1-1', 's5-l2-1', 's5-l3-1'], prompt: 'Jelaskan ke temanmu kenapa pertidaksamaan pecahan tidak boleh dikali silang, dan apa yang harus dilakukan sebagai gantinya.', points: ['Penyebut bisa negatif, sehingga tanda mungkin harus dibalik', 'Pindahkan semua ke satu ruas lalu satukan pecahan', 'Pembuat nol penyebut selalu bulat kosong'] }
   ];
 
-  /* ======================= BAGIAN 6 ======================= */
+  /* ======================= SECTION 6 ======================= */
   C.LESSONS[6] = [
     { k: 'retrieval' },
     { k: 'q', id: 's6-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
@@ -248,7 +248,7 @@ $$-5<1-2x\\le7 \\;\\Rightarrow\\; -6<-2x\\le6 \\;\\Rightarrow\\; 3>x\\ge-3$$
     { k: 'exit', qs: ['s6-l1-1', 's6-l2-1', 's6-l3-1'], prompt: 'Sebutkan semua syarat yang harus ditulis sebelum mengkuadratkan √f < g, dan jelaskan kenapa masing-masing diperlukan.', points: ['f ≥ 0 karena isi akar tidak boleh negatif', 'g > 0 karena akar selalu ≥ 0', 'Baru kemudian f < g²'] }
   ];
 
-  /* ======================= BAGIAN 7 ======================= */
+  /* ======================= SECTION 7 ======================= */
   C.LESSONS[7] = [
     { k: 'retrieval' },
     { k: 'q', id: 's7-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
@@ -286,7 +286,7 @@ $$-5<1-2x\\le7 \\;\\Rightarrow\\; -6<-2x\\le6 \\;\\Rightarrow\\; 3>x\\ge-3$$
     { k: 'exit', qs: ['s7-l1-1', 's7-l2-1', 's7-l3-1'], prompt: 'Pakai kata "jarak" untuk menjelaskan kenapa |x − a| < r menghasilkan satu interval, sedangkan |x − a| > r menghasilkan dua.', points: ['|x − a| adalah jarak x ke a', '< r: titik yang dekat dengan a, satu ruas garis a − r sampai a + r', '> r: titik yang jauh, ke kiri atau ke kanan'] }
   ];
 
-  /* ======================= BAGIAN 8 ======================= */
+  /* ======================= SECTION 8 ======================= */
   C.LESSONS[8] = [
     { k: 'retrieval' },
     { k: 'q', id: 's8-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
@@ -321,7 +321,7 @@ $$-5<1-2x\\le7 \\;\\Rightarrow\\; -6<-2x\\le6 \\;\\Rightarrow\\; 3>x\\ge-3$$
     { k: 'exit', qs: ['s8-l1-1', 's8-l2-1', 's8-l3-1'], prompt: 'Apa hubungan antara "basis antara 0 dan 1" dan "mengali dengan bilangan negatif" di Bagian 1?', points: ['Keduanya membalik urutan', 'Fungsi (½)^x turun', 'Fungsi naik menjaga urutan, fungsi turun membaliknya'] }
   ];
 
-  /* ======================= BAGIAN 9 ======================= */
+  /* ======================= SECTION 9 ======================= */
   C.LESSONS[9] = [
     { k: 'retrieval' },
     { k: 'q', id: 's9-pre', tag: 'Coba dulu', title: 'Tebak dulu' },
