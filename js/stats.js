@@ -51,7 +51,7 @@
   };
   function ring(value, label) {
     const r = 46, c = 2 * Math.PI * r, v = Math.max(0, Math.min(1, value || 0));
-    return '<svg class="ring" viewBox="0 0 120 120" role="img" aria-label="' + label + ' ' + pct(v) + '%"><circle class="ring-bg" cx="60" cy="60" r="' + r + '"/><circle class="ring-fg" cx="60" cy="60" r="' + r + '" stroke-dasharray="' + (c * v).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 60 60)"/><text x="60" y="58" class="ring-v">' + pct(v) + '%</text><text x="60" y="76" class="ring-l">' + label + '</text></svg>';
+    return '<svg class="st-ring" viewBox="0 0 120 120" role="img" aria-label="' + label + ' ' + pct(v) + '%"><circle class="sr-bg" cx="60" cy="60" r="' + r + '"/><circle class="sr-fg" cx="60" cy="60" r="' + r + '" stroke-dasharray="' + (c * v).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 60 60)"/><text x="60" y="58" class="sr-v">' + pct(v) + '%</text><text x="60" y="76" class="sr-l">' + label + '</text></svg>';
   }
   /* Kalender aktivitas 18 minggu (seperti GitHub): satu warna, makin pekat makin lama belajar */
   function heatmap(D, goal) {
