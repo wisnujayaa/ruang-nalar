@@ -53,8 +53,18 @@ export function buildMessage(r: Record<string, any>, who: string, site: string) 
 const SECRET_KEYS = ['RESEND_API_KEY', 'CALLMEBOT_APIKEY', 'FONNTE_TOKEN', 'TELEGRAM_BOT_TOKEN', 'SUPABASE_SERVICE_ROLE_KEY'];
 export function redact(env: Env, msg: string) {
   let m = String(msg);
-  for (const k of SECRET_KEYS) { const v = env[k]; if (v && v.length >= 6) m = m.split(v).join('***').split(encodeURIComponent(v)).join('***'); }
+  const vals = SECRET_KEYS.map(k => env[k]).concat([telegramToken(env.TELEGRAM_BOT_TOKEN).token]);
+  for (const v of vals) { if (v && v.length >= 6) m = m.split(v).join('***').split(encodeURIComponent(v)).join('***'); }
   return m.slice(0, 300);
+}
+
+/* Token bot Telegram yang benar berbentuk "angka:huruf-acak", mis. 1234567890:AAH... (sekitar 46 karakter).
+   Rapikan kesalahan tempel umum (tanda kutip, awalan "bot"), lalu jelaskan bentuknya bila tetap tidak cocok — tanpa membuka isinya. */
+export function telegramToken(raw: string | undefined) {
+  const t = String(raw || '').replace(/^["'`\s]+|["'`\s]+$/g, '').replace(/^bot(?=\d)/i, '');
+  if (/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(t)) return { ok: true, token: t, hint: '' };
+  const hint = `format token tidak cocok (panjang ${t.length}, ` + (t.includes(':') ? 'ada titik dua' : 'TANPA titik dua') + ', ' + (/^\d/.test(t) ? 'diawali angka' : 'TIDAK diawali angka') + (/\s/.test(t) ? ', ada spasi di tengah' : '') + '). Salin ulang dari @BotFather: /mybots → pilih bot → API Token';
+  return { ok: false, token: t, hint };
 }
 
 async function sendAll(env: Env, f: Fetch, subject: string, text: string) {
@@ -79,9 +89,15 @@ async function sendAll(env: Env, f: Fetch, subject: string, text: string) {
     tryIt('wa_fonnte', !!(env.FONNTE_TOKEN && env.REPORT_WA), () => f('https://api.fonnte.com/send', {
       method: 'POST', headers: { Authorization: env.FONNTE_TOKEN! }, body: new URLSearchParams({ target: env.REPORT_WA!, message: text }),
     })),
-    tryIt('telegram', !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID), () => f(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: cut(text, 4000), disable_web_page_preview: true }),
-    })),
+    (async () => {
+      if (!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID)) { out.telegram = 'tidak diatur'; return; }
+      const tk = telegramToken(env.TELEGRAM_BOT_TOKEN);
+      if (!tk.ok) { out.telegram = 'gagal: ' + tk.hint; return; }
+      if (!/^-?\d{3,}$/.test(env.TELEGRAM_CHAT_ID!)) { out.telegram = 'gagal: TELEGRAM_CHAT_ID harus berupa angka (dari @userinfobot), bukan username'; return; }
+      await tryIt('telegram', true, () => f(`https://api.telegram.org/bot${tk.token}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: cut(text, 4000), disable_web_page_preview: true }),
+      }));
+    })(),
   ]);
   return out;
 }
