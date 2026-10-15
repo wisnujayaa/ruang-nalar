@@ -32,8 +32,8 @@ Panjang kode diatur di Authentication → Sign In / Providers → Email (**Email
 ## Wajib dicek: URL Configuration
 
 Authentication → **URL Configuration**:
-- **Site URL**: `https://ruang-nalar.netlify.app`
-- **Redirect URLs**: tambahkan `https://ruang-nalar.netlify.app/**`
+- **Site URL**: `https://ruang-nalar.pages.dev`
+- **Redirect URLs**: tambahkan `https://ruang-nalar.pages.dev/**`
 
 Tanpa ini, tautan di email bisa mengarah ke `localhost` atau ditolak. Aplikasi meminta Supabase mengarahkan
 tautan ke alamat situs yang sedang dibuka (`emailRedirectTo`), dan alamat itu harus ada di daftar ini.
@@ -87,7 +87,7 @@ Tombol "Masuk dengan Google" muncul otomatis di halaman Masuk/Daftar begitu peny
    "Ruang Nalar", email dukungan, lalu **Publish app** (status *In production*) supaya semua orang bisa masuk.
    Cakupan bawaan (email, profile, openid) tidak memerlukan verifikasi Google.
 3. **Credentials → Create credentials → OAuth client ID** → *Web application*:
-   - Authorized JavaScript origins: `https://ruang-nalar.netlify.app`
+   - Authorized JavaScript origins: `https://ruang-nalar.pages.dev`
    - Authorized redirect URIs: salin **Callback URL** dari Supabase → Authentication → Sign In / Providers → Google
      (bentuknya `https://<project-ref>.supabase.co/auth/v1/callback`).
 4. Salin **Client ID** dan **Client Secret** ke Supabase → Authentication → Sign In / Providers → **Google** → Enable → Save.

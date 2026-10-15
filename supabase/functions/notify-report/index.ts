@@ -8,7 +8,7 @@
 //   WhatsApp (CallMeBot) : CALLMEBOT_PHONE, CALLMEBOT_APIKEY
 //   WhatsApp (Fonnte)    : FONNTE_TOKEN, REPORT_WA
 //   Telegram             : TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-//   [SITE_URL]           : alamat situs untuk tautan di pesan (default https://ruang-nalar.netlify.app)
+//   [SITE_URL]           : alamat situs untuk tautan di pesan (default https://ruang-nalar.pages.dev)
 // SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY disediakan otomatis oleh Supabase.
 
 type Env = Record<string, string | undefined>;
@@ -131,7 +131,7 @@ export async function handle(req: Request, rawEnv: Env, f: Fetch = fetch): Promi
     try { const u = await f(`${base}/auth/v1/admin/users/${r.user_id}`, { headers: H }); if (u.ok) email = (await u.json()).email || ''; } catch (_) { /* abaikan */ }
     who = [name, email && `<${email}>`].filter(Boolean).join(' ') || r.user_id;
   }
-  const { subject, text } = buildMessage(r, who, env.SITE_URL || 'https://ruang-nalar.netlify.app');
+  const { subject, text } = buildMessage(r, who, env.SITE_URL || 'https://ruang-nalar.pages.dev');
   const channels = await sendAll(env, f, subject, text);
   console.log('notify-report', id.slice(0, 8), JSON.stringify(channels));   // terlihat di Supabase → Edge Functions → Logs
   return json({ ok: true, sent: true, channels });
