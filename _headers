@@ -1,4 +1,4 @@
-# Header keamanan untuk Netlify (berlaku untuk semua halaman).
+# Header keamanan (format _headers dipahami Cloudflare Pages maupun Netlify; berlaku untuk semua halaman).
 # - Content-Security-Policy: hanya skrip dari situs ini sendiri yang boleh jalan (tanpa skrip inline / eval),
 #   koneksi hanya ke Supabase, iframe hanya dari layanan embed yang diizinkan widget.
 #   Jika kamu memindahkan situs ke proyek Supabase lain, *.supabase.co tetap cocok.

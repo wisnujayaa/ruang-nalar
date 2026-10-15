@@ -1,7 +1,7 @@
 # Arsitektur
 
 ## Prinsip
-- **Tanpa build step.** Setiap file JS adalah IIFE biasa yang menempel ke `window`. Mudah dibaca, mudah di-fork, jalan di GitHub Pages.
+- **Tanpa build step.** Setiap file JS adalah IIFE biasa yang menempel ke `window`. Mudah dibaca, mudah di-fork, jalan di hosting statis mana pun.
 - **Kursus = data.** Kode inti tidak tahu apa pun tentang pertidaksamaan; semua materi, soal, widget, dan jebakan ada di `courses/<id>/`.
 - **Satu antarmuka backend.** UI tidak pernah memanggil Supabase/Claude langsung, selalu lewat `window.BB`.
 

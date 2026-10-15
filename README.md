@@ -4,7 +4,7 @@ Platform e-learning sumber terbuka untuk belajar **sampai paham ke akarnya**: ma
 
 Kursus pertama: **Pertidaksamaan** (SMA kelas X → UTBK → olimpiade/kuliah). Kursus lain bisa ditambahkan sebagai folder baru tanpa menyentuh kode inti.
 
-> Situs statis murni: HTML + CSS + JavaScript biasa, **tanpa build step**. Bisa langsung di-host di GitHub Pages.
+> Situs statis murni: HTML + CSS + JavaScript biasa, **tanpa build step**. Bisa langsung di-host di hosting statis mana pun (Cloudflare Pages, Netlify, GitHub Pages).
 
 ## Fitur
 
@@ -55,11 +55,19 @@ python3 -m http.server 8765      # atau: npm run serve
 
 Harus lewat server lokal (bukan membuka `index.html` langsung), karena kursus dimuat dinamis.
 
-## Terbitkan ke GitHub Pages
+## Terbitkan (Cloudflare Pages, gratis)
 
-1. Push repo ke GitHub (branch `main`).
-2. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-3. Workflow `.github/workflows/pages.yml` menjalankan verifikasi kunci jawaban, lalu menerbitkan situs ke `https://<username>.github.io/ruang-nalar/`.
+Situs ini statis (tanpa build step), jadi cocok di hosting statis mana pun. Yang dipakai: **Cloudflare Pages**
+(gratis, deploy tidak memakai kredit; batas 500 build/bulan).
+
+1. dash.cloudflare.com → **Workers & Pages → Create → Pages → Connect to Git** → pilih repo ini.
+2. Production branch `main` · Framework preset **None** · Build command **kosong** · Build output directory `/`.
+3. Environment variable `SKIP_DEPENDENCY_INSTALL` = `true` (Playwright hanya untuk uji lokal, tidak perlu dipasang saat deploy).
+4. **Save and Deploy**. Setiap push ke `main` otomatis terbit. File `_headers` (CSP & header keamanan) langsung berlaku.
+5. Setelah alamat situs berubah: perbarui **Supabase → Authentication → URL Configuration** (Site URL + Redirect URLs)
+   dan, bila memakai Masuk dengan Google, **Authorized JavaScript origins** di Google Cloud (lihat docs/EMAIL.md).
+
+Netlify juga bisa (`_headers` formatnya sama), tetapi paket gratis Netlify yang baru menghitung setiap deploy sebagai kredit.
 
 ## Aktifkan akun, kelas online, dan forum (Supabase, gratis)
 
