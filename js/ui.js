@@ -204,7 +204,7 @@
         const id = 'ans-' + it.id.replace(/[^a-z0-9]/gi, '');
         body.innerHTML = '<label class="lbl" for="' + id + '">Jawabanmu' + (it.v && it.v !== 'x' ? ' (dalam ' + it.v + ')' : '') + '</label><input class="ans mono" id="' + id + '" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="(−∞, 2] ∪ (5, ∞)   atau   x ≤ 2 atau x > 5">' +
           '<div class="keys">' + ['(', ')', '[', ']', '∞', '−', ',', '∪', '<', '≤', '>', '≥', (it.v || 'x'), 'atau', 'R', '∅', '⌫'].map(k => '<button type="button" data-k="' + esc(k) + '">' + esc(k) + '</button>').join('') + '</div>' +
-          '<div class="preview" aria-live="polite"><span class="muted">Pratinjau garis bilangan muncul saat kamu mengetik.</span></div>';
+          '<div class="preview" aria-live="polite"><span class="muted">Pratinjau garis bilangan muncul saat kamu mengetik.</span></div>' + (G.NalarHelp && !opts.tryout ? '<p class="help-row">' + G.NalarHelp.link('interval', 'Cara menulis jawaban interval') + '</p>' : '');
         const inp = body.querySelector('input');
         const upd = () => { setErr(''); const r = B.parseAnswer(inp.value, it.v); const pv = body.querySelector('.preview'); if (!inp.value.trim()) { pv.innerHTML = '<span class="muted">Pratinjau garis bilangan muncul saat kamu mengetik.</span>'; return; } pv.innerHTML = r.ok ? B.numberLine(r.set) + '<div class="pv-t">' + rich('$' + B.toTex(r.set) + '$') + '</div>' : '<span class="muted">' + esc(r.err) + '</span>'; };
         inp.addEventListener('input', upd);
@@ -676,7 +676,7 @@
   /* ---------- review, campuran, tryout ---------- */
   V.review = function () {
     const due = A.dueItems().length, refs = buildReview();
-    view().innerHTML = '<section class="page"><h1>Review harian</h1><div class="card"><p class="big2">' + due + '</p><p>soal jatuh tempo hari ini' + (due < 6 ? ', ditambah soal campuran dari bagian yang sudah kamu buka' : '') + '.</p><p class="muted">Soal dicampur dari banyak bab (interleaving). Rasanya lebih berat daripada latihan per bab, dan justru itulah yang membuat ingatan bertahan lama.</p>' + (refs.length ? '<button class="btn primary" data-act="review-start">Mulai review (' + refs.length + ' soal)</button>' : '<p class="muted">Belum ada yang bisa direview. Mulai dulu salah satu bagian materi.</p><button class="btn" data-go="map">Ke peta belajar</button>') + '</div>' +
+    view().innerHTML = '<section class="page"><h1>Review harian</h1>' + (G.NalarHelp ? '<p class="help-row">' + G.NalarHelp.link('review-harian', 'Kenapa soal lama muncul lagi?') + '</p>' : '') + '<div class="card"><p class="big2">' + due + '</p><p>soal jatuh tempo hari ini' + (due < 6 ? ', ditambah soal campuran dari bagian yang sudah kamu buka' : '') + '.</p><p class="muted">Soal dicampur dari banyak bab (interleaving). Rasanya lebih berat daripada latihan per bab, dan justru itulah yang membuat ingatan bertahan lama.</p>' + (refs.length ? '<button class="btn primary" data-act="review-start">Mulai review (' + refs.length + ' soal)</button>' : '<p class="muted">Belum ada yang bisa direview. Mulai dulu salah satu bagian materi.</p><button class="btn" data-go="map">Ke peta belajar</button>') + '</div>' +
       '<div class="tiles">' + tile('mistakes', 'Buku kesalahan', Object.values(A.S.mistakes).filter(m => !m.fx).length + ' belum dikuasai') + tile('dump', 'Brain dump', 'Tulis semua yang kamu ingat') + tile('mixed', 'Latihan campuran', '12 soal lintas bab') + tile('traps', 'Katalog jebakan', 'Kenali polanya') + '</div></section>';
   };
   V.mixed = function () {
@@ -753,7 +753,7 @@
   function streakOf(S) { const save = A.S; A.S = S; const s = A.streak(); A.S = save; return s; }
   V.stats = function () {
     const meta = G.NR.meta(A.course) || {};
-    view().innerHTML = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Statistik</p><h1>' + esc(meta.title || 'Kursus') + '</h1></div></header>' + statsHTML(A.S) + '</section>';
+    view().innerHTML = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Statistik</p><h1>' + esc(meta.title || 'Kursus') + '</h1></div></header>' + (G.NalarHelp ? '<p class="help-row">' + G.NalarHelp.link('statistik', 'Cara membaca halaman ini') + '</p>' : '') + statsHTML(A.S) + '</section>';
   };
   /* Nama yang ditampilkan: akun online > nama di pengaturan > nama lama di progres */
   A.displayName = () => { const bb = G.BB || {}; return (bb.mode !== 'local' && bb.user && bb.user.name) || A.set.name || A.S.nick || ''; };
@@ -778,7 +778,7 @@
   /* ======================== AKSI ======================== */
   document.addEventListener('click', async (e) => {
     const g = e.target.closest('[data-go]');
-    if (g && !g.disabled) { e.preventDefault(); A.tick(); const d = g.dataset; const v = d.go; const p = {}; if (d.sec) p.sec = +d.sec; if (d.id) p.id = d.id; if (d.course) p.course = d.course; if (d.tab) p.ktab = d.tab; if (d.f) p.f = d.f; if (d.topik) p.topik = d.topik; if (v === 'lesson' && (!d.course || d.course === A.course)) p.i = A.secProgress(+d.sec).step; go(v, p); return; }
+    if (g && !g.disabled) { e.preventDefault(); A.tick(); const d = g.dataset; const v = d.go; const p = {}; if (d.sec) p.sec = +d.sec; if (d.id) p.id = d.id; if (d.course) p.course = d.course; if (d.tab) p.ktab = d.tab; if (d.f) p.f = d.f; if (d.topik) p.topik = d.topik; if (d.hid) p.hid = d.hid; if (v === 'lesson' && (!d.course || d.course === A.course)) p.i = A.secProgress(+d.sec).step; go(v, p); return; }
     const a = e.target.closest('[data-act]'); if (!a || a.disabled) return;
     const d = a.dataset; A.tick();
     switch (d.act) {
