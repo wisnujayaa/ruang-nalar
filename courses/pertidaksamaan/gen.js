@@ -5,7 +5,11 @@
   const T = B.numTex;
   const GEN = C.GEN = {};
   const REL = ['<', '\\le', '>', '\\ge'];
-  const relFn = { '<': (a, b) => a < b, '\\le': (a, b) => a <= b + 1e-12, '>': (a, b) => a > b, '\\ge': (a, b) => a >= b - 1e-12 };
+  /* Toleransi di KEDUA jenis relasi: titik kritis pecahan (mis. 2/3) tidak bisa disimpan persis di komputer, sehingga
+     (x+2)/(x−2) di x=2/3 bisa bernilai −2,0000000000000004. Tanpa toleransi, "< −2" salah dianggap benar dan ujung
+     interval ikut masuk ke kunci. (Ditemukan oleh tests/verify-gen.js.) */
+  const EPSR = 1e-9;
+  const relFn = { '<': (a, b) => a < b - EPSR, '\\le': (a, b) => a <= b + EPSR, '>': (a, b) => a > b + EPSR, '\\ge': (a, b) => a >= b - EPSR };
   const flipRel = { '<': '>', '>': '<', '\\le': '\\ge', '\\ge': '\\le' };
   // koefisien linear "ax+b" sebagai TeX rapi
   function lin(a, b, v) {
@@ -237,9 +241,12 @@
 
   /* ----------------- BAGIAN 8 ----------------- */
   GEN.s8a = { sec: 8, lvl: 1, concepts: ['eksponen'], make(seed) {
-    const r = B.rng(seed); const base = r.pick([[2, '2'], [3, '3'], [0.5, '\\frac12'], [1 / 3, '\\frac13']]); const p = r.pick([1, 1, 2, -1]); const q = r.int(-3, 3); const k = r.int(-2, 4); const rel = r.pick(REL);
+    const r = B.rng(seed); const base = r.pick([[2, '2', 2, 1], [3, '3', 3, 1], [0.5, '\\frac12', 1, 2], [1 / 3, '\\frac13', 1, 3]]); const p = r.pick([1, 1, 2, -1]); const q = r.int(-3, 3); const k = r.int(-2, 4); const rel = r.pick(REL);
     const bb = base[0];
-    const rhsVal = Math.pow(bb, k); const rhs = B.frac(rhsVal); const rhsT = rhs ? (rhs.q === 1 ? String(rhs.p) : '\\frac{' + rhs.p + '}{' + rhs.q + '}') : T(rhsVal);
+    // Ruas kanan = basis^k sebagai pecahan PERSIS (pembilang & penyebut dipangkatkan langsung), bukan desimal yang dibulatkan.
+    // Sebelumnya (1/3)^4 = 1/81 tampil sebagai "0.012", sehingga jawaban eksaknya bukan lagi kunci yang tersimpan.
+    const num = k >= 0 ? Math.pow(base[2], k) : Math.pow(base[3], -k), den = k >= 0 ? Math.pow(base[3], k) : Math.pow(base[2], -k);
+    const rhsT = den === 1 ? String(num) : '\\frac{' + num + '}{' + den + '}';
     const flip = B.solve(x => relFn[rel](p * x + q, k), [(k - q) / p]);
     // catatan: untuk basis<1, a^f rel a^k <=> f rel' k (dibalik)
     const correct = bb > 1 ? flip : B.solve(x => relFn[flipRel[rel]](p * x + q, k), [(k - q) / p]);

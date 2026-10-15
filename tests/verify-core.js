@@ -8,7 +8,7 @@ const path = require('path'); const ROOT = path.join(__dirname, '..');
 const store = {}; globalThis.localStorage = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } };
 globalThis.window = globalThis;
 require(path.join(ROOT, 'js/math.js'));
-globalThis.BC = { BANK: {}, LESSONS: {}, SECTIONS: [], CARDS: [] };
+globalThis.BC = { BANK: { b1: { id: 'b1' } }, GEN: { lin: {} }, LESSONS: {}, SECTIONS: [], CARDS: [] };
 require(path.join(ROOT, 'js/core.js'));
 const A = globalThis.BA; let bad = 0;
 const ok = (cond, msg) => { if (!cond) { console.log('GAGAL:', msg); bad++; } };
@@ -97,11 +97,37 @@ s = A.schedule(map, 'j', 1); ok(s.iv >= 1 && s.ef < 2.4, 'menebak tapi benar: ja
 for (let i = 0; i < 20; i++) s = A.schedule(map, 'j', 0); ok(s.ef === 1.3, 'ef tidak turun di bawah 1,3');
 Date.now = realNow;
 
+/* 6b) reset di satu perangkat tidak dihidupkan kembali oleh perangkat lain */
+{ const old = A.fresh(); for (let i = 0; i < 5; i++) old.attempts.push({ t: 1700000000000 + i, i: 'q' + i, s: 1, l: 1, ok: 1, c: 2, ms: 1, k: [], src: 'latihan' });
+  old.sections = { 1: { step: 9, done: 1 } }; old.items = { b1: { last: 1700000000000, iv: 3 } }; old.daily = { '2023-11-14': 600000 }; old.updated = 1700000001000;
+  const R = 1800000000000; const reset = A.fresh(); reset.resetAt = R; reset.attempts.push({ t: R + 5, i: 'baru', s: 1, l: 1, ok: 1, c: 2, ms: 1, k: [], src: 'latihan' });
+  const m1 = A.merge(old, reset), m2 = A.merge(reset, old);
+  ok(m1.attempts.length === 1 && m1.attempts[0].i === 'baru' && !m1.sections[1] && !m1.items.b1 && !Object.keys(m1.daily).length && m1.resetAt === R, 'reset tidak dihidupkan kembali oleh data lama');
+  ok(JSON.stringify(m1.attempts) === JSON.stringify(m2.attempts) && m2.resetAt === R, 'urutan merge tidak berpengaruh');
+  const late = A.fresh(); late.attempts.push({ t: R + 99, i: 'offline', s: 1, l: 1, ok: 1, c: 2, ms: 1, k: [], src: 'latihan' });
+  ok(A.merge(reset, late).attempts.length === 2, 'jawaban setelah reset dari perangkat lain tetap disimpan'); }
+
+/* 6c) item yang sudah dihapus dari kursus tidak dihitung jatuh tempo */
+A.S = A.fresh(); A.S.items = { b1: { due: 1, last: 1 }, hilang: { due: 1, last: 1 }, 'g:lin': { due: 1, last: 1 }, 'g:gone': { due: 1, last: 1 } };
+ok(JSON.stringify(A.dueItems().sort()) === JSON.stringify(['b1', 'g:lin']), 'dueItems mengabaikan item yatim: ' + A.dueItems());
+
 /* 7) kode progres */
 A.S = A.fresh(); A.S.attempts.push({ t: 1700000000000, i: 'b1', s: 1, l: 1, ok: 1, c: 2, ms: 1, k: [], src: 'latihan' });
 const code = A.exportCode(); const back = A.decodeCode(code + '\n');
 ok(back.attempts.length === 1, 'kode progres bolak-balik');
 let msg = ''; try { A.decodeCode('BATAS1.@@@'); } catch (e) { msg = e.message; } ok(/rusak|terpotong/.test(msg), 'kode rusak → pesan jelas: ' + msg);
 
-if (bad) { console.log(bad + ' TES INTI GAGAL'); process.exit(1); }
-console.log('INTI APLIKASI LULUS (sanitize, merge, streak, review berjarak, kode progres)');
+/* 8) sinkronisasi: pindah kursus saat pengiriman sedang berjalan tidak menghilangkan perubahan */
+(async () => {
+  const saved = []; globalThis.BB = { online: true, user: { id: 'u' }, progress: { async save(c, s) { await new Promise(r => setTimeout(r, 30)); saved.push([c, JSON.parse(s).attempts.length]); }, async load() { return null; } } };
+  A.course = null; A.useCourse('kursusA');
+  A.S.attempts.push({ t: 1, i: 'a1' }); const p1 = A.sync.push();       // pengiriman pertama sedang berjalan…
+  A.S.attempts.push({ t: 2, i: 'a2' }); A.flush();
+  A.useCourse('kursusB');                                              // …lalu langsung pindah kursus
+  await p1; await new Promise(r => setTimeout(r, 120));
+  const lastA = saved.filter(x => x[0] === 'kursusA').pop();
+  ok(lastA && lastA[1] === 2, 'perubahan terakhir kursus A tetap terkirim setelah pindah kursus: ' + JSON.stringify(saved));
+  ok(!saved.some(x => x[0] === 'kursusB' && x[1] > 0), 'progres A tidak terkirim ke kursus B');
+  if (bad) { console.log(bad + ' TES INTI GAGAL'); process.exit(1); }
+  console.log('INTI APLIKASI LULUS (sanitize, merge, reset, streak, review berjarak, kode progres, sinkronisasi)');
+})();

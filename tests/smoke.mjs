@@ -115,6 +115,13 @@ await page.waitForFunction(() => /Tersimpan/.test(document.querySelector('#k-nam
 await page.click('[data-pact="k-del1"]'); await page.fill('#k-del-n', 'Kelas Uji 2'); await page.click('[data-pact="k-del2"]'); await page.waitForSelector('#clist');
 await page.waitForFunction(() => !document.querySelector('.loading'));
 if ((await page.$$('.klas-card')).length) fail('kelas lokal tidak terhapus'); else console.log('Kelola kelas lokal (ganti nama, hapus) OK');
+// Jawaban interval dengan ujung desimal pembulatan → diminta pecahan persis, tidak dihitung salah
+await page.evaluate(() => BU.startRun([{ id: 'uji-desimal', type: 'interval', v: 'x', q: 'Selesaikan $\\frac{3x-2}{x-2}<0$.', ansSet: [{ a: 2 / 3, b: 2, ca: false, cb: false }], sec: 5, lvl: 2, concepts: [] }], { title: 'Uji', tab: 'review' }));
+await page.waitForSelector('.q input'); await page.fill('.q input', '(0.67, 2)'); await page.click('[data-q="submit"]');
+await page.waitForFunction(() => /pecahan persis/.test(document.querySelector('.q .err').textContent));
+if (await page.$('.fbx')) fail('jawaban desimal tidak boleh langsung dinilai');
+await page.fill('.q input', '(2/3, 2)'); await page.click('[data-q="submit"]'); await page.click('.conf-b button[data-c="3"]').catch(() => {}); await page.click('[data-q="submit"]').catch(() => {});
+await page.waitForSelector('.fbx.good'); console.log('Desimal pembulatan → minta pecahan persis; pecahan persis → benar OK');
 // Laporan kendala (mode lokal): dari Akun, lalu terlihat di daftar laporan
 await page.click('.tabs a[data-go="me"]'); await page.click('[data-go="lapor"]'); await page.waitForSelector('#repf');
 await page.click('[data-rk="saran"]'); await page.fill('#rep-body', 'Tolong tambah mode gelap otomatis'); await page.click('#repf button[type=submit]');

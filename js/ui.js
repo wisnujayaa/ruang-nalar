@@ -149,6 +149,12 @@
     return '<div class="tags">' + t.join('') + '</div>';
   }
   /* QComp: render satu soal. opts: {src, tryout, onDone(res), hideSol} */
+  /* Dua himpunan sama bentuknya (jenis kurung & jumlah ruas) dan ujung-ujungnya berbeda paling banyak tol */
+  function nearSame(s1, s2, tol) {
+    const a = B.norm(s1), b = B.norm(s2); if (a.length !== b.length) return false;
+    const close = (x, y) => (x === y) || Math.abs(x - y) <= tol;
+    return a.every((p, i) => close(p.a, b[i].a) && close(p.b, b[i].b) && p.ca === b[i].ca && p.cb === b[i].cb);
+  }
   function QComp(host, it, opts) {
     opts = opts || {};
     const t0 = Date.now();
@@ -242,6 +248,8 @@
         const r = B.parseAnswer(raw, it.v); if (!r.ok) return { err: r.err, trapHit: r.trap };
         const ans = it.ansSet || B.parseSet(it.ans);
         if (B.same(r.set, ans)) return { ok: true, ans: raw, user: r.set };
+        // Ujung ditulis sebagai desimal pembulatan (0.67 untuk 2/3): penalarannya benar, jadi beri kesempatan memperbaiki
+        if (/\d[.,]\d/.test(raw) && nearSame(r.set, ans, 0.006)) return { err: 'Hampir! Bentuk intervalnya sudah benar, tapi tulis ujungnya sebagai pecahan persis (misalnya 2/3), bukan desimal yang dibulatkan.' };
         for (const w of (it.wrong || [])) { const ws = w.set || B.parseSet(w.a); if (B.same(ws, r.set)) return { ok: false, why: w.why, trapHit: w.trap, ans: raw, user: r.set }; }
         return Object.assign({ ok: false, ans: raw, user: r.set }, diagnose(r.set, ans, it));
       }
@@ -795,7 +803,7 @@
       case 'imp': { try { const st = A.decodeCode($('#code').value); A.S = A.merge(A.S, st); A.save(); $('#code-m').textContent = 'Berhasil digabungkan: ' + st.attempts.length + ' jawaban dari kode.'; } catch (err) { $('#code-m').textContent = err.message; } break; }
       case 'reset1': $('#rst').innerHTML = '<p class="bad">Yakin? Semua progres akan hilang dan tidak bisa dikembalikan.</p><div class="row"><button class="btn danger" data-act="reset2">Ya, hapus semua</button><button class="btn" data-act="reset0">Batal</button></div>'; break;
       case 'reset0': render(); break;
-      case 'reset2': { const ns = A.fresh(); ns.nick = A.S.nick; ns.nickT = Date.now(); A.S = ns; A.flush(); A.sync.lastPushed = ''; A.sync.queue(); go('course'); break; }
+      case 'reset2': { const ns = A.fresh(); ns.nick = A.S.nick; ns.nickT = Date.now(); ns.resetAt = Date.now(); A.S = ns; A.flush(); A.sync.lastPushed = ''; A.sync.queue(); go('course'); break; }
     }
   });
 

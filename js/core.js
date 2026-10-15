@@ -11,7 +11,7 @@
 
   function fresh() {
     return { v: 1, nick: '', nickT: 0, created: now(), attempts: [], items: {}, cards: {}, prereq: {}, diag: { done: 0, t: 0, res: {} }, intro: 0,
-      sections: {}, mistakes: {}, dumps: {}, daily: {}, exits: {}, predicts: {}, unlock: {}, exDone: {}, notesRead: {} };
+      sections: {}, mistakes: {}, dumps: {}, daily: {}, exits: {}, predicts: {}, unlock: {}, exDone: {}, notesRead: {}, resetAt: 0 };
   }
   A.fresh = fresh;
 
@@ -50,7 +50,7 @@
     o.exDone = mapOf(j.exDone, v => isObj(v) ? mapOf(v, () => 1, 99) : null, 2000);
     o.unlock = mapOf(j.unlock, v => v ? 1 : null, 999);
     o.notesRead = mapOf(j.notesRead, v => v ? 1 : null, 2000);
-    o.nick = str(j.nick, 40); o.nickT = num(j.nickT, 0, 0, T_MAX);
+    o.nick = str(j.nick, 40); o.nickT = num(j.nickT, 0, 0, T_MAX); o.resetAt = num(j.resetAt, 0, 0, T_MAX);
     o.created = num(j.created, now(), 0, T_MAX); if (j.updated != null) o.updated = num(j.updated, 0, 0, T_MAX);
     return o;
   };
@@ -72,8 +72,8 @@
   /* Pindah kursus aktif: simpan yang lama, muat yang baru, lalu sinkronkan */
   A.useCourse = function (id) {
     if (A.course === id) return;
-    if (A.course) { A.flush(); A.sync.push(); }
-    A.course = id; A.S = readState(id); A.sync.lastPushed = ''; A.sync.pull();
+    if (A.course) { A.flush(); A.sync.push(A.course, A.S); }
+    A.course = id; A.S = readState(id); A.sync.pull();
   };
   A.set = (() => { try { return Object.assign({ theme: 'system', recallAll: false, checklist: true, radar: true, jalur: 'semua', goal: 20 }, JSON.parse(lsGet(SKEY) || lsGet('batas-settings-v1') || '{}')); } catch (e) { return { theme: 'system', recallAll: false, checklist: true, radar: true, jalur: 'semua', goal: 20 }; } })();
   A.saveSettings = () => lsSet(SKEY, JSON.stringify(A.set));
@@ -189,7 +189,9 @@
     if (A.S.diag.done) { const r = A.S.diag.res[P]; if (r) return r.ok === r.n ? 'lulus' : 'latih'; }
     return 'belum';
   };
-  A.dueItems = function () { return Object.keys(A.S.items).filter(k => A.isDue(A.S.items[k])); };
+  /* Hanya item yang masih ada di kursus: soal/generator yang sudah dihapus tidak dihitung "jatuh tempo" selamanya */
+  A.itemExists = (k) => k.startsWith('g:') ? !!(C.GEN && C.GEN[k.slice(2)]) : !!(C.BANK && C.BANK[k]);
+  A.dueItems = function () { return Object.keys(A.S.items).filter(k => A.isDue(A.S.items[k]) && A.itemExists(k)); };
   A.dueCards = function (pool) { return (pool || G.BC.CARDS).filter(c => !A.S.cards[c.id] || A.isDue(A.S.cards[c.id])); };
   A.cardPool = function (all) {
     if (all) return C.CARDS;
@@ -205,8 +207,22 @@
   };
 
   /* ---------- gabung dua state (HP + laptop) ---------- */
+  /* Sisi yang belum mengalami reset terbaru hanya boleh menyumbang data yang lebih baru dari reset itu.
+     Tanpa ini, perangkat lain yang masih menyimpan data lama akan "menghidupkan" kembali progres yang sudah dihapus. */
+  function afterReset(x, R) {
+    if ((x.resetAt || 0) >= R) return x;
+    const y = fresh(); y.resetAt = x.resetAt || 0; y.nick = x.nick; y.nickT = x.nickT; y.updated = x.updated; y.created = x.created;
+    const newer = (m, f) => { const r = {}; for (const [k, v] of Object.entries(m || {})) if ((f(v) || 0) >= R) r[k] = v; return r; };
+    y.attempts = (x.attempts || []).filter(t => t.t >= R);
+    y.items = newer(x.items, v => v.last); y.cards = newer(x.cards, v => v.last); y.mistakes = newer(x.mistakes, v => v.t);
+    y.dumps = newer(x.dumps, v => v.t); y.exits = newer(x.exits, v => v.t); y.prereq = newer(x.prereq, v => v.t);
+    const dR = A.today(R); for (const [d, v] of Object.entries(x.daily || {})) if (d >= dR) y.daily[d] = v;
+    return y;
+  }
   A.merge = function (a, b) {
-    const o = fresh();
+    const R = Math.max(a.resetAt || 0, b.resetAt || 0);
+    if (R) { a = afterReset(a, R); b = afterReset(b, R); }
+    const o = fresh(); o.resetAt = R;
     const seen = new Set(); o.attempts = a.attempts.concat(b.attempts).filter(x => { const k = x.t + '|' + x.i; if (seen.has(k)) return false; seen.add(k); return true; }).sort((x, y) => x.t - y.t).slice(-1400);
     const byLast = (m1, m2, f) => { const r = {}; for (const k of new Set(Object.keys(m1 || {}).concat(Object.keys(m2 || {})))) { const x = (m1 || {})[k], y = (m2 || {})[k]; r[k] = !x ? y : !y ? x : ((f(x) >= f(y)) ? x : y); } return r; };
     o.items = byLast(a.items, b.items, s => s.last || 0);
@@ -232,6 +248,8 @@
 
   /* ---------- sinkronisasi lewat backend (lokal / Claude / Supabase) ---------- */
   const sync = A.sync = { status: 'lokal', busy: false, pending: false, timer: null, listeners: [], lastPushed: '', notes: [] };
+  const pushed = {};          // teks terakhir yang berhasil dikirim, per kursus
+  let chain = Promise.resolve();   // pengiriman diantrikan berurutan, jadi tidak ada yang terlewat saat pindah kursus
   const BB = () => G.BB;
   sync.on = (fn) => sync.listeners.push(fn);
   const emit = () => sync.listeners.forEach(f => { try { f(); } catch (e) { } });
@@ -239,8 +257,8 @@
   Object.defineProperty(sync, 'owner', { get: () => !!(BB() && BB().isAdmin) });
   Object.defineProperty(sync, 'uid', { get: () => BB() && BB().user ? BB().user.id : null });
   Object.defineProperty(sync, 'online', { get: () => !!(BB() && BB().online) });
-  function packState() {
-    const S = JSON.parse(JSON.stringify(A.S));
+  function packState(src) {
+    const S = JSON.parse(JSON.stringify(src || A.S));
     let s = JSON.stringify(S);
     while (s.length > 230000 && S.attempts.length > 200) { S.attempts.splice(0, 150); s = JSON.stringify(S); }
     return s;
@@ -249,13 +267,21 @@
     if (!sync.online || !A.course) return;
     sync.pending = true; clearTimeout(sync.timer); sync.timer = setTimeout(sync.push, 2500);
   };
-  sync.push = async function () {
-    if (!sync.online || !A.course || sync.busy) return;
-    const s = packState(); if (s === sync.lastPushed) { sync.pending = false; return; }
-    sync.busy = true; sync.status = 'menyimpan'; emit();
-    try { await BB().progress.save(A.course, s); sync.lastPushed = s; sync.pending = false; sync.status = 'tersinkron'; }
-    catch (e) { sync.status = (e && e.code === 'readonly') ? 'hanya-baca' : 'gagal'; setTimeout(() => sync.pending && sync.push(), 6000 + Math.random() * 4000); }
-    sync.busy = false; emit();
+  /* Kirim progres kursus tertentu (bawaan: kursus aktif). State & kursus diambil saat dipanggil, lalu diantrikan. */
+  sync.push = function (course, src) {
+    course = typeof course === 'string' ? course : A.course; src = src || (course === A.course ? A.S : null);
+    if (!sync.online || !course || !src) return chain;
+    if (sync.lastPushed === '') delete pushed[course];   // dipaksa kirim ulang (mis. setelah reset)
+    const s = packState(src);
+    if (s === pushed[course]) { if (course === A.course) sync.pending = false; return chain; }
+    chain = chain.then(async () => {
+      if (s === pushed[course]) return;
+      sync.busy = true; sync.status = 'menyimpan'; emit();
+      try { await BB().progress.save(course, s); pushed[course] = s; sync.lastPushed = s; if (course === A.course) sync.pending = false; sync.status = 'tersinkron'; }
+      catch (e) { sync.status = (e && e.code === 'readonly') ? 'hanya-baca' : 'gagal'; setTimeout(() => sync.pending && sync.push(), 6000 + Math.random() * 4000); }
+      sync.busy = false; emit();
+    });
+    return chain;
   };
   /* Ambil progres dari server lalu gabungkan dengan yang ada di perangkat */
   sync.pull = async function () {
