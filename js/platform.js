@@ -267,6 +267,7 @@
     if (/email not confirmed|email_not_confirmed/i.test(m + c)) return 'Email belum dikonfirmasi. Buka email aktivasi dari kami (cek juga folder Spam).';
     const wait = /after (\d+) seconds?/i.exec(m); if (wait) return 'Demi keamanan, tunggu ' + wait[1] + ' detik sebelum mencoba lagi.';
     if (/rate limit|too many|over_email_send_rate_limit|over_request_rate_limit/i.test(m + c)) return 'Terlalu banyak permintaan dalam waktu singkat. Tunggu beberapa menit, lalu coba lagi.';
+    if (/not authorized|email_address_not_authorized|error sending|unexpected_failure.*mail/i.test(m + c)) return 'Server belum bisa mengirim email ke alamat ini. Ini masalah pengaturan situs, bukan kesalahanmu. Coba lagi nanti atau beri tahu pengelola lewat "Laporkan masalah".';
     if (/should be at least|weak_password|password is too weak/i.test(m + c)) return 'Kata sandi terlalu lemah atau pendek. Pakai minimal 8 karakter dan campurkan huruf dengan angka.';
     if (/same_password|different from the old/i.test(m + c)) return 'Kata sandi baru harus berbeda dari yang lama.';
     if (/invalid.*email|email_address_invalid/i.test(m + c)) return 'Alamat email tidak valid.';

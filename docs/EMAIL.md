@@ -46,7 +46,24 @@ lebih dulu. Halaman penjelasan menyebutkan ini dan menyediakan tombol kirim ulan
 - Masa berlaku tautan email (*Email OTP Expiration*) bawaannya 1 jam; teks email menulis "sekitar 1 jam".
   Kalau diubah, sesuaikan juga teks di `confirm-signup.html` dan `reset-password.html`.
 
-## Pengirim email
-Email bawaan Supabase dikirim dari alamat Supabase dengan **batas jumlah per jam yang kecil**, cocok untuk uji coba
-dan kelas kecil. Untuk banyak siswa sekaligus atau nama pengirim "Ruang Nalar", pasang SMTP sendiri
-(Authentication → Emails → SMTP), misalnya Resend, setelah punya domain sendiri.
+Catatan: *Leaked password protection* hanya tersedia di paket **Pro** ke atas. Di paket gratis, lewati saja
+(peringatan di Security Advisor akan tetap muncul, dan itu wajar).
+
+## Pengirim email (PENTING sebelum dipakai siswa)
+Pengirim bawaan Supabase hanya untuk uji coba. Menurut dokumentasi resmi Supabase, pengirim ini:
+- **hanya mengirim ke alamat anggota tim proyek** (Organization → Team). Alamat lain bisa ditolak dengan
+  *"Email address not authorized"*, sehingga siswa tidak bisa mengaktifkan akun;
+- dibatasi beberapa email **per jam** untuk seluruh proyek;
+- tanpa jaminan terkirim.
+
+Solusi gratis tanpa domain: **SMTP Gmail** (± 500 email/hari).
+1. Buat akun Gmail khusus situs (misalnya `ruangnalar.app@gmail.com`), supaya email pribadimu tidak menjadi pengirim.
+2. Di akun itu nyalakan **Verifikasi 2 Langkah**, lalu buat **Sandi Aplikasi** di https://myaccount.google.com/apppasswords
+   (16 huruf). Sandi ini hanya ditempel di Supabase, jangan disimpan di repo.
+3. Supabase → Authentication → Emails → **SMTP Settings** → Enable custom SMTP:
+   - Sender email: alamat Gmail tadi · Sender name: `Ruang Nalar`
+   - Host: `smtp.gmail.com` · Port: `587` · Username: alamat Gmail tadi · Password: Sandi Aplikasi
+4. Authentication → **Rate Limits**: naikkan batas email per jam (misalnya 30) setelah SMTP aktif.
+5. Uji: daftar dengan email teman (bukan anggota tim) dan pastikan emailnya masuk.
+
+Kalau nanti punya domain sendiri, ganti ke Resend/Brevo dengan domain terverifikasi agar email tidak masuk Spam.
