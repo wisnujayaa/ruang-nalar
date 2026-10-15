@@ -16,8 +16,10 @@
   const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
   const err = (m, code) => { const e = new Error(m); if (code) e.code = code; return e; };
   /* Kursus buatan guru: metadata yang boleh diubah lewat editor */
+  /* Visibilitas kursus Studio: draft (hanya pemilik), class (anggota kelas pemilik), unlisted (lewat tautan), public (katalog) */
+  const VIS = ['draft', 'class', 'unlisted', 'public'];
   const COURSE_FIELDS = ['title', 'subject', 'level', 'blurb', 'glyph', 'color', 'visibility'];
-  const pickMeta = (m) => { const o = {}; COURSE_FIELDS.forEach(k => { if (m && m[k] != null) o[k] = String(m[k]); }); o.title = (o.title || 'Kursus tanpa judul').slice(0, 80); if (!['draft', 'unlisted', 'public'].includes(o.visibility)) o.visibility = 'draft'; if (!['accent', 'sol'].includes(o.color)) o.color = 'accent'; return o; };
+  const pickMeta = (m) => { const o = {}; COURSE_FIELDS.forEach(k => { if (m && m[k] != null) o[k] = String(m[k]); }); o.title = (o.title || 'Kursus tanpa judul').slice(0, 80); if (!VIS.includes(o.visibility)) o.visibility = 'draft'; if (!['accent', 'sol'].includes(o.color)) o.color = 'accent'; return o; };
   const courseMeta = (row, me) => ({ id: row.id, title: row.title, subject: row.subject || '', level: row.level || '', blurb: row.blurb || '', glyph: row.glyph || '', color: row.color || 'accent', visibility: row.visibility || 'draft', ownerId: row.owner_id || row.owner || null, mine: !!me && (row.owner_id || row.owner) === me, updated: row.updated_at ? Date.parse(row.updated_at) : (row.u || row.t || null), db: true });
   const newCourseId = () => 'c-' + Math.random().toString(36).slice(2, 7) + now().toString(36).slice(-5);
 
@@ -69,7 +71,8 @@
         async list() { return ls.get(K.crs, []).map(c => courseMeta(Object.assign({ owner_id: me.id }, c), me.id)); },
         async get(id) { const c = ls.get(K.crs, []).find(x => x.id === id); return c ? { meta: courseMeta(Object.assign({ owner_id: me.id }, c), me.id), content: c.content } : null; },
         async save(id, m, content) { const all = ls.get(K.crs, []); let c = id && all.find(x => x.id === id); if (!c) { c = { id: newCourseId(), created_at: new Date().toISOString() }; all.push(c); } Object.assign(c, pickMeta(m), { content, updated_at: new Date().toISOString() }); ls.set(K.crs, all); return c.id; },
-        async remove(id) { ls.set(K.crs, ls.get(K.crs, []).filter(c => c.id !== id)); }
+        async remove(id) { ls.set(K.crs, ls.get(K.crs, []).filter(c => c.id !== id)); },
+        async setVisibility(id, v) { if (!VIS.includes(v)) throw err('Visibilitas tidak dikenal.'); const all = ls.get(K.crs, []); const c = all.find(x => x.id === id); if (c) { c.visibility = v; ls.set(K.crs, all); } }
       },
       async profiles(ids) { const st = B.students(); const o = {}; ids.forEach(i => { const s = st.find(x => x.id === i); o[i] = i === me.id ? me.name : s ? s.name : 'Anggota'; }); return o; }
     };
@@ -152,10 +155,11 @@
       },
       courses: {
         get canEdit() { return B.online && B.isAdmin; },
-        async list() { if (!db) return []; const q = await db.collection('kursus').limit(200).get(); const me = B.user && B.user.id; return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(c => c.visibility !== 'draft' || c.owner === me).map(c => courseMeta(c, me)); },
+        async list() { if (!db) return []; const q = await db.collection('kursus').limit(200).get(); const me = B.user && B.user.id; return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(c => ['unlisted', 'public'].includes(c.visibility) || c.owner === me).map(c => courseMeta(c, me)); },
         async get(id) { if (!db) return null; const sn = await db.doc('kursus/' + id).get(); if (!sn.exists) return null; const d = Object.assign({ id }, sn.data()); let content = null; try { content = JSON.parse(d.content || 'null'); } catch (e) { } return { meta: courseMeta(d, B.user && B.user.id), content }; },
         async save(id, m, content) { id = id || newCourseId(); const s = JSON.stringify(content); if (s.length > 900000) throw err('Kursus terlalu besar untuk disimpan di mode ini.'); await db.doc('kursus/' + id).set(Object.assign(pickMeta(m), { owner: B.user.id, content: s, u: now() })); return id; },
-        async remove(id) { await db.doc('kursus/' + id).delete(); }
+        async remove(id) { await db.doc('kursus/' + id).delete(); },
+        async setVisibility(id, v) { if (!VIS.includes(v)) throw err('Visibilitas tidak dikenal.'); await db.doc('kursus/' + id).update({ visibility: v, u: now() }); }
       },
       async profiles(ids, progDocs) {
         const out = {}; ids = Array.from(new Set(ids.filter(Boolean)));
@@ -266,7 +270,8 @@
         get canEdit() { return !!B.user && ['teacher', 'admin'].includes(B.user.role); },
         async list() {
           let q = sb.from('courses').select('id,title,subject,level,blurb,glyph,color,visibility,owner_id,updated_at').order('updated_at', { ascending: false }).limit(200);
-          q = B.user ? q.or('visibility.eq.public,owner_id.eq.' + B.user.id) : q.eq('visibility', 'public');
+          // 'class' ikut diminta: RLS di server hanya mengembalikan kursus khusus kelas yang memang boleh kubuka (dari kelasku)
+          q = B.user ? q.or('visibility.in.(public,class),owner_id.eq.' + B.user.id) : q.eq('visibility', 'public');
           const r = await q; if (r.error) return []; return r.data.map(c => courseMeta(c, B.user && B.user.id));
         },
         async get(id) { const r = chk(await sb.from('courses').select('*').eq('id', id).maybeSingle()); return r ? { meta: courseMeta(r, B.user && B.user.id), content: r.content } : null; },
@@ -275,7 +280,8 @@
           if (id) { chk(await sb.from('courses').update(row).eq('id', id)); return id; }
           return chk(await sb.from('courses').insert(row).select('id').single()).id;
         },
-        async remove(id) { chk(await sb.from('courses').delete().eq('id', id)); }
+        async remove(id) { chk(await sb.from('courses').delete().eq('id', id)); },
+        async setVisibility(id, v) { if (!VIS.includes(v)) throw err('Visibilitas tidak dikenal.'); chk(await sb.from('courses').update({ visibility: v, updated_at: new Date().toISOString() }).eq('id', id)); }
       },
       async profiles(ids) { const out = {}; ids = Array.from(new Set(ids.filter(Boolean))); if (!ids.length) return out; const r = chk(await sb.from('profiles').select('id,display_name').in('id', ids)); r.forEach(p => { out[p.id] = p.display_name; }); return out; }
     };

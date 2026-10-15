@@ -52,7 +52,16 @@ const gcid = await T.evaluate(() => BE.id); console.log('kursus guru disimpan (d
 await T.evaluate(() => BU.go('kelas')); await T.waitForSelector('#newc'); await T.click('#newc summary'); await T.fill('#cname', 'Kelas kursus guru'); await T.selectOption('#ccourse', gcid); await T.click('#cform button[type=submit]');
 await T.waitForSelector('.codebox .code'); const code2 = await T.$eval('.codebox .code', e => e.textContent);
 await S.evaluate(() => BU.go('kelas')); await S.waitForSelector('#jcode'); await S.fill('#jcode', code2); await S.click('#joinf button[type=submit]'); await S.waitForSelector('.asgs, .empty');
-await S.evaluate((id) => BU.go('course', { course: id }), gcid); await S.waitForSelector('.path .sec'); console.log('siswa membuka kursus guru:', await S.$eval('.hello h1', e => e.textContent));
+// Kursus masih draf: anggota kelas pun belum bisa membuka
+await S.evaluate((id) => BU.go('course', { course: id }), gcid); await S.waitForSelector('.locked'); console.log('kursus draf terkunci untuk siswa OK');
+// Guru melihat peringatan di halaman kelas, lalu membuka kursus untuk anggota kelas (khusus kelas)
+await T.waitForSelector('.warnbox [data-pact="k-vis"]'); await T.click('.warnbox [data-pact="k-vis"]'); await T.waitForSelector('.acc-note');
+if ((await T.evaluate(() => JSON.parse(localStorage.getItem('FAKE_SB')).courses[0].visibility)) !== 'class') throw new Error('visibilitas tidak menjadi class');
+console.log('guru mengunci kursus untuk kelas OK');
+await S.evaluate(() => BU.go('home')); await S.evaluate(() => NR.refreshRemote().then(() => BU.render())); await S.waitForFunction(() => /Dari kelasmu/.test(document.querySelector('.catalog').textContent));
+await S.evaluate((id) => BU.go('course', { course: id }), gcid); await S.waitForSelector('.path .sec'); console.log('anggota kelas membuka kursus khusus kelas:', await S.$eval('.hello h1', e => e.textContent));
+// Orang yang bukan anggota tetap terkunci walau punya tautannya
+{ const X = await pg(); await signup(X, 'Orang Lain', 'lain@x.id'); await X.goto(URL + '#kursus=' + gcid); await X.waitForSelector('.locked'); console.log('bukan anggota: terkunci OK'); await X.close(); }
 // Guru mengelola kelas: ganti nama, kode baru, hapus
 await T.evaluate(() => BU.go('kelas')); await T.waitForSelector('.klas-card');
 const cards = await T.$$('.klas-card'); for (const cd of cards) { if ((await cd.innerText()).includes('Kelas kursus guru')) { await cd.click(); break; } }

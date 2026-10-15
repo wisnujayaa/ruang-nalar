@@ -106,6 +106,11 @@
   const TAB = { home: 'home', course: 'course', map: 'course', intro: 'course', diag: 'course', prereq: 'course', lesson: 'course', summary: 'course', mixed: 'course', lintas: 'course', tryout: 'course', dump: 'course', traps: 'course',
     review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me' };
   function tabOf(v) { return v === 'run' ? (nav.cur.tab === 'map' ? 'course' : nav.cur.tab || 'review') : TAB[v] || 'home'; }
+  /* Kursus Studio yang tidak boleh kubuka (draf, khusus kelas, atau sudah dihapus) */
+  function lockedHTML() {
+    const inUser = G.BB && G.BB.user;
+    return '<div class="card locked"><span class="lk-ic">' + ic('lock') + '</span><h2>Kursus ini terkunci</h2><p>Kursus ini hanya bisa dibuka oleh <b>anggota kelas</b> gurunya' + (inUser ? '' : ', jadi kamu perlu masuk dulu') + '. Minta <b>kode kelas</b> ke gurumu, lalu gabung lewat menu Kelas.</p><p class="muted small">Bisa juga kursusnya masih draf atau sudah dihapus.</p><div class="row">' + (inUser ? '<button class="btn primary" data-go="kelas">Gabung kelas</button>' : '<button class="btn primary" data-go="login">Masuk</button>') + '<button class="btn" data-go="home">Ke beranda</button></div></div>';
+  }
   let loadingCourse = false;
   function render() {
     const v = nav.cur.v;
@@ -116,7 +121,7 @@
       if (!want) { nav.cur = { v: 'home' }; return render(); }
       if (loadingCourse) return;
       loadingCourse = true; view().innerHTML = '<div class="loading"><span class="spin"></span><p class="muted">Memuat kursus…</p></div>';
-      openCourse(want).then(() => { loadingCourse = false; render(); }).catch(e => { loadingCourse = false; if (A.set.lastCourse === want) { A.set.lastCourse = null; A.saveSettings(); } view().innerHTML = '<div class="card"><p class="bad">' + esc(e.message) + '</p><button class="btn" data-go="home">Ke beranda</button></div>'; });
+      openCourse(want).then(() => { loadingCourse = false; render(); }).catch(e => { loadingCourse = false; if (A.set.lastCourse === want) { A.set.lastCourse = null; A.saveSettings(); } view().innerHTML = G.NR.isDb(want) ? lockedHTML() : '<div class="card"><p class="bad">' + esc(e.message) + '</p><button class="btn" data-go="home">Ke beranda</button></div>'; });
       return;
     }
     const fn = V[v] || V.home;

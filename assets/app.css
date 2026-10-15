@@ -735,3 +735,10 @@ details.card[open]>summary{margin-bottom:6px}
 .inline-f input{flex:1;min-width:0}
 .danger-zone{border-color:var(--bad-soft)}
 .danger-zone h2{color:var(--bad)}
+/* Status akses kursus di halaman kelas */
+.warnbox{background:var(--warn-soft);border-color:transparent}
+.warnbox p{margin:.2rem 0}
+.acc-note{display:flex;align-items:center;gap:6px;margin:.2rem 0 .8rem}
+.locked{text-align:center;max-width:520px;margin:2rem auto}
+.locked .lk-ic{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--accent-soft);color:var(--accent);margin-bottom:.5rem}
+.locked .row{justify-content:center}

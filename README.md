@@ -22,7 +22,7 @@ Kursus pertama: **Pertidaksamaan** (SMA kelas X → UTBK → olimpiade/kuliah). 
 - Forum diskusi per kelas: utas, balasan, rumus `$…$`, sematkan, tandai terjawab, moderasi
 - Laporan per siswa dan per kelas: konsep terlemah, jebakan paling umum, salah-padahal-yakin, aktivitas terakhir
 - Pesan ke siswa / seluruh kelas, bisa ditautkan langsung ke materi atau latihan
-- **Studio kursus** (khusus akun guru): buat kursus lewat formulir (materi, contoh bertahap, 6 tipe soal dengan pratinjau, flashcard, jebakan, widget grafik/garis bilangan/Desmos/GeoGebra/PhET/YouTube), terbitkan sebagai draf/tautan/publik. Tanpa menulis kode
+- **Studio kursus** (khusus akun guru): buat kursus lewat formulir (materi, contoh bertahap, 6 tipe soal dengan pratinjau, flashcard, jebakan, widget grafik/garis bilangan/Desmos/GeoGebra/PhET/YouTube), terbitkan sebagai draf, **khusus kelas** (terkunci, hanya anggota kelasmu), lewat tautan, atau publik. Tanpa menulis kode
 - **Peran akun**: siswa, guru, admin. Admin mengangkat guru dari halaman *Kelola pengguna*
 
 ## Tiga mode penyimpanan
@@ -52,7 +52,7 @@ Harus lewat server lokal (bukan membuka `index.html` langsung), karena kursus di
 
 ## Aktifkan akun, kelas online, dan forum (Supabase, gratis)
 
-Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql`, `supabase/courses.sql`, lalu `supabase/roles.sql` di SQL Editor → jadikan akunmu admin → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
+Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql`, `supabase/courses.sql`, `supabase/roles.sql`, lalu `supabase/course-access.sql` di SQL Editor → jadikan akunmu admin → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
 
 ## Menambah kursus
 

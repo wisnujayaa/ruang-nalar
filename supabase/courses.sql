@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Ruang Nalar — kursus buatan guru (editor kursus di web)
--- Jalankan SETELAH schema.sql. Aman dijalankan ulang.
+-- Jalankan SETELAH schema.sql, lalu roles.sql dan course-access.sql (akses kursus). Aman dijalankan ulang.
 -- =====================================================================
 create table if not exists public.courses (
   id text primary key default ('c-' || substr(md5(random()::text || clock_timestamp()::text), 1, 10))

@@ -8,14 +8,14 @@ Ada dua cara:
 | Tempat menulis | Formulir di web: **Akun → Studio kursus** | Folder `courses/<id>/` |
 | Disimpan di | Database (tabel `courses`) | Repo GitHub |
 | Fitur khusus | Teks, contoh bertahap, 6 tipe soal, flashcard, jebakan, sumber belajar, **widget dari pustaka** (grafik, garis bilangan, Desmos/GeoGebra/PhET/YouTube) | Semua itu **plus** widget kustom & generator soal acak (butuh JavaScript) |
-| Siapa yang bisa melihat | Draf / lewat tautan / publik (diatur di tab Terbitkan) | Semua pengunjung |
+| Siapa yang bisa membuka | Draf / **khusus kelas** (terkunci) / lewat tautan / publik (tab Terbitkan) | Semua pengunjung (berkas di repo bersifat publik) |
 
 ## Cara 1: Studio kursus (disarankan untuk guru)
 1. Masuk, buka **Akun → Studio kursus → Buat kursus baru**.
 2. **Info**: judul, mata pelajaran, jenjang, deskripsi.
 3. **Bagian & materi**: tiap bagian berisi blok yang disusun dari atas ke bawah (teks, contoh bertahap, soal coba-dulu, jebakan, rangkuman, latihan otomatis, tiket keluar). Teks memakai format ringan: `**tebal**`, `*miring*`, baris `- ` untuk daftar, rumus `$x^2<4$`.
 4. **Soal**: pilih tipe, isi pertanyaan, kunci, pembahasan, level (L1–L6). Tombol **Coba soal ini** menampilkan soal persis seperti yang dilihat siswa. Kunci interval langsung dipratinjau di garis bilangan.
-5. **Terbitkan**: periksa daftar masalah/saran, pilih Draf/Lewat tautan/Publik, klik **Simpan**, lalu **Pratinjau sebagai siswa**.
+5. **Terbitkan**: periksa daftar masalah/saran, pilih Draf/Khusus kelas/Lewat tautan/Publik, klik **Simpan**, lalu **Pratinjau sebagai siswa**.
 6. Kursus langsung bisa dipilih saat membuat kelas, dan semua fitur (review berjarak, tugas berstatus otomatis, laporan guru) berlaku.
 
 Keamanan: semua teks dari Studio dibersihkan oleh `js/course-safe.js` sebelum ditampilkan. HTML mentah tidak pernah dirender, rumus dibersihkan, dan tautan wajib `https://`. Diuji oleh `tests/verify-safe.js`.
@@ -89,3 +89,21 @@ Level yang disarankan: L1 mekanik, L2 konsep, L3 aplikasi, L4 ujian (UTBK/mandir
 - Pengecoh pilihan ganda = kesalahan nyata siswa, bukan angka acak. Beri `why` di setiap pengecoh.
 - Hubungkan soal ke `trap` yang sama dengan katalog jebakan agar radar jebakan bekerja.
 - Uji setiap kunci dengan komputer (lihat `tests/verify-keys.js`): kunci yang salah merusak kepercayaan siswa.
+
+## Mengunci kursus untuk kelas tertentu
+
+Kursus Studio punya empat tingkat akses (tab **Terbitkan**):
+
+| Akses | Siapa yang bisa membuka | Guru lain boleh memakainya di kelasnya? |
+|---|---|---|
+| Draf | hanya pembuat | tidak |
+| **Khusus kelas** | pembuat + anggota kelas **milik pembuat** yang memakai kursus ini | tidak |
+| Lewat tautan | siapa pun yang punya tautan | ya |
+| Publik | semua orang, tampil di katalog | ya |
+
+Alurnya: buat kursus → pilih **Khusus kelas** → buat kelas (menu Kelas) dengan kursus itu → bagikan kode kelas.
+Siswa yang bergabung otomatis bisa membuka kursus, dan yang keluar atau dikeluarkan otomatis kehilangan akses.
+Kunci ini ditegakkan di database (RLS, `supabase/course-access.sql`), bukan sekadar disembunyikan di tampilan.
+
+Kursus **berkas** (folder `courses/`) tidak bisa dikunci: file-nya disajikan Netlify ke siapa pun.
+Jika materinya perlu dikunci, buat ulang di Studio.

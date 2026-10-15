@@ -59,6 +59,14 @@
     return R.loaded[id];
   };
   /* Pasang kursus dari data mentah editor (sudah dibersihkan oleh NalarSafe.compile) */
+  /* Visibilitas kursus Studio — label & penjelasan yang dipakai Studio, katalog, dan halaman kelas */
+  R.VIS = {
+    draft: { label: 'Draf', cls: 'st-todo', desc: 'Hanya kamu. Siswa di kelasmu pun belum bisa membukanya. Pakai saat masih menulis.' },
+    class: { label: 'Khusus kelas', cls: 'st-doing', desc: 'Terkunci: hanya kamu dan siswa yang bergabung ke kelasmu yang memakai kursus ini. Orang lain tidak bisa membukanya, walau punya tautannya.' },
+    unlisted: { label: 'Lewat tautan', cls: 'st-doing', desc: 'Siapa pun yang punya tautannya, tanpa perlu bergabung ke kelas. Tidak muncul di katalog.' },
+    public: { label: 'Publik', cls: 'st-done', desc: 'Muncul di katalog beranda untuk semua pengunjung.' }
+  };
+  R.visLabel = (v) => (R.VIS[v] || R.VIS.draft).label;
   R.install = function (id, meta, raw) {
     const obj = Object.assign({ id, meta, fromDb: true }, G.NalarSafe.compile(raw));
     R.normalize(obj); R.loaded[id] = obj; return obj;

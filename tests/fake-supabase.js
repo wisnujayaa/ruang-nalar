@@ -1,4 +1,4 @@
-/* Supabase palsu di memori (tanpa RLS) untuk menguji alur UI mode Supabase. Dibagi antar tab via localStorage. */
+/* Supabase palsu di memori (RLS hanya ditiru untuk akses kursus) untuk menguji alur UI mode Supabase. Dibagi antar tab via localStorage. */
 (function () {
   const K = 'FAKE_SB';
   const load = () => JSON.parse(localStorage.getItem(K) || '{"users":[],"profiles":[],"progress":[],"classes":[],"class_members":[],"assignments":[],"forum_threads":[],"forum_posts":[],"messages":[],"courses":[]}');
@@ -20,7 +20,7 @@
       select(s) { if (st.op === 'select') st.sel = s || '*'; else st.ret = true; return q; },
       eq(c, v) { st.filters.push(r => r[c] === v); return q; },
       in(c, vs) { st.filters.push(r => vs.includes(r[c])); return q; },
-      or(expr) { const parts = expr.split(',').map(x => x.split('.')); st.filters.push(r => parts.some(([c, op, ...v]) => op === 'eq' && String(r[c]) === v.join('.'))); return q; },
+      or(expr) { const parts = expr.split(/,(?![^()]*\))/).map(x => x.split('.')); st.filters.push(r => parts.some(([c, op, ...v]) => { v = v.join('.'); return op === 'eq' ? String(r[c]) === v : op === 'in' ? v.replace(/[()]/g, '').split(',').includes(String(r[c])) : false; })); return q; },
       order(c, o) { st.order.push([c, !o || o.ascending !== false]); return q; },
       limit(n) { st.limit = n; return q; },
       single() { st.single = true; return q; }, maybeSingle() { st.maybe = true; return q; },
@@ -28,8 +28,14 @@
       update(o) { st.op = 'update'; st.payload = o; return q; }, delete() { st.op = 'delete'; return q; },
       then(res, rej) { return Promise.resolve().then(run).then(res, rej); }
     };
+    /* Tiruan RLS kursus (lihat supabase/course-access.sql) */
+    const canRead = (db, k) => ['unlisted', 'public'].includes(k.visibility) || k.owner_id === me() ||
+      (k.visibility === 'class' && db.classes.some(c => c.course_id === k.id && c.owner_id === k.owner_id && (c.owner_id === me() || db.class_members.some(m => m.class_id === c.id && m.user_id === me()))));
+    const guard = (db, ownerId, cid) => !/^c-/.test(cid || '') || db.courses.some(k => k.id === cid && (k.owner_id === ownerId || ['unlisted', 'public'].includes(k.visibility)));
     function run() {
       const db = load(); const T = db[table]; const now = new Date().toISOString();
+      if (table === 'classes' && (st.op === 'insert' || (st.op === 'update' && st.payload && 'course_id' in st.payload)) && !guard(db, st.op === 'insert' ? me() : (T.find(r => st.filters.every(f => f(r))) || {}).owner_id, st.payload.course_id))
+        return { data: null, error: { message: 'Kursus ini terkunci dan tidak bisa dipakai di kelasmu.', code: 'P0001' } };
       if (st.op === 'insert') {
         const row = Object.assign({ id: uuid(), created_at: now }, st.payload);
         if (table === 'classes') row.join_code = Math.random().toString(36).slice(2, 8).toUpperCase().replace(/[01IO]/g, 'X');
@@ -41,7 +47,7 @@
         T.push(row); save(db); return { data: st.single || st.ret ? row : null, error: null };
       }
       if (st.op === 'upsert') { const i = T.findIndex(r => r.user_id === st.payload.user_id && r.course_id === st.payload.course_id); if (i >= 0) T[i] = Object.assign(T[i], st.payload); else T.push(st.payload); save(db); return { data: null, error: null }; }
-      let rows = T.filter(r => st.filters.every(f => f(r)));
+      let rows = T.filter(r => st.filters.every(f => f(r)) && (table !== 'courses' || st.op !== 'select' || canRead(db, r)));
       if (st.op === 'update') { rows.forEach(r => Object.assign(r, st.payload)); save(db); return { data: null, error: null }; }
       if (st.op === 'delete') { db[table] = T.filter(r => !rows.includes(r)); if (table === 'forum_threads') db.forum_posts = db.forum_posts.filter(p => !rows.some(r => r.id === p.thread_id)); save(db); return { data: null, error: null }; }
       for (const [c, asc] of st.order.slice().reverse()) rows.sort((a, b) => (a[c] > b[c] ? 1 : a[c] < b[c] ? -1 : 0) * (asc ? 1 : -1));

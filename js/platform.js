@@ -106,7 +106,7 @@
   function courseCard(c) {
     if (c.soon) return '<div class="ccard soon"><span class="cglyph" aria-hidden="true">' + esc(c.glyph || '') + '</span><div><p class="eyebrow">' + esc(c.subject || '') + '</p><h3>' + esc(c.title) + '</h3><p class="muted small">' + esc(c.blurb || '') + '</p></div><span class="chip">Segera hadir</span></div>';
     const S = stateFor(c.id); const started = S.attempts.length || Object.keys(S.sections || {}).length || S.intro;
-    const vis = c.db && c.mine && c.visibility !== 'public' ? '<span class="chip st-todo">' + (c.visibility === 'draft' ? 'Draf' : 'Lewat tautan') + '</span>' : '';
+    const vis = c.db && c.mine && c.visibility !== 'public' ? '<span class="chip st-todo">' + (c.visibility === 'class' ? ic('lock') + ' ' : '') + esc(NR.visLabel(c.visibility)) + '</span>' : c.db && c.visibility === 'class' ? '<span class="chip st-doing">' + ic('lock') + ' Dari kelasmu</span>' : '';
     return '<button class="ccard c-' + esc(c.color || 'accent') + '" data-go="course" data-course="' + esc(c.id) + '"><span class="cglyph" aria-hidden="true">' + esc(c.glyph || '') + '</span><div><p class="eyebrow">' + esc(c.subject || '') + (c.level ? ' · ' + esc(c.level) : '') + '</p><h3>' + esc(c.title) + '</h3><p class="muted small">' + esc(c.blurb || '') + '</p></div>' + vis + '<span class="chip ' + (started ? 'ok' : '') + '">' + (started ? 'Lanjutkan · ' + S.attempts.length + ' soal' : 'Mulai') + '</span></button>';
   }
   /* Tugas yang belum selesai dari semua kelas tempat aku menjadi siswa */
@@ -209,7 +209,7 @@
     let h = '';
     if (b.mode === 'local') h += '<div class="card slim"><p class="small"><b>Mode tanpa server.</b> Kelas, tugas, dan forum hanya tersimpan di browser ini, cocok untuk mencoba atau untuk satu guru yang memantau siswa lewat <b>kode progres</b>. Supaya siswa bisa bergabung dari perangkat masing-masing, hubungkan Supabase (lihat README).</p></div>';
     if (b.classes.usesCode) h += '<div class="card"><h2>Gabung ke kelas</h2><form class="inline" id="joinf"><input id="jcode" class="mono" maxlength="12" autocapitalize="characters" placeholder="Kode dari guru, misal K7QX2M" value="' + esc(p.join || '') + '"><button class="btn primary" type="submit">Gabung</button></form><p class="err" role="alert" id="jerr"></p></div>';
-    if (b.classes.canCreate) h += '<details class="card" id="newc"' + (p.create ? ' open' : '') + '><summary><b>' + ic('plus') + ' Buat kelas baru</b> <span class="muted small">(kamu menjadi gurunya)</span></summary><form id="cform" class="form"><label class="lbl" for="cname">Nama kelas</label><input id="cname" maxlength="60" placeholder="misalnya: X-3 Matematika atau Les Sabtu"><label class="lbl" for="ccourse">Kursus</label><select id="ccourse">' + openCourses().map(c => '<option value="' + esc(c.id) + '"' + (c.id === A.set.lastCourse ? ' selected' : '') + '>' + esc(c.title) + (c.db && c.mine ? ' (buatanmu' + (c.visibility === 'draft' ? ', draf' : '') + ')' : '') + '</option>').join('') + '</select><p class="err" role="alert" id="cerr"></p><button class="btn primary" type="submit">Buat kelas</button></form></details>';
+    if (b.classes.canCreate) h += '<details class="card" id="newc"' + (p.create ? ' open' : '') + '><summary><b>' + ic('plus') + ' Buat kelas baru</b> <span class="muted small">(kamu menjadi gurunya)</span></summary><form id="cform" class="form"><label class="lbl" for="cname">Nama kelas</label><input id="cname" maxlength="60" placeholder="misalnya: X-3 Matematika atau Les Sabtu"><label class="lbl" for="ccourse">Kursus</label><select id="ccourse">' + openCourses().map(c => '<option value="' + esc(c.id) + '"' + (c.id === A.set.lastCourse ? ' selected' : '') + '>' + esc(c.title) + (c.db && c.mine ? ' (buatanmu' + (c.visibility !== 'public' ? ', ' + NR.visLabel(c.visibility).toLowerCase() : '') + ')' : '') + '</option>').join('') + '</select><p class="err" role="alert" id="cerr"></p><button class="btn primary" type="submit">Buat kelas</button></form></details>';
     h += '<div id="clist">' + loading + '</div>';
     view().innerHTML = page('Kelas', '', h, { noBack: true });
     const jf = $('#joinf'); if (jf) jf.addEventListener('submit', async (e) => {
@@ -238,12 +238,14 @@
       const c = await findClass(p.id);
       if (!c) { view().innerHTML = page('Kelas', '', '<div class="card"><p>Kelas tidak ditemukan atau kamu bukan anggotanya lagi.</p><button class="btn" data-go="kelas">Ke daftar kelas</button></div>'); return; }
       const meta = NR.meta(c.course);
-      if ((meta && !meta.soon) || NR.isDb(c.course)) { try { await openCourse(c.course); } catch (e) { console.warn(e); } }
+      let courseOk = true;
+      if ((meta && !meta.soon) || NR.isDb(c.course)) { try { await openCourse(c.course); } catch (e) { courseOk = false; console.warn(e); } }
       if (P.tok !== tok) return;
       P.cur = c;
       const tab = p.ktab || 'tugas';
       let h = '<section class="page wide"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">' + esc(courseTitle(c.course)) + ' · ' + (c.isOwner ? 'Kamu guru' : 'Kamu siswa') + '</p><h1 class="cn"></h1></div></header>';
       if (c.isOwner && c.code) h += '<div class="card codebox' + (p.fresh ? ' hi' : '') + '"><div><p class="eyebrow">Kode kelas</p><p class="code mono">' + esc(c.code) + '</p><p class="muted small">Bagikan kode ini atau tautannya ke siswa. Siswa masuk/daftar, lalu menekan Gabung.</p></div><div class="row"><button class="btn small" data-pact="copy" data-v="' + esc(c.code) + '">' + ic('copy') + ' Salin kode</button><button class="btn small" data-pact="copy" data-v="' + esc(joinLink(c.code)) + '">' + ic('copy') + ' Salin tautan</button></div></div>';
+      h += accessCard(c, courseOk);
       h += '<div class="seg tabs3" role="tablist">' + [['tugas', 'Tugas', 'task'], ['forum', 'Forum', 'chat'], ['anggota', c.isOwner ? 'Progres' : 'Anggota', 'users']].concat(c.isOwner ? [['atur', 'Atur', 'grid']] : []).map(x => '<button role="tab" data-go="klas" data-id="' + esc(c.id) + '" data-tab="' + x[0] + '" aria-checked="' + (tab === x[0]) + '">' + ic(x[2]) + ' ' + x[1] + '</button>').join('') + '</div><div id="kbody">' + loading + '</div></section>';
       view().innerHTML = h; $('.cn').textContent = c.name;
       const body = $('#kbody');
@@ -255,6 +257,18 @@
       } catch (e) { if (P.tok === tok) body.innerHTML = fail(e); console.error(e); }
     })().catch(e => { view().innerHTML = fail(e); });
   };
+  /* Status akses kursus kelas (khusus kursus Studio): draf belum bisa dibuka siswa; khusus kelas = terkunci untuk anggota */
+  function accessCard(c, ok) {
+    if (!NR.isDb(c.course)) return '';
+    const m = NR.meta(c.course) || {};
+    if (c.isOwner && m.mine) {
+      if (m.visibility === 'draft') return '<div class="card warnbox"><p><b>Siswa belum bisa membuka kursus kelas ini.</b> Kursusnya masih <b>Draf</b> (hanya kamu yang bisa membuka).</p><p class="muted small">' + esc(NR.VIS.class.desc) + '</p><div class="row"><button class="btn small primary" data-pact="k-vis" data-v="class">' + ic('lock') + ' Buka untuk anggota kelas</button></div><p class="small" id="k-vis-m"></p></div>';
+      if (m.visibility === 'class') return '<p class="muted small acc-note">' + ic('lock') + ' Kursus ini <b>khusus kelas</b>: hanya anggota kelasmu yang bisa membukanya.</p>';
+      return '';
+    }
+    if (!ok) return '<div class="card warnbox"><p><b>Kursus kelas ini belum bisa dibuka.</b> ' + (c.isOwner ? 'Kursus ini milik guru lain dan sekarang terkunci.' : 'Gurumu belum membukanya untuk siswa. Tugas dan forum tetap bisa dipakai.') + '</p></div>';
+    return '';
+  }
   const joinLink = (code) => location.origin + location.pathname + '#gabung=' + code;
 
   /* ---------- Tab Atur (khusus guru pemilik kelas) ---------- */
@@ -464,6 +478,11 @@
         case 'asg-go': {
           let as = P.cache.asg && P.cache.asg.find(x => x.id === d.aid); if (!as && P.cache.homeRows) { const r = P.cache.homeRows.find(x => x.a.id === d.aid); as = r && r.a; }
           const c = await findClass(d.cls); if (as && c) await doTargetIn(c.course, as.target || {}); break; }
+        case 'k-vis': {
+          const id = P.cur.course; a.disabled = true;
+          await b.courses.setVisibility(id, d.v);
+          if (NR.loaded && NR.loaded[id]) NR.loaded[id].meta.visibility = d.v;
+          await NR.refreshRemote(); render(); break; }
         case 'k-rename': {
           const n = $('#k-name').value.trim(); const m = $('#k-name-m'); if (!n) { m.textContent = 'Nama tidak boleh kosong.'; m.className = 'small bad'; return; }
           a.disabled = true; await b.classes.update(P.cur.id, { name: n }); P.cur.name = n; P.classes = null; $('.cn').textContent = n; m.textContent = '✓ Tersimpan'; m.className = 'small ok'; a.disabled = false; break; }
