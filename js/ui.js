@@ -96,6 +96,8 @@
     if (l.error || l.code) return go('authinfo', { code: l.code || l.error, desc: l.desc }, { replace: true });
     if (l.type === 'recovery' || bb.recovery) return go('sandi', { recovery: 1 }, { replace: true });
     if (bb.user && ['signup', 'magiclink', 'invite', 'email_change'].includes(l.type)) return go('selamat', { type: l.type }, { replace: true });
+    // Masuk dengan Google untuk pertama kali (akun baru dibuat beberapa saat lalu) → sambutan
+    if (bb.user && !l.type && bb.user.created && Date.now() - bb.user.created < 10 * 60000) return go('selamat', { type: 'oauth' }, { replace: true });
   }
   /* #gabung=KODE, #kursus=id, #bagian3 → buka halamannya; false bila hash tidak dikenali */
   function routeHash(hash) {

@@ -1,34 +1,29 @@
 <!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Aktifkan akun Ruang Nalar-mu</title></head>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Kode aktivasi akun Ruang Nalar</title></head>
 <body style="margin:0;padding:0;background:#F3F4F9;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#12162B;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Satu langkah lagi: aktifkan akunmu</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Kode aktivasimu ada di dalam</div>
+<!-- Sengaja TANPA tautan dan gambar: email transaksional berisi kode jauh lebih jarang dianggap spam/phishing,
+     dan kode tidak bisa "terpakai" oleh pemindai tautan email sekolah/kantor. -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3F4F9;padding:24px 12px;"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #DCDFEB;border-radius:16px;">
-<tr><td style="padding:24px 28px 0 28px;">
-  <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-    <td style="vertical-align:middle;"><img src="{{ .SiteURL }}/assets/icon-180.png" width="36" height="36" alt="" style="display:block;border-radius:10px;"></td>
-    <td style="vertical-align:middle;padding-left:10px;font-size:18px;font-weight:800;color:#12162B;">Ruang Nalar</td>
-  </tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #DCDFEB;border-radius:16px;">
+<tr><td style="padding:24px 28px 0 28px;font-size:18px;font-weight:800;color:#12162B;">
+  <span style="display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:9px;background:#3442E8;color:#ffffff;font-size:15px;vertical-align:middle;">&#8730;</span>
+  <span style="vertical-align:middle;padding-left:8px;">Ruang Nalar</span>
 </td></tr>
 <tr><td style="padding:20px 28px 0 28px;">
-  <h1 style="margin:0 0 12px 0;font-size:22px;line-height:1.3;color:#12162B;">Aktifkan akun Ruang Nalar-mu</h1>
-  <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Halo! Seseorang (semoga kamu 😊) baru saja membuat akun Ruang Nalar dengan email <b>{{ .Email }}</b>.</p><p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Klik tombol di bawah untuk mengaktifkan akun. Setelah itu kamu langsung masuk dan bisa mulai belajar.</p>
+  <h1 style="margin:0 0 12px 0;font-size:21px;line-height:1.3;color:#12162B;">Kode aktivasi akun Ruang Nalar</h1>
+  <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">Halo! Akun Ruang Nalar baru saja dibuat dengan email <b>{{ .Email }}</b>. Untuk mengaktifkannya, masukkan kode berikut di halaman <b>"Masukkan kode aktivasi"</b> yang sedang terbuka.</p>
+  <p style="margin:0 0 6px 0;font-size:13px;color:#5B6281;">Kode aktivasi</p>
+  <p style="margin:0 0 16px 0;font-family:Consolas,Menlo,monospace;font-size:34px;font-weight:800;letter-spacing:8px;color:#12162B;background:#EEF0FB;border-radius:12px;padding:14px 16px;text-align:center;">{{ .Token }}</p>
+  <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Setelah kode dimasukkan, akunmu aktif dan kamu langsung masuk. Progres belajarmu tersimpan di semua perangkat.</p>
+  <p style="margin:0 0 8px 0;font-size:13px;line-height:1.6;color:#5B6281;">Halaman itu sudah tertutup? Buka situs Ruang Nalar → <b>Masuk</b> → tulis email → <b>"Sudah punya kode aktivasi dari email?"</b>.</p>
+  <p style="margin:0 0 4px 0;font-size:13px;line-height:1.6;color:#5B6281;">Kode berlaku sekitar <b>1 jam</b> dan hanya bisa dipakai sekali. Kalau meminta kode baru, pakai kode dari email yang paling baru.</p>
 </td></tr>
-<tr><td align="left" style="padding:8px 28px 4px 28px;">
-  <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:12px;background:#3442E8;">
-    <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 26px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">Aktifkan akun saya</a>
-  </td></tr></table>
-</td></tr>
-<tr><td style="padding:12px 28px 0 28px;font-size:14px;line-height:1.6;color:#12162B;">
-  <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;"><b>Setelah akun aktif, kamu bisa:</b></p><ul style="margin:0 0 12px 18px;padding:0;font-size:14px;line-height:1.7;"><li>Menyimpan progres belajar di semua perangkat (HP, laptop, komputer sekolah).</li><li>Bergabung ke kelas dengan kode dari gurumu, mengerjakan tugas, dan berdiskusi di forum kelas.</li><li>Melihat statistik belajar: kalender aktivitas, akurasi, dan bagian yang perlu dilatih.</li></ul><p style="margin:12px 0 0 0;font-size:13px;color:#6E7594;">Tautan ini hanya bisa dipakai <b>sekali</b> dan berlaku terbatas (bawaan sekitar 1 jam). Kalau sudah kedaluwarsa, buka situs lalu pilih <b>Masuk → Kirim ulang email konfirmasi</b>.</p>
-  <p style="margin:16px 0 0 0;font-size:13px;color:#6E7594;">Tombolnya tidak bisa diklik? Salin tautan ini ke browser:<br><a href="{{ .ConfirmationURL }}" style="color:#3442E8;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
-</td></tr>
-<tr><td style="padding:20px 28px 24px 28px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #DCDFEB;padding-top:16px;font-size:12px;line-height:1.6;color:#6E7594;">
-    <p style="margin:0 0 10px 0;">Tidak merasa mendaftar? Abaikan saja email ini. Akun tidak akan aktif tanpa tautan di atas.</p>
-    Butuh bantuan? Buka <a href="{{ .SiteURL }}/#bantuan" style="color:#3442E8;">Pusat Bantuan</a> atau sampaikan pertanyaanmu lewat menu <b>Akun → Laporkan kendala</b>.<br>
-    <b>Ruang Nalar</b> · Belajar sedikit tiap hari, paham sampai ke akarnya.<br>
-    Kami tidak pernah meminta kata sandimu lewat email.
+<tr><td style="padding:18px 28px 24px 28px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #DCDFEB;padding-top:14px;font-size:12px;line-height:1.6;color:#5B6281;">
+    <p style="margin:0 0 8px 0;">Tidak merasa mendaftar? Abaikan saja email ini. Akun tidak akan aktif tanpa kode di atas.</p>
+    Jangan berikan kode ini kepada siapa pun. Ruang Nalar tidak pernah meminta kode atau kata sandimu lewat chat, telepon, maupun email.<br>
+    Butuh bantuan? Buka situs Ruang Nalar lalu tekan tombol <b>?</b> di pojok atas.
   </td></tr></table>
 </td></tr>
 </table>

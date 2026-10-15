@@ -4,21 +4,30 @@ Supabase mengirim email akun dengan template bawaan berbahasa Inggris yang minim
 Folder `supabase/email-templates/` berisi pengganti berbahasa Indonesia yang menjelaskan: email apa ini,
 apa yang terjadi setelah tombol diklik, masa berlaku tautan, dan apa yang harus dilakukan kalau tidak merasa meminta.
 
+## Kenapa kode, bukan tautan?
+Email aktivasi dan lupa sandi berisi **kode angka**, tanpa tautan dan tanpa gambar:
+- Penyaring spam (Gmail dsb.) paling curiga pada email otomatis berisi tombol + tautan yang dialihkan ke domain lain
+  (`*.supabase.co` → `*.netlify.app`). Itu pola phishing. Email berisi kode saja jauh lebih jarang masuk Spam.
+- Pemindai keamanan email sekolah/kantor sering "mengklik" tautan lebih dulu sehingga tautan sudah terpakai. Kode tidak.
+- Kode bisa dibaca di HP lalu diketik di laptop.
+
+Tautan dari email lama tetap didukung aplikasi.
+
 ## Memasang template (± 5 menit)
 
-Supabase Dashboard → **Authentication → Emails** (atau *Email Templates*). Untuk tiap jenis email,
-ganti **Subject** dan tempel seluruh isi file ke kotak **Body (HTML)**, lalu **Save**.
+Supabase Dashboard → **Authentication → Emails → Templates**. Untuk tiap jenis email,
+ganti **Subject** dan tempel seluruh isi file ke kotak **Body**, lalu **Save**.
 
 | Jenis di Supabase | Subject (salin persis) | File |
 |---|---|---|
-| Confirm signup | `Aktifkan akun Ruang Nalar-mu` | `confirm-signup.html` |
-| Reset password | `Buat kata sandi baru untuk Ruang Nalar` | `reset-password.html` |
+| Confirm signup | `Kode aktivasi akun Ruang Nalar` | `confirm-signup.html` (kode) |
+| Reset password | `Kode atur ulang sandi Ruang Nalar` | `reset-password.html` (kode) |
 | Magic link | `Tautan masuk ke Ruang Nalar` | `magic-link.html` |
 | Change email address | `Konfirmasi email baru akun Ruang Nalar` | `change-email.html` |
 | Invite user | `Kamu diundang ke Ruang Nalar` | `invite.html` |
 
-Variabel seperti `{{ .ConfirmationURL }}`, `{{ .Email }}`, `{{ .SiteURL }}`, `{{ .NewEmail }}` diisi otomatis oleh Supabase. Jangan diubah.
-Logo di email diambil dari `{{ .SiteURL }}/assets/icon-180.png`, jadi **Site URL harus benar** (lihat di bawah).
+Variabel seperti `{{ .Token }}` (kode), `{{ .Email }}`, `{{ .ConfirmationURL }}`, `{{ .SiteURL }}` diisi otomatis oleh Supabase. Jangan diubah.
+Panjang kode diatur di Authentication → Sign In / Providers → Email (**Email OTP Length**, bawaan 6). Aplikasi menerima 6–10 angka.
 
 ## Wajib dicek: URL Configuration
 
@@ -68,3 +77,21 @@ Solusi gratis tanpa domain: **SMTP Gmail** (± 500 email/hari).
 5. Uji: daftar dengan email teman (bukan anggota tim) dan pastikan emailnya masuk.
 
 Kalau nanti punya domain sendiri, ganti ke Resend/Brevo dengan domain terverifikasi agar email tidak masuk Spam.
+
+## Masuk dengan Google (paling ampuh: tanpa email konfirmasi sama sekali)
+Akun Google sudah terverifikasi, jadi pengguna yang masuk dengan Google **tidak menerima email apa pun**.
+Tombol "Masuk dengan Google" muncul otomatis di halaman Masuk/Daftar begitu penyedia Google diaktifkan di Supabase.
+
+1. https://console.cloud.google.com → buat proyek (misalnya "Ruang Nalar").
+2. **APIs & Services → OAuth consent screen** (Google Auth Platform): User type **External**, isi nama aplikasi
+   "Ruang Nalar", email dukungan, lalu **Publish app** (status *In production*) supaya semua orang bisa masuk.
+   Cakupan bawaan (email, profile, openid) tidak memerlukan verifikasi Google.
+3. **Credentials → Create credentials → OAuth client ID** → *Web application*:
+   - Authorized JavaScript origins: `https://ruang-nalar.netlify.app`
+   - Authorized redirect URIs: salin **Callback URL** dari Supabase → Authentication → Sign In / Providers → Google
+     (bentuknya `https://<project-ref>.supabase.co/auth/v1/callback`).
+4. Salin **Client ID** dan **Client Secret** ke Supabase → Authentication → Sign In / Providers → **Google** → Enable → Save.
+5. Uji di jendela incognito: Masuk → "Masuk dengan Google".
+
+Pengguna lama yang dulu daftar dengan email + sandi bisa masuk dengan Google memakai email yang sama;
+Supabase menautkan keduanya ke akun yang sama bila email itu sudah terkonfirmasi.

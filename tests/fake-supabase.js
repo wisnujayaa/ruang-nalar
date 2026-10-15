@@ -72,13 +72,19 @@
       getSession: async () => ({ data: { session } }),
       onAuthStateChange: (f) => { listeners.push(f); return { data: { subscription: { unsubscribe() {} } } }; },
       signUp: async ({ email, password, options }) => { const db = load(); if (db.users.some(u => u.email === email)) return { error: { message: 'User already registered' } }; const u = { id: uuid(), email, password, user_metadata: options.data, redirect: options.emailRedirectTo }; db.users.push(u); db.profiles.push({ id: u.id, display_name: options.data.display_name, role: 'student' }); save(db);
-        if (localStorage.getItem('FAKE_CONFIRM')) { u.unconfirmed = true; save(Object.assign(db, { users: db.users })); return { data: { session: null, user: u }, error: null }; }
+        if (localStorage.getItem('FAKE_CONFIRM')) { u.unconfirmed = true; u.code = '123456'; save(Object.assign(db, { users: db.users })); return { data: { session: null, user: u }, error: null }; }
         setSession({ user: u }); return { data: { session: { user: u } }, error: null }; },
       resend: async ({ type, email }) => { const d = load(); (d.resent = d.resent || []).push({ type, email }); save(d); return { data: {}, error: null }; },
       updateUser: async ({ password }) => { if (!session) return { error: { message: 'Auth session missing!' } }; const d = load(); const u = d.users.find(x => x.id === session.user.id); if (u.password === password) return { error: { message: 'New password should be different from the old password.', code: 'same_password' } }; u.password = password; save(d); return { data: { user: u }, error: null }; },
       signInWithPassword: async ({ email, password }) => { const u = load().users.find(u => u.email === email && u.password === password); if (!u) return { error: { message: 'Invalid login credentials' } }; if (u.unconfirmed) return { error: { message: 'Email not confirmed', code: 'email_not_confirmed' } }; setSession({ user: u }); return { data: {}, error: null }; },
       signOut: async () => setSession(null),
-      resetPasswordForEmail: async () => ({ data: {}, error: null })
+      resetPasswordForEmail: async (email, o) => { const d = load(); const u = d.users.find(x => x.email === email); if (u) { u.rcode = '654321'; u.rredirect = o && o.redirectTo; } save(d); return { data: {}, error: null }; },
+      /* Kode 6 digit dari email: 123456 untuk aktivasi, 654321 untuk lupa sandi */
+      verifyOtp: async ({ email, token, type }) => { const d = load(); const u = d.users.find(x => x.email === email); (d.verified = d.verified || []).push({ email, type }); save(d);
+        const ok = u && ((type === 'signup' || type === 'email') && token === u.code || type === 'recovery' && token === u.rcode);
+        if (!ok) return { data: { session: null, user: null }, error: { message: 'Token has expired or is invalid', code: 'otp_expired' } };
+        u.unconfirmed = false; save(d); setSession({ user: u }); return { data: { session: { user: u }, user: u }, error: null }; },
+      signInWithOAuth: async ({ provider, options }) => { const d = load(); d.oauth = { provider, redirectTo: options && options.redirectTo }; save(d); return { data: { provider, url: null }, error: null }; }
     }
   }) };
 })();

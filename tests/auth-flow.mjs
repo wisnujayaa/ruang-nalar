@@ -12,36 +12,80 @@ const p = await ctx.newPage(); p.on('pageerror', e => errs.push(e.message)); p.o
 const fail = (m) => { console.error('GAGAL:', m); process.exitCode = 1; };
 const fakeDb = () => p.evaluate(() => JSON.parse(localStorage.getItem('FAKE_SB')));
 
-// 1) Daftar saat konfirmasi email wajib → kartu "Cek emailmu", tautan email menuju situs ini
+// 0) Tombol Google muncul hanya bila penyedia Google aktif di Supabase (dibaca dari /auth/v1/settings)
+let googleOn = false;
+await ctx.route(/\/auth\/v1\/settings/, r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ external: { google: googleOn, email: true } }) }));
+
+// 1) Daftar saat konfirmasi email wajib → kartu "Masukkan kode aktivasi"
 await p.goto(URL); await p.evaluate(() => localStorage.setItem('FAKE_CONFIRM', '1')); await p.reload(); await p.waitForSelector('.catalog');
-await p.evaluate(() => BU.go('login', { t: 'daftar' })); await p.waitForSelector('#l-name');
+await p.evaluate(() => BU.go('login', { t: 'daftar' })); await p.waitForSelector('#l-name'); await p.waitForTimeout(150);
+if (await p.$eval('#g-box', e => !e.hidden)) fail('tombol Google tampil padahal Google belum aktif');
 await p.fill('#l-name', 'Rani'); await p.fill('#l-email', 'rani@x.id'); await p.fill('#l-pass', 'abc');
 await p.waitForFunction(() => /pendek/.test(document.querySelector('#pw-h').textContent)); await p.fill('#l-pass', 'RahasiaKuat#2026');
 if (!/Kuat/.test(await p.$eval('#pw-h', e => e.textContent))) fail('indikator sandi kuat');
 await p.click('[data-pact="pw-eye"]'); if ((await p.$eval('#l-pass', e => e.type)) !== 'text') fail('tombol lihat sandi'); await p.click('[data-pact="pw-eye"]');
-await p.click('#lform button[type=submit]'); await p.waitForSelector('.mailcard');
+await p.click('#lform button[type=submit]'); await p.waitForSelector('.mailcard #otp');
 if (!(await p.$eval('.mailcard', e => e.textContent)).includes('rani@x.id')) fail('email tidak tampil di kartu');
 if (!/\/$|index\.html$/.test((await fakeDb()).users[0].redirect || '')) fail('emailRedirectTo harus ke situs: ' + (await fakeDb()).users[0].redirect);
-console.log('daftar → kartu "Cek emailmu" OK');
-await p.click('.mailcard [data-pact="resend"]'); await p.waitForFunction(() => /dikirim/.test(document.querySelector('#resend-m').textContent));
+console.log('daftar → kartu "Masukkan kode aktivasi" OK');
 await p.click('.mailcard [data-pact="resend"]'); await p.waitForFunction(() => /Tunggu \d+ detik/.test(document.querySelector('#resend-m').textContent));
-if ((await fakeDb()).resent.length !== 1) fail('jeda kirim ulang tidak berlaku');
-console.log('kirim ulang + jeda 60 detik OK');
+if ((await fakeDb()).resent) fail('kirim ulang langsung setelah daftar harus menunggu jeda');
+console.log('jeda kirim ulang 60 detik OK');
 
-// 2) Masuk sebelum konfirmasi → pesan jelas + tombol kirim ulang
+// 2) Masuk sebelum konfirmasi → pesan jelas + tombol "Masukkan kode aktivasi"
 await p.evaluate(() => BU.go('login')); await p.waitForSelector('#l-email');
 await p.fill('#l-email', 'rani@x.id'); await p.fill('#l-pass', 'RahasiaKuat#2026'); await p.click('#lform button[type=submit]');
 await p.waitForFunction(() => /belum dikonfirmasi/.test(document.querySelector('#l-err').textContent));
-if (!(await p.$('#l-err [data-pact="resend"]'))) fail('tombol kirim ulang di pesan error');
-await p.fill('#l-pass', 'salah-sekali'); await p.click('#lform button[type=submit]'); await p.waitForFunction(() => /salah/.test(document.querySelector('#l-err').textContent));
-console.log('masuk sebelum konfirmasi / sandi salah → pesan Indonesia OK');
+await p.click('#l-err [data-pact="code-in"]'); await p.waitForSelector('#otp');
+console.log('masuk sebelum konfirmasi → arahkan ke kode aktivasi OK');
 
-// 3) Membuka tautan konfirmasi dari email → sambutan "Akunmu sudah aktif"
-await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('FAKE_SB')); d.users[0].unconfirmed = false; localStorage.setItem('FAKE_SB', JSON.stringify(d)); sessionStorage.setItem('FAKE_SESSION', JSON.stringify({ user: d.users[0] })); localStorage.removeItem('FAKE_CONFIRM'); });
+// 3) Kode salah → pesan jelas; kode benar → akun aktif + sambutan
+await p.fill('#otp', '12 34'); await p.click('#otpf button[type=submit]');
+await p.waitForFunction(() => /6 angka/.test(document.querySelector('#otp-e').textContent));
+await p.fill('#otp', '999999'); await p.click('#otpf button[type=submit]');
+await p.waitForFunction(() => /salah atau sudah kedaluwarsa/.test(document.querySelector('#otp-e').textContent));
+await p.fill('#otp', '123 456'); if ((await p.$eval('#otp', e => e.value)) !== '123456') fail('spasi di kode harus dibuang');
+await p.click('#otpf button[type=submit]'); await p.waitForSelector('.welcome');
+if (!(await p.$eval('.welcome', e => e.textContent)).includes('Rani')) fail('nama di sambutan');
+if (!(await p.$eval('header', e => e.textContent)).includes('Rani') && !(await p.evaluate(() => BB.user && BB.user.name === 'Rani'))) fail('belum masuk setelah kode benar');
+if ((await fakeDb()).users[0].unconfirmed) fail('akun belum aktif');
+console.log('kode aktivasi salah/benar → akun aktif + sambutan OK');
+
+// 3b) Tautan dari email lama tetap bisa dipakai
 await p.goto(URL + '#access_token=abc&refresh_token=def&expires_in=3600&token_type=bearer&type=signup'); await p.reload();
 await p.waitForSelector('.welcome'); if (/access_token/.test(p.url())) fail('token masih tertinggal di URL: ' + p.url());
-if (!(await p.$eval('.welcome', e => e.textContent)).includes('Rani')) fail('nama di sambutan');
-console.log('tautan konfirmasi → halaman sambutan, URL dibersihkan OK');
+console.log('tautan konfirmasi lama → sambutan, URL dibersihkan OK');
+
+// 3c) Lupa sandi dengan kode
+await p.evaluate(() => { sessionStorage.removeItem('FAKE_SESSION'); }); await p.goto(URL); await p.reload(); await p.waitForSelector('.catalog');
+await p.evaluate(() => BU.go('login', { t: 'lupa' })); await p.waitForSelector('#l-email'); await p.fill('#l-email', 'rani@x.id'); await p.click('#lform button[type=submit]');
+await p.waitForSelector('#otp'); if (!/atur ulang/i.test(await p.$eval('.mailcard h2', e => e.textContent))) fail('kartu kode atur ulang');
+await p.fill('#otp', '123456'); await p.click('#otpf button[type=submit]'); await p.waitForFunction(() => /salah/.test(document.querySelector('#otp-e').textContent));
+await p.fill('#otp', '654321'); await p.click('#otpf button[type=submit]'); await p.waitForSelector('#pwf');
+if (!/Kode atur ulang diterima/.test(await p.$eval('#pwf', e => e.textContent))) fail('formulir sandi baru (pemulihan)');
+await p.fill('#pw1', 'SandiKode#2026'); await p.fill('#pw2', 'SandiKode#2026'); await p.click('#pwf button[type=submit]'); await p.waitForSelector('.rep-ok');
+if ((await fakeDb()).users[0].password !== 'SandiKode#2026') fail('sandi baru dari kode tidak tersimpan');
+console.log('lupa sandi → kode → sandi baru OK');
+
+// 3d) "Sudah punya kode?" dari halaman masuk
+await p.evaluate(() => sessionStorage.removeItem('FAKE_SESSION')); await p.goto(URL); await p.reload(); await p.waitForSelector('.catalog');
+await p.evaluate(() => BU.go('login', { t: 'lupa' })); await p.waitForSelector('[data-pact="have-code"]'); await p.click('[data-pact="have-code"]');
+await p.waitForFunction(() => /Tulis dulu email/.test(document.querySelector('#l-err').textContent));
+await p.fill('#l-email', 'rani@x.id'); await p.click('[data-pact="have-code"]'); await p.waitForSelector('#otp');
+console.log('"Sudah punya kode?" OK');
+
+// 3e) Google aktif → tombol tampil → diarahkan ke Google dengan alamat kembali ke situs ini
+googleOn = true; await p.goto(URL); await p.reload(); await p.waitForSelector('.catalog');
+await p.evaluate(() => BU.go('login')); await p.waitForSelector('#g-box:not([hidden])'); await p.click('[data-pact="google"]'); await p.waitForTimeout(150);
+const oa = (await fakeDb()).oauth; if (!oa || oa.provider !== 'google' || !/\/$|index\.html$/.test(oa.redirectTo || '')) fail('masuk Google: ' + JSON.stringify(oa));
+// kembali dari Google sebagai pengguna baru → sambutan
+await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('FAKE_SB')); const u = { id: 'g-1', email: 'g@gmail.com', created_at: new Date().toISOString(), user_metadata: { full_name: 'Gita Google' } }; d.users.push(u); d.profiles.push({ id: 'g-1', display_name: 'Gita Google', role: 'student' }); localStorage.setItem('FAKE_SB', JSON.stringify(d)); sessionStorage.setItem('FAKE_SESSION', JSON.stringify({ user: u })); });
+await p.goto(URL + '#access_token=abc&refresh_token=def&expires_in=3600&token_type=bearer&provider_token=x'); await p.reload();
+await p.waitForSelector('.welcome'); if (!(await p.$eval('.welcome', e => e.textContent)).includes('Gita')) fail('sambutan pengguna Google baru');
+if (/access_token/.test(p.url())) fail('token Google tertinggal di URL');
+console.log('masuk dengan Google → kembali → sambutan OK');
+googleOn = false;
+await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('FAKE_SB')); sessionStorage.setItem('FAKE_SESSION', JSON.stringify({ user: d.users[0] })); localStorage.removeItem('FAKE_CONFIRM'); });
 
 // 4) Tautan lupa sandi → formulir sandi baru → tersimpan
 await p.goto(URL + '#access_token=abc&type=recovery'); await p.reload(); await p.waitForSelector('#pwf');

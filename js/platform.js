@@ -175,30 +175,60 @@
   /* ============ Akun: masuk, daftar, lupa sandi ============ */
   const pwField = (id, label, auto, ph) => '<label class="lbl" for="' + id + '">' + label + '</label><div class="pw"><input id="' + id + '" type="password" minlength="8" autocomplete="' + auto + '" required placeholder="' + ph + '"><button type="button" class="pw-eye" data-pact="pw-eye" data-for="' + id + '" aria-label="Tampilkan kata sandi" aria-pressed="false">Lihat</button></div>';
   const pwHint = (pw) => { if (!pw) return ''; const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(r => r.test(pw)).length; if (pw.length < 8) return 'Terlalu pendek: minimal 8 karakter.'; if (pw.length >= 12 && kinds >= 3) return 'Kuat ✓'; if (kinds >= 2) return 'Cukup. Lebih kuat bila 12+ karakter dengan campuran huruf besar, angka, atau simbol.'; return 'Lemah: campurkan huruf dengan angka atau simbol.'; };
-  /* Kartu "cek emailmu" setelah daftar, lengkap dengan kirim ulang (jeda 60 detik) */
-  function checkEmailCard(email) {
-    return '<div class="card mailcard"><span class="lk-ic">' + ic('send') + '</span><h2>Cek emailmu</h2><p>Kami mengirim tautan aktivasi ke <b class="mono em"></b>. Buka email itu lalu klik <b>"Aktifkan akun saya"</b>. Setelah itu kamu langsung masuk.</p>' +
-      '<ul class="tips"><li>Belum ada setelah 2 menit? Cek folder <b>Spam</b>, <b>Promosi</b>, atau <b>Update</b>.</li><li>Pengirimnya bernama <b>Supabase Auth</b> atau Ruang Nalar.</li><li>Tautan hanya berlaku sebentar. Kalau kedaluwarsa, minta kirim ulang di bawah.</li></ul>' +
-      '<div class="row"><button class="btn" data-pact="resend" data-email="' + esc(email) + '">' + ic('send') + ' Kirim ulang email</button><button class="btn ghost" data-pact="ltab" data-t="daftar">Salah email? Daftar ulang</button></div><p class="small" id="resend-m" aria-live="polite"></p></div>';
+  /* Kartu "cek emailmu": ketik kode dari email (aktivasi akun atau lupa sandi), plus kirim ulang (jeda 60 detik).
+     Kode dipilih alih-alih tautan: tidak bisa "terpakai" oleh pemindai email, bisa dibuka di perangkat lain,
+     dan email tanpa tautan jauh lebih jarang masuk Spam. Tautan lama tetap didukung (lihat ui.js handleLanding). */
+  function codeCard(email, kind) {
+    const rec = kind === 'recovery';
+    return '<div class="card mailcard"><span class="lk-ic">' + ic('send') + '</span><h2>' + (rec ? 'Masukkan kode atur ulang' : 'Masukkan kode aktivasi') + '</h2>' +
+      '<p>' + (rec ? 'Kalau email itu terdaftar, kami' : 'Kami') + ' mengirim <b>kode angka</b> ke <b class="mono em"></b>. Salin kodenya ke sini' + (rec ? ', lalu buat kata sandi baru.' : '. Setelah itu akunmu aktif dan kamu langsung masuk.') + '</p>' +
+      '<form id="otpf" class="form otp" novalidate><label class="lbl" for="otp">Kode dari email</label><input id="otp" class="otp-in mono" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="••••••" required>' +
+      '<p class="err" role="alert" id="otp-e"></p><button class="btn primary wide" type="submit">' + (rec ? 'Lanjut buat sandi baru' : 'Aktifkan akun') + '</button></form>' +
+      '<ul class="tips"><li>Belum ada setelah 2 menit? Cek folder <b>Spam</b>, <b>Promosi</b>, atau <b>Update</b>, atau cari <b>"Ruang Nalar"</b> di kotak pencarian email.</li><li>Kode berlaku sekitar 1 jam. Kalau meminta kode baru, pakai kode dari email yang <b>paling baru</b>.</li><li>Email lama berisi tombol/tautan? Klik saja tautannya, hasilnya sama.</li></ul>' +
+      '<div class="row"><button class="btn" data-pact="resend" data-kind="' + (rec ? 'recovery' : 'signup') + '" data-email="' + esc(email) + '">' + ic('send') + ' Kirim ulang kode</button><button class="btn ghost" data-pact="ltab" data-t="' + (rec ? 'lupa' : 'daftar') + '">Salah email?</button></div><p class="small" id="resend-m" aria-live="polite"></p></div>';
+  }
+  function bindCode(email, kind) {
+    const f = $('#otpf'); if (!f) return; const inp = $('#otp');
+    inp.addEventListener('input', () => { const v = inp.value.replace(/\D/g, '').slice(0, 10); if (v !== inp.value) inp.value = v; });
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault(); const er = $('#otp-e'); er.textContent = ''; const code = inp.value.replace(/\D/g, '');
+      if (code.length < 6) { er.textContent = 'Kode terdiri dari 6 angka atau lebih. Salin persis dari email.'; inp.focus(); return; }
+      const btn = f.querySelector('button[type=submit]'); btn.disabled = true;
+      try {
+        await bb().auth.verifyCode(email, code, kind);
+        if (kind === 'recovery') go('sandi', { recovery: 1 }, { replace: true }); else go('selamat', { type: 'signup' }, { replace: true });
+      } catch (err) {
+        const m = ((err && err.message) || '') + ((err && err.code) || '');
+        er.textContent = /expired|invalid|otp/i.test(m) ? 'Kode salah atau sudah kedaluwarsa. Periksa lagi angkanya, atau tekan "Kirim ulang kode" lalu pakai kode dari email terbaru.' : authMsg(err);
+        btn.disabled = false; inp.select();
+      }
+    });
+    setTimeout(() => { try { inp.focus(); } catch (e) { } }, 0);
   }
   V.login = function (p) {
     const b = bb();
     if (b.mode !== 'supabase') { view().innerHTML = page('Akun', '', '<div class="card"><p>Situs ini belum terhubung ke server akun. Progres tersimpan di browser ini. Pemilik situs bisa mengaktifkan akun, kelas online, dan forum dengan Supabase (lihat <code>docs/SUPABASE.md</code>).</p></div>'); return; }
     if (b.user) { view().innerHTML = page('Akun', '', '<div class="card"><p>Kamu sudah masuk sebagai <b class="nm"></b>.</p><div class="row"><button class="btn primary" data-go="home">Ke beranda</button><button class="btn ghost" data-pact="logout">Keluar</button></div></div>'); $('.nm').textContent = b.user.name; return; }
     const tab = p.t || 'masuk';
-    if (p.sent) { view().innerHTML = page('Satu langkah lagi', siteName(), checkEmailCard(p.sent)); $('.mailcard .em').textContent = p.sent; return; }
+    if (p.sent) {
+      const kind = p.kind === 'recovery' ? 'recovery' : 'signup';
+      view().innerHTML = page(kind === 'recovery' ? 'Atur ulang sandi' : 'Satu langkah lagi', siteName(), codeCard(p.sent, kind)); $('.mailcard .em').textContent = p.sent; bindCode(p.sent, kind); return;
+    }
     let f = '<div class="seg" role="tablist">' + [['masuk', 'Masuk'], ['daftar', 'Daftar'], ['lupa', 'Lupa sandi']].map(x => '<button role="tab" data-pact="ltab" data-t="' + x[0] + '" aria-checked="' + (tab === x[0]) + '">' + x[1] + '</button>').join('') + '</div><form class="card form" id="lform" novalidate>';
+    if (tab !== 'lupa') f += '<div id="g-box" hidden><button type="button" class="btn wide gbtn" data-pact="google"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg> ' + (tab === 'daftar' ? 'Daftar dengan Google' : 'Masuk dengan Google') + '</button><p class="small muted center">Tanpa sandi dan tanpa email konfirmasi.</p><p class="or"><span>atau pakai email</span></p></div>';
     if (tab === 'daftar') f += '<p class="muted small">Akun membuat progresmu tersimpan di semua perangkat dan memungkinkanmu bergabung ke kelas. Gratis.</p><label class="lbl" for="l-name">Nama yang ditampilkan</label><input id="l-name" maxlength="40" autocomplete="nickname" required placeholder="misalnya: Dika">';
-    if (tab === 'lupa') f += '<p class="muted small">Tulis email akunmu. Kami kirim tautan untuk membuat kata sandi baru.</p>';
+    if (tab === 'lupa') f += '<p class="muted small">Tulis email akunmu. Kami kirim kode untuk membuat kata sandi baru.</p>';
     f += '<label class="lbl" for="l-email">Email</label><input id="l-email" type="email" autocomplete="email" required placeholder="nama@contoh.com" value="' + esc(p.email || '') + '">';
     if (tab !== 'lupa') f += pwField('l-pass', 'Kata sandi', tab === 'daftar' ? 'new-password' : 'current-password', 'minimal 8 karakter');
     if (tab === 'daftar') f += '<p class="small muted" id="pw-h" aria-live="polite"></p>';
-    f += '<p class="err" role="alert" id="l-err"></p><p class="ok small" id="l-ok" aria-live="polite"></p><button class="btn primary wide" type="submit">' + ({ masuk: 'Masuk', daftar: 'Buat akun', lupa: 'Kirim tautan atur ulang' })[tab] + '</button>';
+    f += '<p class="err" role="alert" id="l-err"></p><p class="ok small" id="l-ok" aria-live="polite"></p><button class="btn primary wide" type="submit">' + ({ masuk: 'Masuk', daftar: 'Buat akun', lupa: 'Kirim kode atur ulang' })[tab] + '</button>';
     if (tab === 'masuk') f += '<p class="small muted center">Belum punya akun? <button type="button" class="linkbtn" data-pact="ltab" data-t="daftar">Daftar gratis</button> · <button type="button" class="linkbtn" data-pact="ltab" data-t="lupa">Lupa sandi?</button></p>';
     if (tab === 'daftar') f += '<p class="muted small">Progres yang sudah ada di perangkat ini akan otomatis digabung ke akun barumu.</p>';
+    f += '<p class="small muted center"><button type="button" class="linkbtn" data-pact="have-code" data-kind="' + (tab === 'lupa' ? 'recovery' : 'signup') + '">Sudah punya kode ' + (tab === 'lupa' ? 'atur ulang' : 'aktivasi') + ' dari email?</button></p>';
     f += '<p class="small muted center"><button type="button" class="linkbtn" data-go="bantuan" data-topik="akun">Masalah dengan akun? Lihat bantuan</button></p></form>';
     view().innerHTML = page(tab === 'daftar' ? 'Buat akun' : tab === 'lupa' ? 'Atur ulang sandi' : 'Masuk', siteName(), f);
     const pw = $('#l-pass'), ph = $('#pw-h'); if (pw && ph) pw.addEventListener('input', () => { ph.textContent = pwHint(pw.value); });
+    if (b.auth.providers && $('#g-box')) b.auth.providers().then(pr => { const g = $('#g-box'); if (g && pr.google) g.hidden = false; });
     $('#lform').addEventListener('submit', async (e) => {
       e.preventDefault(); const er = $('#l-err'), ok = $('#l-ok'); er.textContent = ''; ok.textContent = '';
       const email = $('#l-email').value.trim(), pass = ($('#l-pass') || {}).value || '', nm = (($('#l-name') || {}).value || '').trim();
@@ -208,11 +238,11 @@
       const btn = $('#lform button[type=submit]'); btn.disabled = true;
       try {
         if (tab === 'masuk') { await b.auth.signIn(email, pass); go(p.next || 'home', {}, { replace: true }); }
-        else if (tab === 'daftar') { const r = await b.auth.signUp(email, pass, nm); A.set.name = nm; A.saveSettings(); if (r && r.session) go('selamat', { type: 'signup' }, { replace: true }); else go('login', { sent: email }, { replace: true }); }
-        else { await b.auth.resetPassword(email); ok.textContent = 'Kalau email itu terdaftar, tautan atur ulang sudah dikirim. Cek kotak masuk dan folder Spam, lalu klik tautannya untuk membuat sandi baru.'; }
+        else if (tab === 'daftar') { const r = await b.auth.signUp(email, pass, nm); A.set.name = nm; A.saveSettings(); if (r && r.session) go('selamat', { type: 'signup' }, { replace: true }); else { resendAt = Date.now() + 60000; go('login', { sent: email }, { replace: true }); } }
+        else { await b.auth.resetPassword(email); resendAt = Date.now() + 60000; go('login', { sent: email, kind: 'recovery' }, { replace: true }); return; }
       } catch (err) {
         er.textContent = authMsg(err);
-        if (/not confirmed/i.test((err && err.message) || '')) er.insertAdjacentHTML('beforeend', ' <button type="button" class="linkbtn" data-pact="resend" data-email="' + esc(email) + '">Kirim ulang email konfirmasi</button>');
+        if (/not confirmed/i.test((err && err.message) || '')) er.insertAdjacentHTML('beforeend', ' <button type="button" class="linkbtn" data-pact="code-in" data-email="' + esc(email) + '">Masukkan kode aktivasi</button>');
       }
       btn.disabled = false;
     });
@@ -221,9 +251,9 @@
   V.sandi = function (p) {
     const b = bb();
     if (b.mode !== 'supabase' || !b.auth.updatePassword) { view().innerHTML = page('Kata sandi', '', '<div class="card"><p>Fitur ini butuh akun online.</p></div>'); return; }
-    if (!b.user) { view().innerHTML = page('Buat sandi baru', siteName(), '<div class="card"><p>Tautan atur ulang sudah tidak berlaku atau kamu belum masuk.</p><p class="muted small">Minta tautan baru: tautan hanya bisa dipakai sekali dan berlaku terbatas.</p><button class="btn primary" data-pact="ltab" data-t="lupa">Minta tautan baru</button></div>'); return; }
+    if (!b.user) { view().innerHTML = page('Buat sandi baru', siteName(), '<div class="card"><p>Sesi atur ulang sudah berakhir atau kamu belum masuk.</p><p class="muted small">Minta kode baru: kode hanya bisa dipakai sekali dan berlaku sekitar 1 jam.</p><button class="btn primary" data-pact="ltab" data-t="lupa">Minta kode baru</button></div>'); return; }
     const rec = p.recovery || b.recovery;
-    view().innerHTML = page(rec ? 'Buat sandi baru' : 'Ganti kata sandi', siteName(), '<form class="card form" id="pwf" novalidate>' + (rec ? '<p>Kamu masuk lewat tautan atur ulang. Buat kata sandi baru untuk <b class="mono em"></b>.</p>' : '<p class="muted small">Akun: <b class="mono em"></b></p>') +
+    view().innerHTML = page(rec ? 'Buat sandi baru' : 'Ganti kata sandi', siteName(), '<form class="card form" id="pwf" novalidate>' + (rec ? '<p>Kode atur ulang diterima. Buat kata sandi baru untuk <b class="mono em"></b>.</p>' : '<p class="muted small">Akun: <b class="mono em"></b></p>') +
       pwField('pw1', 'Kata sandi baru', 'new-password', 'minimal 8 karakter') + '<p class="small muted" id="pw-h" aria-live="polite"></p>' + pwField('pw2', 'Ulangi kata sandi baru', 'new-password', 'ketik sekali lagi') +
       '<p class="err" role="alert" id="pw-e"></p><button class="btn primary wide" type="submit">Simpan sandi baru</button></form>');
     $('.em').textContent = b.user.email || '';
@@ -243,7 +273,7 @@
     let h = '<div class="card"><span class="lk-ic warn">' + ic('clock') + '</span><h2>' + (expired ? 'Tautan sudah tidak berlaku' : 'Tautan tidak bisa dipakai') + '</h2>' +
       '<p>' + (expired ? 'Tautan di email hanya bisa dipakai <b>satu kali</b> dan berlaku <b>terbatas</b>. Biasanya ini terjadi karena tautannya sudah diklik sebelumnya (misalnya oleh pemindai keamanan email), sudah terlalu lama, atau kamu membuka email yang lebih lama.' : 'Ada yang tidak beres dengan tautan ini.') + '</p>' +
       '<p class="muted small">Kalau akunmu sebenarnya sudah aktif, langsung saja <b>masuk</b>.</p>' +
-      '<div class="row"><button class="btn primary" data-go="login">Masuk</button><button class="btn" data-pact="go-resend">Kirim ulang email konfirmasi</button><button class="btn ghost" data-pact="ltab" data-t="lupa">Lupa sandi</button></div>' +
+      '<div class="row"><button class="btn primary" data-go="login">Masuk</button><button class="btn" data-pact="go-resend">Kirim kode aktivasi baru</button><button class="btn ghost" data-pact="ltab" data-t="lupa">Lupa sandi</button></div>' +
       '<div id="resend-box" hidden><label class="lbl" for="rs-email">Email akunmu</label><div class="row"><input id="rs-email" type="email" autocomplete="email" placeholder="nama@contoh.com"><button class="btn primary" data-pact="resend-in">Kirim</button></div><p class="small" id="resend-m" aria-live="polite"></p></div>' +
       (p.desc ? '<details class="small muted"><summary>Detail teknis</summary><p class="dsc"></p></details>' : '') + '</div>';
     view().innerHTML = page('Ada kendala dengan tautan', siteName(), h);
@@ -272,21 +302,23 @@
     if (/same_password|different from the old/i.test(m + c)) return 'Kata sandi baru harus berbeda dari yang lama.';
     if (/invalid.*email|email_address_invalid/i.test(m + c)) return 'Alamat email tidak valid.';
     if (/signups? not allowed|signup_disabled/i.test(m + c)) return 'Pendaftaran akun baru sedang ditutup oleh pengelola situs.';
-    if (/expired|otp_expired/i.test(m + c)) return 'Tautan sudah kedaluwarsa. Minta tautan baru.';
+    if (/expired|otp_expired/i.test(m + c)) return 'Kode atau tautan sudah kedaluwarsa. Minta yang baru.';
     if (/fetch|network|Failed to/i.test(m)) return 'Tidak bisa terhubung ke server. Periksa koneksi internetmu, lalu coba lagi.';
     return m || 'Gagal. Coba lagi.';
   }
   /* Kirim ulang email konfirmasi, dengan jeda supaya tidak terkena batas kirim */
   let resendAt = 0;
-  async function doResend(email, msgEl, btn) {
+  async function doResend(email, msgEl, btn, kind) {
     const b = bb(); if (!b.auth.resend) return;
     const left = Math.ceil((resendAt - Date.now()) / 1000);
     if (left > 0) { msgEl.textContent = 'Tunggu ' + left + ' detik sebelum mengirim ulang.'; msgEl.className = 'small muted'; return; }
     if (!/^\S+@\S+\.\S+$/.test(email || '')) { msgEl.textContent = 'Tulis email yang valid.'; msgEl.className = 'small bad'; return; }
     if (btn) btn.disabled = true;
-    try { await b.auth.resend(email); resendAt = Date.now() + 60000; msgEl.textContent = '✓ Email baru sudah dikirim. Pakai tautan di email yang paling baru.'; msgEl.className = 'small ok'; }
+    let ok = false;
+    try { if (kind === 'recovery') await b.auth.resetPassword(email); else await b.auth.resend(email); resendAt = Date.now() + 60000; ok = true; msgEl.textContent = '✓ Email baru sudah dikirim. Pakai kode dari email yang paling baru.'; msgEl.className = 'small ok'; }
     catch (err) { msgEl.textContent = authMsg(err); msgEl.className = 'small bad'; }
     if (btn) btn.disabled = false;
+    return ok;
   }
 
   /* ============ Daftar kelas ============ */
@@ -559,9 +591,12 @@
         case 'retry': render(); break;
         case 'ltab': go('login', { t: d.t, next: nav.cur.next, email: ($('#l-email') || {}).value || nav.cur.email || '' }, { replace: nav.cur.v === 'login' }); break;
         case 'pw-eye': { const inp = document.getElementById(d.for); if (!inp) break; const show = inp.type === 'password'; inp.type = show ? 'text' : 'password'; a.textContent = show ? 'Sembunyikan' : 'Lihat'; a.setAttribute('aria-pressed', String(show)); break; }
-        case 'resend': await doResend(d.email, $('#resend-m') || $('#l-err'), a); break;
+        case 'resend': await doResend(d.email, $('#resend-m') || $('#l-err'), a, d.kind); break;
+        case 'code-in': go('login', { sent: d.email }); break;
+        case 'have-code': { const em = (($('#l-email') || {}).value || '').trim(), m = $('#l-err'); if (!/^\S+@\S+\.\S+$/.test(em)) { if (m) m.textContent = 'Tulis dulu email yang kamu pakai, lalu tekan tautan ini lagi.'; const i = $('#l-email'); if (i) i.focus(); break; } go('login', { sent: em, kind: d.kind }); break; }
+        case 'google': { a.disabled = true; try { await bb().auth.signInGoogle(); } catch (err) { const m = $('#l-err'); if (m) m.textContent = authMsg(err); a.disabled = false; } break; }
         case 'go-resend': { const bx = $('#resend-box'); if (bx) { bx.hidden = false; $('#rs-email').focus(); } break; }
-        case 'resend-in': await doResend($('#rs-email').value.trim(), $('#resend-m'), a); break;
+        case 'resend-in': { const em = $('#rs-email').value.trim(); if (await doResend(em, $('#resend-m'), a)) go('login', { sent: em }); break; }
         case 'tour': go('home'); setTimeout(() => G.NalarHelp && G.NalarHelp.tour(), 250); break;
         case 'login-next': go('login', { next: 'kelas' }); if (d.join) P.pendingJoin = d.join; break;
         case 'logout': await b.auth.signOut(); P.classes = null; A.sync.status = 'lokal'; go('home'); break;

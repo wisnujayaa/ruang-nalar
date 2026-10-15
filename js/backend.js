@@ -228,7 +228,7 @@
       }
       return r.data;
     };
-    let noteCb = null, noteTimer = null;
+    let noteCb = null, noteTimer = null, provCache = null;
     const B = {
       mode: 'supabase', online: false, isAdmin: false, user: null, client: sb,
       async init() {
@@ -252,7 +252,32 @@
         canEmail: true,
         async signIn(email, password) { chk(await sb.auth.signInWithPassword({ email, password })); },
         async signOut() { await sb.auth.signOut(); await setUser(null); },
-        async resetPassword(email) { chk(await sb.auth.resetPasswordForEmail(email, { redirectTo: siteUrl() })); }
+        async resetPassword(email) { chk(await sb.auth.resetPasswordForEmail(email, { redirectTo: siteUrl() })); },
+        /* Kode dari email (aktivasi / lupa sandi). Kode tidak bisa "terpakai" oleh pemindai tautan email,
+           dan email tanpa tautan jauh lebih jarang dianggap spam. kind: 'signup' | 'recovery' */
+        async verifyCode(email, code, kind) {
+          const type = kind === 'recovery' ? 'recovery' : 'signup';
+          let r = await sb.auth.verifyOtp({ email, token: code, type });
+          // Kode dari email "tautan masuk" (dikirim dari dasbor) memakai jenis 'email'
+          if (r.error && type === 'signup') { const r2 = await sb.auth.verifyOtp({ email, token: code, type: 'email' }); if (!r2.error) r = r2; }
+          chk(r);
+          const s = r.data && r.data.session; if (!s) throw err('Kode tidak bisa dipakai. Minta kode baru.', 'otp');
+          if (kind === 'recovery') B.recovery = true;
+          await setUser(s.user); G.BA && G.BA.emit && G.BA.emit('auth');
+          return r.data;
+        },
+        /* Masuk dengan Google: tampil otomatis bila penyedia Google diaktifkan di Supabase */
+        async providers() {
+          if (provCache) return provCache;
+          try {
+            const ac = typeof AbortController === 'function' ? new AbortController() : null; const t = ac && setTimeout(() => ac.abort(), 5000);
+            const r = await fetch(CFG.supabaseUrl.replace(/\/+$/, '') + '/auth/v1/settings', { headers: { apikey: CFG.supabaseAnonKey }, signal: ac && ac.signal });
+            if (t) clearTimeout(t);
+            const j = r.ok ? await r.json() : {}; provCache = { google: !!(j.external && j.external.google) };
+          } catch (e) { return { google: false }; }
+          return provCache;
+        },
+        async signInGoogle() { chk(await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: siteUrl(), queryParams: { prompt: 'select_account' } } })); }
       },
       admin: {
         async listUsers() { return chk(await sb.rpc('admin_list_users')).map(u => ({ id: u.id, name: u.display_name, email: u.email, role: u.role, created: Date.parse(u.created_at) })); },
@@ -350,13 +375,14 @@
     }
     async function setUser(u) {
       if (!u) { B.user = null; B.online = false; B.isAdmin = false; return; }
-      let name = (u.user_metadata && u.user_metadata.display_name) || (u.email || '').split('@')[0], role = 'student';
+      const md = u.user_metadata || {};
+      let name = md.display_name || md.full_name || md.name || (u.email || '').split('@')[0], role = 'student';
       try {
         let r = await sb.from('profiles').select('display_name, role').eq('id', u.id).maybeSingle();
         if (r.error) r = await sb.from('profiles').select('display_name').eq('id', u.id).maybeSingle();   // skema lama tanpa kolom role
         if (r.data) { name = r.data.display_name; role = r.data.role || 'student'; }
       } catch (e) { }
-      B.user = { id: u.id, name, email: u.email, role }; B.isAdmin = role === 'admin'; B.online = true; pollNotes();
+      B.user = { id: u.id, name, email: u.email, role, created: Date.parse(u.created_at) || 0 }; B.isAdmin = role === 'admin'; B.online = true; pollNotes();
     }
     return B;
   }
