@@ -150,7 +150,25 @@
   /* =========================== SUPABASE =========================== */
   function SupabaseBackend() {
     const sb = G.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } });
-    const chk = (r) => { if (r.error) throw err(r.error.message || 'Terjadi kesalahan', r.error.code); return r.data; };
+    /* Jika server menolak karena tidak ada izin padahal UI mengira sudah masuk, berarti token sesi
+       tidak ikut terkirim (sesi hilang/kedaluwarsa). Periksa ulang lalu minta pengguna masuk lagi. */
+    let rechecking = false;
+    async function recheckSession() {
+      if (rechecking) return; rechecking = true;
+      try { const { data } = await sb.auth.getSession(); if (!data || !data.session) { await setUser(null); G.BA && G.BA.emit && G.BA.emit('auth'); } } catch (e) { }
+      rechecking = false;
+    }
+    const chk = (r) => {
+      if (r.error) {
+        const code = r.error.code, msg = r.error.message || 'Terjadi kesalahan';
+        if (B.user && (code === '42501' || code === 'PGRST301' || code === 'PGRST303' || /permission denied|JWT/i.test(msg))) {
+          recheckSession();
+          throw err('Sesi login tidak terbaca oleh server. Coba Keluar lalu Masuk lagi (menu Akun).', 'session');
+        }
+        throw err(msg, code);
+      }
+      return r.data;
+    };
     let noteCb = null, noteTimer = null;
     const B = {
       mode: 'supabase', online: false, isAdmin: false, user: null, client: sb,
