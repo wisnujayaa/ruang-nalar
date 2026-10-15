@@ -10,6 +10,7 @@ Supabase menyediakan database Postgres + sistem login. Paket gratisnya cukup unt
 1. Buka **SQL Editor → New query**.
 2. Tempel seluruh isi `supabase/schema.sql`, klik **Run**.
    Skrip ini aman dijalankan ulang (memakai `if not exists` / `create or replace`).
+3. Jalankan juga `supabase/courses.sql` (tabel kursus buatan guru untuk Studio kursus).
 
 Yang dibuat:
 
@@ -22,6 +23,7 @@ Yang dibuat:
 | `assignments` | tugas + target + tenggat | orang di kelas; hanya guru yang menulis |
 | `forum_threads`, `forum_posts` | forum | orang di kelas; ubah/hapus milik sendiri; guru memoderasi; hanya guru yang bisa menyematkan |
 | `messages` | pesan guru → siswa | pengirim & penerima; hanya guru dari kelas yang sama yang boleh mengirim |
+| `courses` | kursus buatan guru (Studio) | publik/bertautan: semua orang; draf: pemilik + anggota kelas yang memakainya. Hanya pemilik yang mengubah/menghapus |
 
 Siswa bergabung lewat fungsi `join_class(kode)`, jadi tidak ada yang bisa menambahkan diri ke kelas tanpa kode.
 

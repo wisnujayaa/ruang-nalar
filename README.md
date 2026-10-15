@@ -22,6 +22,7 @@ Kursus pertama: **Pertidaksamaan** (SMA kelas X → UTBK → olimpiade/kuliah). 
 - Forum diskusi per kelas: utas, balasan, rumus `$…$`, sematkan, tandai terjawab, moderasi
 - Laporan per siswa dan per kelas: konsep terlemah, jebakan paling umum, salah-padahal-yakin, aktivitas terakhir
 - Pesan ke siswa / seluruh kelas, bisa ditautkan langsung ke materi atau latihan
+- **Studio kursus**: buat kursus sendiri lewat formulir (materi, contoh bertahap, 6 tipe soal dengan pratinjau, flashcard, jebakan), terbitkan sebagai draf/tautan/publik. Tanpa menulis kode
 
 ## Tiga mode penyimpanan
 
@@ -50,11 +51,11 @@ Harus lewat server lokal (bukan membuka `index.html` langsung), karena kursus di
 
 ## Aktifkan akun, kelas online, dan forum (Supabase, gratis)
 
-Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql` di SQL Editor → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
+Ringkasnya: buat proyek Supabase → jalankan `supabase/schema.sql` lalu `supabase/courses.sql` di SQL Editor → isi `config.js` dengan Project URL dan **anon** key → atur Site URL. Panduan langkah demi langkah: [docs/SUPABASE.md](docs/SUPABASE.md).
 
 ## Menambah kursus
 
-Salin `courses/contoh-kursus/`, ubah isinya, daftarkan di `courses/index.js`. Panduan lengkap beserta format setiap blok dan tipe soal: [docs/MENAMBAH-KURSUS.md](docs/MENAMBAH-KURSUS.md).
+Tanpa kode: **Akun → Studio kursus**. Dengan kode (bisa memakai widget interaktif & generator soal): salin `courses/contoh-kursus/`, ubah isinya, daftarkan di `courses/index.js`. Panduan lengkap beserta format setiap blok dan tipe soal: [docs/MENAMBAH-KURSUS.md](docs/MENAMBAH-KURSUS.md).
 
 ## Struktur
 
@@ -69,6 +70,8 @@ js/
   core.js               progres per kursus, review berjarak, statistik, sinkronisasi
   ui.js                 halaman belajar: materi, soal, review, flashcard, statistik
   platform.js           beranda katalog, akun, kelas, tugas, forum, laporan
+  editor.js             Studio kursus (editor tanpa kode)
+  course-safe.js        pembersih & kompilasi kursus buatan guru
 courses/
   index.js              daftar kursus
   pertidaksamaan/       kursus utama
@@ -86,7 +89,8 @@ Penjelasan alur data: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 npm test             # verifikasi semua kunci jawaban (Node, tanpa dependensi)
 npm run test:ui      # uji asap antarmuka dengan Playwright (jalankan `npm run serve` dulu)
 npm run test:flow    # alur guru & siswa mode Supabase (Supabase palsu di memori)
-PGURL=postgres://... npm run test:rls   # uji kebijakan keamanan di Postgres LOKAL kosong
+npm run test:editor  # guru membuat kursus di Studio → siswa mengerjakan
+PGHOST=localhost PGUSER=postgres npm run test:rls   # uji kebijakan keamanan di Postgres LOKAL
 ```
 
 ## Lisensi

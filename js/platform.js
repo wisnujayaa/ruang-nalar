@@ -21,8 +21,15 @@
 
   async function myClasses(force) {
     if (needLogin()) return [];
-    if (!P.classes || force) P.classes = await bb().classes.mine();
+    if (!P.classes || force) { P.classes = await bb().classes.mine(); await ensureMeta(P.classes.map(c => c.course)); }
     return P.classes;
+  }
+  /* Kursus buatan guru yang masih draf tidak ada di katalog; ambil metadatanya supaya judulnya tampil */
+  async function ensureMeta(ids) {
+    for (const id of Array.from(new Set(ids))) {
+      if (!NR.isDb(id) || NR.meta(id) || !bb().courses) continue;
+      try { const got = await bb().courses.get(id); if (got && !NR.remote.some(r => r.id === id)) NR.remote.push(got.meta); } catch (e) { }
+    }
   }
   const findClass = async (id) => (await myClasses()).find(c => c.id === id) || (await myClasses(true)).find(c => c.id === id);
 
@@ -90,7 +97,7 @@
     }
     h += '<div id="home-tasks"></div>';
     h += '<h2 class="h1like">Kursus</h2><div class="catalog">' + NR.list().map(courseCard).join('') + '</div>';
-    h += '<p class="foot muted small">' + esc(siteName()) + ' · sumber terbuka. Ingin menambah kursus? Lihat panduan di repositori.</p></section>';
+    h += '<p class="foot muted small">' + esc(siteName()) + ' · sumber terbuka. Ingin membuat kursus sendiri? <button class="linkbtn small" data-go="studio">Buka Studio kursus</button></p></section>';
     view().innerHTML = h;
     const nt = $('.note-txt'); if (nt) nt.textContent = notes[0].text;
     homeTasks();
@@ -99,7 +106,8 @@
   function courseCard(c) {
     if (c.soon) return '<div class="ccard soon"><span class="cglyph" aria-hidden="true">' + esc(c.glyph || '') + '</span><div><p class="eyebrow">' + esc(c.subject || '') + '</p><h3>' + esc(c.title) + '</h3><p class="muted small">' + esc(c.blurb || '') + '</p></div><span class="chip">Segera hadir</span></div>';
     const S = stateFor(c.id); const started = S.attempts.length || Object.keys(S.sections || {}).length || S.intro;
-    return '<button class="ccard c-' + esc(c.color || 'accent') + '" data-go="course" data-course="' + esc(c.id) + '"><span class="cglyph" aria-hidden="true">' + esc(c.glyph || '') + '</span><div><p class="eyebrow">' + esc(c.subject || '') + (c.level ? ' · ' + esc(c.level) : '') + '</p><h3>' + esc(c.title) + '</h3><p class="muted small">' + esc(c.blurb || '') + '</p></div><span class="chip ' + (started ? 'ok' : '') + '">' + (started ? 'Lanjutkan · ' + S.attempts.length + ' soal' : 'Mulai') + '</span></button>';
+    const vis = c.db && c.mine && c.visibility !== 'public' ? '<span class="chip st-todo">' + (c.visibility === 'draft' ? 'Draf' : 'Lewat tautan') + '</span>' : '';
+    return '<button class="ccard c-' + esc(c.color || 'accent') + '" data-go="course" data-course="' + esc(c.id) + '"><span class="cglyph" aria-hidden="true">' + esc(c.glyph || '') + '</span><div><p class="eyebrow">' + esc(c.subject || '') + (c.level ? ' · ' + esc(c.level) : '') + '</p><h3>' + esc(c.title) + '</h3><p class="muted small">' + esc(c.blurb || '') + '</p></div>' + vis + '<span class="chip ' + (started ? 'ok' : '') + '">' + (started ? 'Lanjutkan · ' + S.attempts.length + ' soal' : 'Mulai') + '</span></button>';
   }
   /* Tugas yang belum selesai dari semua kelas tempat aku menjadi siswa */
   async function homeTasks() {
@@ -123,6 +131,7 @@
     const modeTxt = { local: 'Mode tanpa server · data di browser ini', claude: 'Akun Claude', supabase: u ? 'Akun ' + (u.email || '') : 'Belum masuk' }[b.mode];
     let h = '<div class="card acct"><span class="av big">' + esc((name || '?').slice(0, 1).toUpperCase()) + '</span><div><h2 class="nm"></h2><p class="muted small">' + esc(modeTxt) + '</p></div></div>';
     h += '<div class="row wrap"><button class="btn" data-go="settings">Pengaturan</button>' + (b.mode === 'supabase' ? (u ? '<button class="btn ghost" data-pact="logout">' + ic('out') + ' Keluar</button>' : '<button class="btn primary" data-go="login">Masuk / daftar</button>') : '') + '</div>';
+    if (b.courses && (b.courses.canEdit || b.mode === 'supabase')) h += '<div class="card studio-cta"><div><h2>' + ic('book') + ' Studio kursus</h2><p class="muted small">Buat kursusmu sendiri lewat formulir: materi, contoh, soal, flashcard. Tanpa menulis kode.</p></div><button class="btn primary" data-go="studio">Buka Studio</button></div>';
     h += '<h2 class="h1like">Progres per kursus</h2><div class="cprog">' + openCourses().map(c => { const S = stateFor(c.id); const st = A.stats(S); return '<div class="card"><p class="eyebrow">' + esc(c.subject || '') + '</p><h3>' + esc(c.title) + '</h3><div class="kpis small"><div><b>' + Object.values(S.sections || {}).filter(x => x.done).length + '</b><span>bagian selesai</span></div><div><b>' + st.tot + '</b><span>soal</span></div><div><b>' + (st.tot ? Math.round(st.acc * 100) + '%' : '–') + '</b><span>akurasi</span></div></div><div class="row"><button class="btn small" data-go="stats" data-course="' + esc(c.id) + '">Statistik lengkap</button><button class="btn small ghost" data-go="course" data-course="' + esc(c.id) + '">Buka kursus</button></div></div>'; }).join('') + '</div>';
     view().innerHTML = page(name ? esc(name) : 'Akun', '', h, { noBack: true });
     const nm = $('.acct .nm'); if (nm) nm.textContent = name || 'Tanpa nama';
@@ -172,7 +181,7 @@
     let h = '';
     if (b.mode === 'local') h += '<div class="card slim"><p class="small"><b>Mode tanpa server.</b> Kelas, tugas, dan forum hanya tersimpan di browser ini, cocok untuk mencoba atau untuk satu guru yang memantau siswa lewat <b>kode progres</b>. Supaya siswa bisa bergabung dari perangkat masing-masing, hubungkan Supabase (lihat README).</p></div>';
     if (b.classes.usesCode) h += '<div class="card"><h2>Gabung ke kelas</h2><form class="inline" id="joinf"><input id="jcode" class="mono" maxlength="12" autocapitalize="characters" placeholder="Kode dari guru, misal K7QX2M" value="' + esc(p.join || '') + '"><button class="btn primary" type="submit">Gabung</button></form><p class="err" role="alert" id="jerr"></p></div>';
-    if (b.classes.canCreate) h += '<details class="card" id="newc"' + (p.create ? ' open' : '') + '><summary><b>' + ic('plus') + ' Buat kelas baru</b> <span class="muted small">(kamu menjadi gurunya)</span></summary><form id="cform" class="form"><label class="lbl" for="cname">Nama kelas</label><input id="cname" maxlength="60" placeholder="misalnya: X-3 Matematika atau Les Sabtu"><label class="lbl" for="ccourse">Kursus</label><select id="ccourse">' + openCourses().map(c => '<option value="' + esc(c.id) + '"' + (c.id === A.set.lastCourse ? ' selected' : '') + '>' + esc(c.title) + '</option>').join('') + '</select><p class="err" role="alert" id="cerr"></p><button class="btn primary" type="submit">Buat kelas</button></form></details>';
+    if (b.classes.canCreate) h += '<details class="card" id="newc"' + (p.create ? ' open' : '') + '><summary><b>' + ic('plus') + ' Buat kelas baru</b> <span class="muted small">(kamu menjadi gurunya)</span></summary><form id="cform" class="form"><label class="lbl" for="cname">Nama kelas</label><input id="cname" maxlength="60" placeholder="misalnya: X-3 Matematika atau Les Sabtu"><label class="lbl" for="ccourse">Kursus</label><select id="ccourse">' + openCourses().map(c => '<option value="' + esc(c.id) + '"' + (c.id === A.set.lastCourse ? ' selected' : '') + '>' + esc(c.title) + (c.db && c.mine ? ' (buatanmu' + (c.visibility === 'draft' ? ', draf' : '') + ')' : '') + '</option>').join('') + '</select><p class="err" role="alert" id="cerr"></p><button class="btn primary" type="submit">Buat kelas</button></form></details>';
     h += '<div id="clist">' + loading + '</div>';
     view().innerHTML = page('Kelas', '', h, { noBack: true });
     const jf = $('#joinf'); if (jf) jf.addEventListener('submit', async (e) => {
@@ -201,7 +210,7 @@
       const c = await findClass(p.id);
       if (!c) { view().innerHTML = page('Kelas', '', '<div class="card"><p>Kelas tidak ditemukan atau kamu bukan anggotanya lagi.</p><button class="btn" data-go="kelas">Ke daftar kelas</button></div>'); return; }
       const meta = NR.meta(c.course);
-      if (meta && !meta.soon) await openCourse(c.course);
+      if ((meta && !meta.soon) || NR.isDb(c.course)) { try { await openCourse(c.course); } catch (e) { console.warn(e); } }
       if (P.tok !== tok) return;
       P.cur = c;
       const tab = p.ktab || 'tugas';

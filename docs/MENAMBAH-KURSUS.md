@@ -1,5 +1,29 @@
 # Menambah kursus
 
+Ada dua cara:
+
+| | **Studio kursus (tanpa kode)** | **Kursus berbasis file (kode)** |
+|---|---|---|
+| Untuk | Guru mana pun yang punya akun | Pengelola repo |
+| Tempat menulis | Formulir di web: **Akun → Studio kursus** | Folder `courses/<id>/` |
+| Disimpan di | Database (tabel `courses`) | Repo GitHub |
+| Fitur khusus | Teks, contoh bertahap, 6 tipe soal, flashcard, jebakan, sumber belajar | Semua itu **plus** widget interaktif & generator soal acak (butuh JavaScript) |
+| Siapa yang bisa melihat | Draf / lewat tautan / publik (diatur di tab Terbitkan) | Semua pengunjung |
+
+## Cara 1: Studio kursus (disarankan untuk guru)
+1. Masuk, buka **Akun → Studio kursus → Buat kursus baru**.
+2. **Info**: judul, mata pelajaran, jenjang, deskripsi.
+3. **Bagian & materi**: tiap bagian berisi blok yang disusun dari atas ke bawah (teks, contoh bertahap, soal coba-dulu, jebakan, rangkuman, latihan otomatis, tiket keluar). Teks memakai format ringan: `**tebal**`, `*miring*`, baris `- ` untuk daftar, rumus `$x^2<4$`.
+4. **Soal**: pilih tipe, isi pertanyaan, kunci, pembahasan, level (L1–L6). Tombol **Coba soal ini** menampilkan soal persis seperti yang dilihat siswa. Kunci interval langsung dipratinjau di garis bilangan.
+5. **Terbitkan**: periksa daftar masalah/saran, pilih Draf/Lewat tautan/Publik, klik **Simpan**, lalu **Pratinjau sebagai siswa**.
+6. Kursus langsung bisa dipilih saat membuat kelas, dan semua fitur (review berjarak, tugas berstatus otomatis, laporan guru) berlaku.
+
+Keamanan: semua teks dari Studio dibersihkan oleh `js/course-safe.js` sebelum ditampilkan. HTML mentah tidak pernah dirender, rumus dibersihkan, dan tautan wajib `https://`. Diuji oleh `tests/verify-safe.js`.
+
+Kursus Studio bisa diekspor/impor sebagai JSON (tab Terbitkan), misalnya untuk cadangan atau memindahkannya ke situs lain.
+
+## Cara 2: kursus berbasis file
+
 Sebuah kursus adalah satu folder di `courses/` berisi file JavaScript biasa yang mengisi objek `BC`. Tidak perlu menyentuh `js/`.
 
 ## Langkah cepat

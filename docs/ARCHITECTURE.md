@@ -23,6 +23,11 @@
 
 Halaman yang butuh kursus (daftar `COURSE_VIEWS` di `ui.js`) otomatis memuat kursus terakhir bila belum ada yang aktif.
 
+## Kursus buatan guru (Studio)
+- Disimpan di backend (`BB.courses`), id berbentuk `c-xxxxxxxxxx`. `NR.refreshRemote()` mengambil daftar kursus publik + milik sendiri; `NR.load('c-…')` mengambil isinya.
+- Isi kursus adalah data dari pengguna, jadi **selalu** melewati `NalarSafe.compile()` (`js/course-safe.js`): hanya blok & tipe soal yang aman, teks di-escape, rumus dibersihkan dari `< > &`, tautan wajib https. Hasilnya berformat sama dengan kursus berbasis file, sehingga `ui.js` tidak membedakan keduanya.
+- Editor (`js/editor.js`) mengedit data mentah `E.raw` lewat atribut `data-b="path"` pada input; perubahan struktur (tambah/hapus/pindah) menggambar ulang tab.
+
 ## Progres
 Satu dokumen JSON per (pengguna, kursus): riwayat jawaban (maks 1.400), jadwal review tiap soal & kartu, kesalahan, posisi materi, dll. Statistik (penguasaan konsep, jebakan) **tidak disimpan**, selalu dihitung ulang dari riwayat (`BA.stats`). Karena itu laporan guru dan status tugas cukup membaca dokumen progres siswa.
 

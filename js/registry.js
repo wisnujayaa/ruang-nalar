@@ -13,18 +13,39 @@
     ownKeys: () => Reflect.ownKeys(holder.cur),
     getOwnPropertyDescriptor: (_, k) => { const d = Object.getOwnPropertyDescriptor(holder.cur, k); if (d) d.configurable = true; return d; }
   });
+  /* Dua sumber kursus:
+     - file  : courses/index.js (ditulis di kode, misalnya Pertidaksamaan)
+     - db    : dibuat guru lewat editor web (id diawali "c-"), diambil dari backend */
   const R = G.NR = {
-    list: () => (G.NALAR_COURSES || []),
-    meta: (id) => (G.NALAR_COURSES || []).find(c => c.id === id),
+    remote: [],
+    list: () => (G.NALAR_COURSES || []).concat(R.remote.filter(r => !(G.NALAR_COURSES || []).some(c => c.id === r.id))),
+    meta: (id) => R.list().find(c => c.id === id),
+    isDb: (id) => /^c-[a-z0-9]{6,20}$/.test(String(id || '')),
     loaded: {},
     active: null,
     base: 'courses/'
   };
+  /* Perbarui daftar kursus dari backend (dipanggil setelah masuk/keluar & setelah menyimpan di editor) */
+  R.refreshRemote = async function () {
+    try { R.remote = (G.BB && G.BB.courses) ? await G.BB.courses.list() : []; } catch (e) { R.remote = []; }
+    return R.remote;
+  };
+  /* Paksa muat ulang (misalnya setelah kursus diedit) */
+  R.forget = function (id) { delete R.loaded[id]; if (R.active === id) R.active = null; };
   function loadScript(src) {
     return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Gagal memuat ' + src)); document.head.appendChild(s); });
   }
   /* Muat kursus (sekali saja), lalu jadikan aktif */
   R.load = async function (id) {
+    if (R.isDb(id)) {
+      if (!R.loaded[id]) {
+        const got = G.BB && G.BB.courses ? await G.BB.courses.get(id) : null;
+        if (!got || !got.content) throw new Error('Kursus tidak ditemukan atau belum dibagikan.');
+        if (!R.remote.some(r => r.id === id)) R.remote.push(got.meta);
+        R.install(id, got.meta, got.content);
+      }
+      R.use(id); return R.loaded[id];
+    }
     const meta = R.meta(id); if (!meta || meta.soon) throw new Error('Kursus tidak ditemukan: ' + id);
     if (!R.loaded[id]) {
       const obj = { id, meta };
@@ -36,6 +57,11 @@
     }
     R.use(id);
     return R.loaded[id];
+  };
+  /* Pasang kursus dari data mentah editor (sudah dibersihkan oleh NalarSafe.compile) */
+  R.install = function (id, meta, raw) {
+    const obj = Object.assign({ id, meta, fromDb: true }, G.NalarSafe.compile(raw));
+    R.normalize(obj); R.loaded[id] = obj; return obj;
   };
   R.use = function (id) { if (!R.loaded[id]) return false; holder.cur = R.loaded[id]; R.active = id; return true; };
   R.current = () => holder.cur;

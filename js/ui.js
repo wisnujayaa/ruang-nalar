@@ -59,7 +59,7 @@
   }
   function back() { const p = nav.stack.pop() || { v: 'home' }; if (nav.active && nav.active.cleanup) nav.active.cleanup(); nav.active = null; nav.cur = p; render(); }
   const TAB = { home: 'home', course: 'course', map: 'course', intro: 'course', diag: 'course', prereq: 'course', lesson: 'course', summary: 'course', mixed: 'course', lintas: 'course', tryout: 'course', dump: 'course', traps: 'course',
-    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me' };
+    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me' };
   function tabOf(v) { return v === 'run' ? (nav.cur.tab === 'map' ? 'course' : nav.cur.tab || 'review') : TAB[v] || 'home'; }
   let loadingCourse = false;
   function render() {
@@ -71,7 +71,7 @@
       if (!want) { nav.cur = { v: 'home' }; return render(); }
       if (loadingCourse) return;
       loadingCourse = true; view().innerHTML = '<div class="loading"><span class="spin"></span><p class="muted">Memuat kursus…</p></div>';
-      openCourse(want).then(() => { loadingCourse = false; render(); }).catch(e => { loadingCourse = false; view().innerHTML = '<div class="card"><p class="bad">' + esc(e.message) + '</p><button class="btn" data-go="home">Ke beranda</button></div>'; });
+      openCourse(want).then(() => { loadingCourse = false; render(); }).catch(e => { loadingCourse = false; if (A.set.lastCourse === want) { A.set.lastCourse = null; A.saveSettings(); } view().innerHTML = '<div class="card"><p class="bad">' + esc(e.message) + '</p><button class="btn" data-go="home">Ke beranda</button></div>'; });
       return;
     }
     const fn = V[v] || V.home;
@@ -779,7 +779,7 @@
     go('course');
   }
   /* Dipakai platform.js */
-  Object.assign(G.BU = G.BU || {}, { go, back, render, renderTop, V, nav, ic, esc, rich, $, $$, view, statsHTML, openCourse, tile, LV, secMeta, shuffle, greet, startRun, applyTheme, COURSE_VIEWS, doTarget, hasDiag });
+  Object.assign(G.BU = G.BU || {}, { QComp, go, back, render, renderTop, V, nav, ic, esc, rich, $, $$, view, statsHTML, openCourse, tile, LV, secMeta, shuffle, greet, startRun, applyTheme, COURSE_VIEWS, doTarget, hasDiag });
 
   function boot() {
     applyTheme();
@@ -790,13 +790,15 @@
       if (uid !== lastUid) {
         const first = lastUid === undefined; lastUid = uid;
         if (!first && A.sync.online) A.sync.pull();
-        if (['home', 'me', 'kelas', 'klas', 'login', 'settings', 'thread'].includes(nav.cur.v)) render();
+        if (!first) G.NR.refreshRemote().then(() => { if (['home', 'me', 'kelas', 'studio'].includes(nav.cur.v)) render(); });
+        if (['home', 'me', 'kelas', 'klas', 'login', 'settings', 'thread', 'studio', 'editor'].includes(nav.cur.v)) render();
         return;
       }
       if (nav.cur.v === 'home' || nav.cur.v === 'settings') render();
     });
     // Pilih backend: Supabase (bila dikonfigurasi) atau lokal; di claude.ai, tunggu runtime Artifact muncul
-    const start = () => A.sync.init().catch(e => { console.error(e); A.sync.status = 'lokal'; renderTop(); });
+    const start = () => A.sync.init().catch(e => { console.error(e); A.sync.status = 'lokal'; renderTop(); })
+      .then(() => G.NR.refreshRemote()).then(() => { if (['home', 'me', 'kelas', 'studio'].includes(nav.cur.v)) render(); });
     const cfg = G.NALAR_CONFIG || {};
     if (G.BB.mode === 'local' && !(cfg.supabaseUrl && cfg.supabaseAnonKey) && G.NALAR_makeClaude) {
       const tryClaude = (n) => {
@@ -813,7 +815,7 @@
     const h = decodeURIComponent((location.hash || '').slice(1));
     let m;
     if ((m = h.match(/^gabung=([A-Za-z0-9]{4,12})$/))) go('kelas', { join: m[1].toUpperCase() });
-    else if ((m = h.match(/^kursus=([a-z0-9_-]+)$/)) && G.NR.meta(m[1]) && !G.NR.meta(m[1]).soon) go('course', { course: m[1] });
+    else if ((m = h.match(/^kursus=([a-z0-9_-]+)$/)) && (G.NR.isDb(m[1]) || (G.NR.meta(m[1]) && !G.NR.meta(m[1]).soon))) go('course', { course: m[1] });
     else if ((m = h.match(/^bagian(\d{1,2})$/))) go('lesson', { sec: +m[1] });
     else render();
   }

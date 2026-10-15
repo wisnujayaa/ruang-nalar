@@ -643,3 +643,64 @@ details.card[open]>summary{margin-bottom:6px}
 .tabs3 button{justify-content:center;padding:8px 6px}
 @media (max-width:420px){.tabs3 button .ic{display:none}}
 .post h2.tt{overflow-wrap:anywhere}
+
+/* =================== Studio / editor kursus =================== */
+@media (min-width:960px){body[data-view="editor"] main.wrapx,body[data-view="studio"] main.wrapx{max-width:980px}}
+.studio-cta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.studio-cta h2 .ic{fill:none;color:var(--accent);vertical-align:-3px}
+.st-card .row{margin-top:4px}
+.ed-bar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;background:var(--bg)}
+.ed-bar .chip{margin:0}
+.ed-tabs{position:relative}
+.ed-f{display:block}
+.ed-f .lbl{display:block}
+.ed-help{margin-top:4px}
+.ed-2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.ed-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px;align-items:end}
+@media (max-width:560px){.ed-2,.ed-3{grid-template-columns:1fr}}
+.ed-sec-h{display:flex;gap:12px;align-items:flex-start}
+.ed-sec-h .num{flex:none;width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:800;margin-top:30px}
+.ed-grow{flex:1;min-width:0}
+.ed-tools{display:inline-flex;gap:4px;align-items:center;flex:none;flex-wrap:wrap}
+.ed-tools .btn{min-height:34px;padding:4px 10px}
+.ed-tools .ic{width:16px;height:16px}
+.ed-end{justify-content:flex-end;padding-bottom:4px}
+.ed-blocks{list-style:none;padding:0;margin:14px 0 6px;display:grid;gap:8px}
+.ed-blk{border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.ed-blk.open{background:var(--surface);border-color:var(--accent)}
+.ed-blk-h{display:flex;align-items:center;gap:10px;padding:8px 10px;flex-wrap:wrap}
+.ed-kind{font-weight:700;font-size:.86rem;white-space:nowrap}
+.ed-sum{flex:1;min-width:120px;color:var(--muted);font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ed-blk-b{padding:0 12px 12px}
+.ed-note{padding:0 12px 8px;margin:0}
+.ed-add{margin-top:6px}
+.ed-add select{width:auto;flex:1;min-width:180px}
+.ed-list{padding-left:1.4em;display:grid;gap:8px;margin:6px 0}
+.ed-opt{display:flex;gap:8px;align-items:center}
+.ed-opt input:not([type=radio]),.ed-opt select{flex:1}
+.ed-opt select{flex:0 0 110px}
+.ed-ok{display:flex;gap:4px;align-items:center;font-size:.8rem;font-weight:700;color:var(--ok);white-space:nowrap}
+.ed-ok input{accent-color:var(--ok);width:18px;height:18px}
+.ed-why{margin-top:6px;font-size:.9rem}
+.ed-modes{margin-top:0}
+.ed-modes .tog{margin:0}
+.tog.small{font-size:.88rem;padding:4px 0}
+.ed-q.ed-incomplete{border-color:var(--bad);border-left-width:4px}
+.ed-q .tag{margin:0}
+.ed-try{margin-top:10px}
+.ed-ivprev{margin-top:6px}
+.ed-res{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}
+.ed-res summary{cursor:pointer;font-weight:700;color:var(--ink-2)}
+.ed-res-row{display:grid;grid-template-columns:110px 1fr 1.4fr 1fr auto;gap:6px;margin:8px 0;align-items:center}
+@media (max-width:700px){.ed-res-row{grid-template-columns:1fr 1fr}}
+.ed-card{margin:10px 0}
+.ed-vis{display:flex;gap:10px;align-items:flex-start;padding:8px 0}
+.ed-link{flex:1;min-width:0}
+.ed-issues{padding-left:1.2em}
+.ed-issues li{margin:.3em 0}
+.bad-l li{color:var(--bad)}
+.ed-prev{margin-top:8px}
+.ed-blocks>li,.ed-list>li,.ed-q,.ed-sec{min-width:0}
+.ed-sum{min-width:0;flex-basis:120px}
+@media (max-width:560px){.ed-sec-h{flex-wrap:wrap}.ed-sec-h .num{margin-top:0}.ed-sec-h .ed-tools{order:-1;margin-left:auto}.ed-grow{flex-basis:100%}.ed-blk-h .ed-tools{width:100%;justify-content:flex-end}.ed-opt{flex-wrap:wrap}.ed-opt input:not([type=radio]){min-width:0}}
+.ed-tabs{flex-wrap:wrap}

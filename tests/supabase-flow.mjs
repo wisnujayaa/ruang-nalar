@@ -32,5 +32,17 @@ await T.click('[data-act="back"]'); await T.click('[data-tab="anggota"]'); await
 await T.click('.ktbl .sn'); await T.waitForSelector('#note-t'); await T.fill('#note-t', 'Mantap Dika! Lanjut L2 ya.'); await T.selectOption('#note-l', 'k:pertidaksamaan|lesson:2'); await T.click('[data-pact="note-send"]'); await T.waitForSelector('#nhist .notes li'); console.log('pesan terkirim OK');
 await S.reload(); await S.waitForSelector('.catalog'); await S.waitForSelector('.note-k', { timeout: 5000 }); console.log('siswa terima pesan:', await S.$eval('.note-txt', e => e.textContent));
 await S.click('[data-pact="note-open"]'); await S.waitForSelector('.lesson'); console.log('tautan pesan membuka:', await S.$eval('.les-ht h1', e => e.textContent));
+// Guru membuat kursus di Studio, memakainya untuk kelas baru; siswa bergabung dan membukanya
+await T.evaluate(() => BU.go('studio')); await T.click('[data-eact="new"]'); await T.waitForSelector('[data-b="meta.title"]');
+await T.fill('[data-b="meta.title"]', 'Kursus Guru');
+await T.click('[data-eact="tab"][data-t="soal"]'); await T.click('[data-eact="q-add"]');
+const gq = await T.$eval('.ed-q [data-b$=".q"]', e => e.dataset.b.split('.')[2]);
+await T.fill(`[data-b="raw.BANK.${gq}.q"]`, '$1+1=$?'); await T.fill(`[data-b="raw.BANK.${gq}.opts.0.t"]`, '2'); await T.fill(`[data-b="raw.BANK.${gq}.opts.1.t"]`, '3');
+await T.click('.ed-bar [data-eact="save"]'); await T.waitForFunction(() => /Tersimpan/.test(document.querySelector('#ed-status').textContent));
+const gcid = await T.evaluate(() => BE.id); console.log('kursus guru disimpan (draf):', gcid);
+await T.evaluate(() => BU.go('kelas')); await T.waitForSelector('#newc'); await T.click('#newc summary'); await T.fill('#cname', 'Kelas kursus guru'); await T.selectOption('#ccourse', gcid); await T.click('#cform button[type=submit]');
+await T.waitForSelector('.codebox .code'); const code2 = await T.$eval('.codebox .code', e => e.textContent);
+await S.evaluate(() => BU.go('kelas')); await S.waitForSelector('#jcode'); await S.fill('#jcode', code2); await S.click('#joinf button[type=submit]'); await S.waitForSelector('.asgs, .empty');
+await S.evaluate((id) => BU.go('course', { course: id }), gcid); await S.waitForSelector('.path .sec'); console.log('siswa membuka kursus guru:', await S.$eval('.hello h1', e => e.textContent));
 await S.evaluate(() => BU.go('me')); await S.click('[data-pact="logout"]'); await S.waitForSelector('.nudge'); console.log('keluar OK');
 if (errs.length) { console.error('GAGAL, error konsol:', errs); process.exitCode = 1; } else console.log('Alur Supabase OK, tanpa error konsol.'); await b.close();

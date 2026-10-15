@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# Uji kebijakan keamanan (Row Level Security) di Postgres LOKAL yang kosong.
-# JANGAN jalankan ke database produksi: skrip ini membuat skema auth tiruan.
-# Pemakaian: PGURL=postgres://user:pass@localhost:5432/ujirls bash tests/run-rls.sh
+# Uji kebijakan keamanan (Row Level Security) di server Postgres LOKAL untuk pengujian.
+# JANGAN jalankan ke database produksi: skrip ini membuat database baru berisi skema auth tiruan.
+# Koneksi memakai variabel standar libpq, misalnya:
+#   PGHOST=localhost PGPORT=5432 PGUSER=postgres bash tests/run-rls.sh
 set -euo pipefail
-: "${PGURL:?Set PGURL ke database Postgres uji yang kosong}"
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
-psql "$PGURL" -v ON_ERROR_STOP=1 -q -f "$DIR/supabase/test-stub.sql"
-psql "$PGURL" -v ON_ERROR_STOP=1 -q -f "$DIR/supabase/schema.sql"
-psql "$PGURL" -v ON_ERROR_STOP=1 -f "$DIR/supabase/test-rls.sql"
+run() {
+  local db=$1; shift
+  psql -d postgres -v ON_ERROR_STOP=1 -q -c "drop database if exists $db" -c "create database $db"
+  psql -d "$db" -v ON_ERROR_STOP=1 -q -f "$DIR/supabase/test-stub.sql" -f "$DIR/supabase/schema.sql" -f "$DIR/supabase/courses.sql" 2>&1 | grep -v NOTICE || true
+  for f in "$@"; do psql -d "$db" -v ON_ERROR_STOP=1 -f "$DIR/supabase/$f"; done
+}
+run nalar_uji_rls test-rls.sql
+run nalar_uji_rls2 test-rls-courses.sql

@@ -1,7 +1,7 @@
 /* Supabase palsu di memori (tanpa RLS) untuk menguji alur UI mode Supabase. Dibagi antar tab via localStorage. */
 (function () {
   const K = 'FAKE_SB';
-  const load = () => JSON.parse(localStorage.getItem(K) || '{"users":[],"profiles":[],"progress":[],"classes":[],"class_members":[],"assignments":[],"forum_threads":[],"forum_posts":[],"messages":[]}');
+  const load = () => JSON.parse(localStorage.getItem(K) || '{"users":[],"profiles":[],"progress":[],"classes":[],"class_members":[],"assignments":[],"forum_threads":[],"forum_posts":[],"messages":[],"courses":[]}');
   const save = (d) => localStorage.setItem(K, JSON.stringify(d));
   const uuid = () => 'u' + Math.random().toString(16).slice(2, 10) + Date.now().toString(16);
   let session = JSON.parse(sessionStorage.getItem('FAKE_SESSION') || 'null');
@@ -20,6 +20,7 @@
       select(s) { if (st.op === 'select') st.sel = s || '*'; else st.ret = true; return q; },
       eq(c, v) { st.filters.push(r => r[c] === v); return q; },
       in(c, vs) { st.filters.push(r => vs.includes(r[c])); return q; },
+      or(expr) { const parts = expr.split(',').map(x => x.split('.')); st.filters.push(r => parts.some(([c, op, ...v]) => op === 'eq' && String(r[c]) === v.join('.'))); return q; },
       order(c, o) { st.order.push([c, !o || o.ascending !== false]); return q; },
       limit(n) { st.limit = n; return q; },
       single() { st.single = true; return q; }, maybeSingle() { st.maybe = true; return q; },
@@ -36,6 +37,7 @@
         if (table === 'forum_posts') { row.author_id = me(); const t = db.forum_threads.find(t => t.id === row.thread_id); if (t) t.last_activity = now; }
         if (table === 'messages') { row.from_user = me(); row.read_at = null; }
         if (table === 'assignments') row.created_by = me();
+        if (table === 'courses') { row.id = 'c-' + Math.random().toString(36).slice(2, 12); row.owner_id = me(); row.updated_at = now; }
         T.push(row); save(db); return { data: st.single || st.ret ? row : null, error: null };
       }
       if (st.op === 'upsert') { const i = T.findIndex(r => r.user_id === st.payload.user_id && r.course_id === st.payload.course_id); if (i >= 0) T[i] = Object.assign(T[i], st.payload); else T.push(st.payload); save(db); return { data: null, error: null }; }
