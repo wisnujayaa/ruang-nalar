@@ -22,7 +22,7 @@ await T.click('.tabs a[data-go="kelas"]'); await T.waitForSelector('#newc'); awa
 await T.waitForSelector('.codebox .code'); const code = await T.$eval('.codebox .code', e => e.textContent); console.log('kode kelas', code);
 await T.click('#asgf summary'); await T.selectOption('#a-kind', 'practice'); await T.selectOption('#a-sec', '1'); await T.selectOption('#a-lvl', '1'); await T.click('#aform button[type=submit]'); await T.waitForSelector('.asg'); console.log('tugas guru:', await T.$eval('.asg .chip', e => e.textContent));
 const S = await pg(); await signup(S, 'Dika', 'dika@x.id');
-await S.goto(URL + '#gabung=' + code); await S.reload(); await S.waitForSelector('#jcode'); console.log('kode terisi:', await S.inputValue('#jcode'));
+await S.goto(URL + '#gabung=' + code); await S.waitForSelector('#jcode'); console.log('kode terisi:', await S.inputValue('#jcode'));
 await S.click('#joinf button[type=submit]'); await S.waitForSelector('.asg'); console.log('siswa lihat tugas:', await S.$eval('.asg .chip', e => e.textContent));
 // siswa mengerjakan 5 soal benar: rekam langsung lalu push
 await S.evaluate(async () => { await BU.openCourse('pertidaksamaan'); for (let i = 0; i < 5; i++) BA.record({ id: 'x' + i, sec: 1, lvl: 1, concepts: ['sifat-dasar'] }, { ok: true, conf: 3, ms: 1000, src: 'latihan' }); BA.flush(); await BA.sync.push(); });

@@ -323,7 +323,7 @@
       case 'edit': go('editor', { id: d.id }); return;
       case 'del1': $('#del-' + CSS.escape(d.id)).innerHTML = '<span class="bad small">Hapus permanen? Progres siswa di kursus ini ikut tidak bisa dibuka.</span> ' + btn('del2', 'Ya, hapus', ' data-id="' + escA(d.id) + '"', 'btn small danger'); return;
       case 'del2': try { await bb().courses.remove(d.id); NR.forget(d.id); if (A.set.lastCourse === d.id) { A.set.lastCourse = null; A.saveSettings(); } } catch (err) { alert(err.message); } render(); return;
-      case 'leave': if (E.dirty && !confirm('Ada perubahan yang belum disimpan. Tetap keluar?')) return; E.dirty = false; go('studio'); return;
+      case 'leave': if (E.dirty && !confirm('Ada perubahan yang belum disimpan. Tetap keluar?')) return; E.dirty = false; U.up('studio'); return;
       case 'tab': E.tab = d.t; drawEditor(); return;
       case 'save': save(); return;
       case 'preview': preview(); return;

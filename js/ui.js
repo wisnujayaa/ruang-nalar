@@ -47,17 +47,62 @@
   /* ------------------------ navigasi ------------------------ */
   const ROOTS = ['home', 'course', 'review', 'kelas', 'me'];
   const nav = { stack: [], cur: { v: 'home' } };
+  /* Riwayat browser: setiap pindah halaman dicatat dengan history.pushState, sehingga tombol Kembali
+     di browser/HP berpindah antarhalaman di dalam situs, bukan langsung keluar. history.state hanya
+     menyimpan nomor urut + id sesi; isi halamannya (nav.cur) disimpan di memori (HIST). */
+  const SID = Math.random().toString(36).slice(2, 10);
+  const HIST = []; let pos = 0;
+  const hasHist = !!(G.history && G.history.pushState);
+  const cleanUrl = () => location.pathname + location.search;
+  function record(push) {
+    if (!hasHist) return;
+    try {
+      if (push) { pos++; HIST.length = pos; HIST[pos] = nav.cur; history.pushState({ rn: pos, sid: SID }, '', cleanUrl()); }
+      else { HIST[pos] = nav.cur; history.replaceState({ rn: pos, sid: SID }, '', cleanUrl()); }
+    } catch (e) { /* mis. dalam iframe tanpa izin: tetap jalan tanpa riwayat */ }
+  }
+  function stopActive() { if (nav.active && nav.active.cleanup) nav.active.cleanup(); nav.active = null; }
   function go(v, p, opt) {
-    if (nav.active && nav.active.cleanup) { nav.active.cleanup(); }
-    nav.active = null;
+    stopActive();
     const same = nav.cur.v === v && ['klas', 'login'].includes(v) && (!p || p.id === nav.cur.id);
-    if (!(opt && opt.replace) && !same) nav.stack.push(nav.cur);
+    const push = !(opt && opt.replace) && !same;
+    if (push) nav.stack.push(nav.cur);
     if (ROOTS.includes(v)) nav.stack = [];
     nav.cur = Object.assign({ v }, p || {});
+    record(push);
     render();
     try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
   }
-  function back() { const p = nav.stack.pop() || { v: 'home' }; if (nav.active && nav.active.cleanup) nav.active.cleanup(); nav.active = null; nav.cur = p; render(); }
+  /* Tombol kembali di dalam aplikasi = tombol Kembali browser, supaya keduanya selalu seirama */
+  function back() {
+    if (hasHist && pos > 0 && HIST[pos - 1]) { history.back(); return; }
+    const p = nav.stack.pop() || { v: 'home' }; stopActive(); nav.cur = p; record(false); render();
+  }
+  /* Kembali ke halaman v: pakai riwayat bila halaman sebelumnya memang v, selain itu ganti halaman ini */
+  function up(v, p) { if (hasHist && pos > 0 && HIST[pos - 1] && HIST[pos - 1].v === v) history.back(); else go(v, p, { replace: true }); }
+  /* #gabung=KODE, #kursus=id, #bagian3 → buka halamannya; false bila hash tidak dikenali */
+  function routeHash(hash) {
+    const h = decodeURIComponent((hash || '').slice(1));
+    let m;
+    if ((m = h.match(/^gabung=([A-Za-z0-9]{4,12})$/))) go('kelas', { join: m[1].toUpperCase() });
+    else if ((m = h.match(/^kursus=([a-z0-9_-]+)$/)) && (G.NR.isDb(m[1]) || (G.NR.meta(m[1]) && !G.NR.meta(m[1]).soon))) go('course', { course: m[1] });
+    else if ((m = h.match(/^bagian(\d{1,2})$/))) go('lesson', { sec: +m[1] });
+    else return false;
+    return true;
+  }
+  function onPop(e) {
+    const st = e.state;
+    if (!st && location.hash && routeHash(location.hash)) return;   // tautan #... dibuka saat situs sudah terbuka
+    if (nav.cur.v === 'editor' && G.BE && G.BE.dirty && !confirm('Ada perubahan yang belum disimpan. Tetap keluar?')) {
+      try { history.pushState({ rn: pos, sid: SID }, '', cleanUrl()); } catch (er) {} return;
+    }
+    if (G.BE && nav.cur.v === 'editor') G.BE.dirty = false;
+    stopActive();
+    if (st && st.sid === SID && HIST[st.rn]) { pos = st.rn; nav.cur = HIST[pos]; }
+    else { pos = st && st.sid === SID ? st.rn : 0; nav.cur = { v: 'home' }; HIST[pos] = nav.cur; }   // entri dari sebelum halaman dimuat ulang
+    nav.stack = [];
+    render();
+  }
   const TAB = { home: 'home', course: 'course', map: 'course', intro: 'course', diag: 'course', prereq: 'course', lesson: 'course', summary: 'course', mixed: 'course', lintas: 'course', tryout: 'course', dump: 'course', traps: 'course',
     review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me' };
   function tabOf(v) { return v === 'run' ? (nav.cur.tab === 'map' ? 'course' : nav.cur.tab || 'review') : TAB[v] || 'home'; }
@@ -779,10 +824,12 @@
     go('course');
   }
   /* Dipakai platform.js */
-  Object.assign(G.BU = G.BU || {}, { QComp, go, back, render, renderTop, V, nav, ic, esc, rich, $, $$, view, statsHTML, openCourse, tile, LV, secMeta, shuffle, greet, startRun, applyTheme, COURSE_VIEWS, doTarget, hasDiag });
+  Object.assign(G.BU = G.BU || {}, { QComp, go, back, up, render, renderTop, V, nav, ic, esc, rich, $, $$, view, statsHTML, openCourse, tile, LV, secMeta, shuffle, greet, startRun, applyTheme, COURSE_VIEWS, doTarget, hasDiag });
 
   function boot() {
     applyTheme();
+    const h0 = location.hash;
+    if (hasHist) { record(false); window.addEventListener('popstate', onPop); }
     let lastUid = undefined;
     A.sync.on(() => {
       renderTop();
@@ -811,13 +858,8 @@
     window.addEventListener('pagehide', A.flush);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { A.flush(); A.sync.push(); } });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.cur.v !== 'home') { const t = e.target; if (!t.matches || !t.matches('input,textarea,select')) back(); } });
-    // Tautan langsung: #gabung=KODE, #kursus=id, #bagian3
-    const h = decodeURIComponent((location.hash || '').slice(1));
-    let m;
-    if ((m = h.match(/^gabung=([A-Za-z0-9]{4,12})$/))) go('kelas', { join: m[1].toUpperCase() });
-    else if ((m = h.match(/^kursus=([a-z0-9_-]+)$/)) && (G.NR.isDb(m[1]) || (G.NR.meta(m[1]) && !G.NR.meta(m[1]).soon))) go('course', { course: m[1] });
-    else if ((m = h.match(/^bagian(\d{1,2})$/))) go('lesson', { sec: +m[1] });
-    else render();
+    // Tautan langsung: #gabung=KODE, #kursus=id, #bagian3 (hash dibaca sebelum riwayat menghapusnya dari URL)
+    if (!routeHash(h0)) render();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })(typeof window !== 'undefined' ? window : globalThis);

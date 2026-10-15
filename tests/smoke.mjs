@@ -23,6 +23,19 @@ await page.waitForSelector('.catalog');
 const cards = await page.$$eval('.ccard', els => els.length);
 if (cards < 1) fail('katalog kosong');
 console.log('Beranda: ' + cards + ' kartu kursus');
+// Tombol Kembali browser berpindah antarhalaman di dalam situs, tidak keluar
+{
+  const v = () => page.evaluate(() => BU.nav.cur.v);
+  await page.click('.tabs a[data-go="kelas"]'); await page.waitForFunction(() => BU.nav.cur.v === 'kelas');
+  await page.click('.tabs a[data-go="me"]'); await page.waitForFunction(() => BU.nav.cur.v === 'me');
+  await page.goBack(); await page.waitForFunction(() => BU.nav.cur.v === 'kelas');
+  await page.goBack(); await page.waitForFunction(() => BU.nav.cur.v === 'home');
+  if (!page.url().startsWith(URL)) fail('Kembali keluar dari situs');
+  await page.goForward(); await page.waitForFunction(() => BU.nav.cur.v === 'kelas');
+  await page.evaluate(() => BU.go('settings')); await page.click('[data-act="back"]'); await page.waitForFunction(() => BU.nav.cur.v === 'kelas');
+  await page.click('.tabs a[data-go="home"]'); await page.waitForSelector('.catalog');
+  console.log('Riwayat (Kembali/Maju browser & tombol kembali) OK, terakhir di: ' + await v());
+}
 // buka kursus pertidaksamaan
 await page.click('.ccard[data-course="pertidaksamaan"]');
 await page.waitForSelector('.path .sec');
@@ -122,7 +135,7 @@ await d.page.goto(URL + '#kursus=pertidaksamaan');
 await d.page.waitForSelector('.path .sec');
 if (await overflow(d.page) > 1) fail('overflow desktop');
 // tautan gabung tanpa server -> halaman kelas tampil
-await d.page.goto(URL + '#gabung=ABC123'); await d.page.reload(); await d.page.waitForSelector('#clist');
+await d.page.goto(URL + '#gabung=ABC123'); await d.page.waitForSelector('#clist');
 console.log('Desktop & tautan langsung OK');
 if (errors.length) { fail('error di konsol:\n' + errors.join('\n')); }
 else console.log('Tanpa error konsol.');

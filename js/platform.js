@@ -186,8 +186,8 @@
       if (tab === 'daftar' && !nm) { er.textContent = 'Tulis nama yang ingin ditampilkan.'; return; }
       const btn = $('#lform button[type=submit]'); btn.disabled = true;
       try {
-        if (tab === 'masuk') { await b.auth.signIn(email, pass); go(p.next || 'home'); }
-        else if (tab === 'daftar') { const r = await b.auth.signUp(email, pass, nm); A.set.name = nm; A.saveSettings(); if (r && r.session) go(p.next || 'home'); else ok.textContent = 'Akun dibuat. Cek email untuk konfirmasi, lalu masuk.'; }
+        if (tab === 'masuk') { await b.auth.signIn(email, pass); go(p.next || 'home', {}, { replace: true }); }
+        else if (tab === 'daftar') { const r = await b.auth.signUp(email, pass, nm); A.set.name = nm; A.saveSettings(); if (r && r.session) go(p.next || 'home', {}, { replace: true }); else ok.textContent = 'Akun dibuat. Cek email untuk konfirmasi, lalu masuk.'; }
         else { await b.auth.resetPassword(email); ok.textContent = 'Jika email terdaftar, tautan atur ulang sudah dikirim.'; }
       } catch (err) { er.textContent = authMsg(err); }
       btn.disabled = false;
