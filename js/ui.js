@@ -73,6 +73,8 @@
     record(push);
     render();
     try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+    // Pembaca layar: pindahkan fokus ke isi halaman baru (tanpa menggulir)
+    try { const vw = view(); if (vw && !vw.contains(document.activeElement)) vw.focus({ preventScroll: true }); } catch (e) { }
   }
   /* Tombol kembali di dalam aplikasi = tombol Kembali browser, supaya keduanya selalu seirama */
   function back() {
@@ -103,6 +105,7 @@
     else if ((m = h.match(/^kursus=([a-z0-9_-]+)$/)) && (G.NR.isDb(m[1]) || (G.NR.meta(m[1]) && !G.NR.meta(m[1]).soon))) go('course', { course: m[1] });
     else if ((m = h.match(/^bagian(\d{1,2})$/))) go('lesson', { sec: +m[1] });
     else if ((m = h.match(/^bantuan(?:=([a-z0-9-]{1,40}))?$/))) go('bantuan', m[1] ? { topik: m[1] } : {});
+    else if (['review', 'kelas', 'me', 'stats'].includes(h)) go(h);   // pintasan aplikasi di layar utama
     else return false;
     return true;
   }
@@ -127,6 +130,22 @@
     const inUser = G.BB && G.BB.user;
     return '<div class="card locked"><span class="lk-ic">' + ic('lock') + '</span><h2>Kursus ini terkunci</h2><p>Kursus ini hanya bisa dibuka oleh <b>anggota kelas</b> gurunya' + (inUser ? '' : ', jadi kamu perlu masuk dulu') + '. Minta <b>kode kelas</b> ke gurumu, lalu gabung lewat menu Kelas.</p><p class="muted small">Bisa juga kursusnya masih draf atau sudah dihapus.</p><div class="row">' + (inUser ? '<button class="btn primary" data-go="kelas">Gabung kelas</button>' : '<button class="btn primary" data-go="login">Masuk</button>') + '<button class="btn" data-go="home">Ke beranda</button></div></div>';
   }
+  /* Judul tab browser mengikuti halaman (juga terlihat di daftar riwayat tombol Kembali) */
+  const TITLES = { home: 'Beranda', course: '', review: 'Review harian', cards: 'Flashcard', mistakes: 'Buku kesalahan', kelas: 'Kelas', klas: 'Kelas', me: 'Akun', settings: 'Pengaturan', stats: 'Statistik', login: 'Masuk', studio: 'Studio kursus', editor: 'Studio kursus', bantuan: 'Pusat bantuan', lapor: 'Laporkan kendala', laporan: 'Laporan masuk', lesson: '', run: 'Latihan', tryout: 'Tryout', sandi: 'Kata sandi', selamat: 'Selamat datang', admin: 'Kelola pengguna' };
+  function setTitle(v) {
+    const site = (G.NALAR_CONFIG || {}).siteName || 'Ruang Nalar';
+    let t = TITLES[v];
+    if (t === '' || t === undefined) { const h1 = document.querySelector('#view h1'); t = h1 ? h1.textContent.trim().slice(0, 60) : ''; }
+    document.title = t ? t + ' · ' + site : site;
+  }
+  /* Koneksi terputus: beri tahu bahwa progres tetap aman di perangkat */
+  function netBanner() {
+    let el = document.getElementById('netbar');
+    if (navigator.onLine !== false) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'netbar'; el.setAttribute('role', 'status'); el.textContent = 'Kamu sedang offline. Progres tetap tersimpan di perangkat ini dan akan disinkronkan saat koneksi kembali.'; document.body.appendChild(el); }
+  }
+  window.addEventListener('offline', netBanner);
+  window.addEventListener('online', () => { netBanner(); try { A.sync.push(); } catch (e) { } });
   let loadingCourse = false;
   function render() {
     const v = nav.cur.v;
@@ -143,6 +162,7 @@
     const fn = V[v] || V.home;
     fn(nav.cur);
     renderTop();
+    setTitle(v);
   }
   function renderTop() {
     const st = A.sync.status; const bb = G.BB || {};

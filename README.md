@@ -15,6 +15,11 @@ Kursus pertama: **Pertidaksamaan** (SMA kelas X → UTBK → olimpiade/kuliah). 
 - 6 tipe soal: pilihan ganda, isian interval (dengan pratinjau garis bilangan), isian angka, benar/salah, cari langkah yang salah, **susun langkah bukti**
 - Diagnosis otomatis jawaban interval yang salah ("coba x = 4: titik ini memenuhi soal, tapi tidak ada di jawabanmu")
 - Review harian berjarak, flashcard, buku kesalahan, radar jebakan, cek 5 detik, rating keyakinan, brain dump, tryout berwaktu
+- **Dasbor statistik**: cincin penguasaan, runtutan hari belajar, peta aktivitas, konsep terkuat/terlemah, akurasi per level
+- **Pusat bantuan** (`#bantuan`): 38 artikel yang bisa dicari, tur kenalan 8 langkah, kartu sambutan untuk pengguna baru
+- **Laporkan masalah** dari setiap soal/materi (bug, kunci salah, pembahasan keliru); admin menerima email lewat Edge Function
+- Alur akun lengkap: konfirmasi email, kirim ulang tautan, lupa/ganti sandi, tautan kedaluwarsa, halaman selamat datang
+- Bisa dipasang sebagai aplikasi (PWA), banner saat offline, judul halaman per tampilan, kontras warna sesuai WCAG AA
 
 **Untuk guru/kakak**
 - Kelas dengan kode gabung dan tautan undangan (`#gabung=KODE`)
@@ -24,6 +29,12 @@ Kursus pertama: **Pertidaksamaan** (SMA kelas X → UTBK → olimpiade/kuliah). 
 - Pesan ke siswa / seluruh kelas, bisa ditautkan langsung ke materi atau latihan
 - **Studio kursus** (khusus akun guru): buat kursus lewat formulir (materi, contoh bertahap, 6 tipe soal dengan pratinjau, flashcard, jebakan, widget grafik/garis bilangan/Desmos/GeoGebra/PhET/YouTube), terbitkan sebagai draf, **khusus kelas** (terkunci, hanya anggota kelasmu), lewat tautan, atau publik. Tanpa menulis kode
 - **Peran akun**: siswa, guru, admin. Admin mengangkat guru dari halaman *Kelola pengguna*
+
+**Keamanan**
+- Row Level Security di semua tabel, hak kolom paling minim, batas ukuran data, batas percobaan kode kelas (`supabase/hardening.sql`)
+- Content Security Policy ketat lewat `_headers` (Netlify): tidak ada skrip inline, tidak ada skrip dari domain lain
+- Semua progres dari server/kode progres melewati pembersih (`BA.sanitize`) sebelum dipakai, sehingga data siswa tidak bisa menyisipkan skrip ke tampilan guru
+- Templat email Supabase berbahasa Indonesia di `supabase/email-templates/` (panduan: [docs/EMAIL.md](docs/EMAIL.md))
 
 ## Tiga mode penyimpanan
 
@@ -71,6 +82,10 @@ js/
   core.js               progres per kursus, review berjarak, statistik, sinkronisasi
   ui.js                 halaman belajar: materi, soal, review, flashcard, statistik
   platform.js           beranda katalog, akun, kelas, tugas, forum, laporan
+  stats.js              dasbor statistik
+  help.js               pusat bantuan & tur kenalan
+  report.js             formulir laporan masalah & kotak masuk admin
+  site.js               nama situs dari config.js (dipisah dari HTML demi CSP)
   editor.js             Studio kursus (editor tanpa kode)
   widget-lib.js         pustaka widget untuk Studio (lihat docs/WIDGET.md)
   expr.js               parser rumus aman untuk widget
@@ -90,10 +105,14 @@ Penjelasan alur data: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Pengujian
 
 ```bash
-npm test             # verifikasi semua kunci jawaban (Node, tanpa dependensi)
+npm test             # kunci jawaban, pembersih kursus & progres, merge/streak/SRS, fuzz 40 ribu input,
+                     # verifikasi independen 17 generator soal, Edge Function laporan (Node, tanpa dependensi)
 npm run test:ui      # uji asap antarmuka dengan Playwright (jalankan `npm run serve` dulu)
 npm run test:flow    # alur guru & siswa mode Supabase (Supabase palsu di memori)
 npm run test:editor  # guru membuat kursus di Studio → siswa mengerjakan
+npm run test:auth    # daftar, konfirmasi email, kirim ulang, lupa & ganti sandi
+npm run test:help    # pusat bantuan, pencarian, tur kenalan
+npm run test:csp     # CSP dari _headers diterapkan; skrip sisipan harus diblokir
 PGHOST=localhost PGUSER=postgres npm run test:rls   # uji kebijakan keamanan di Postgres LOKAL
 ```
 

@@ -15,6 +15,16 @@
 | `BA` | `js/core.js` | state progres kursus aktif (`BA.S`), rekam jawaban, jadwal review, statistik, sinkronisasi |
 | `BU` | `js/ui.js` | router & komponen UI yang dipakai `platform.js` |
 | `BP` | `js/platform.js` | cache halaman kelas |
+| `NalarStats` | `js/stats.js` | dasbor statistik (dihitung dari `BA.stats`) |
+| `NalarHelp` | `js/help.js` | artikel bantuan, pencarian tanpa aksen, tur kenalan |
+| `NalarReport` | `js/report.js` | laporan masalah dari pengguna |
+
+## Kepercayaan data
+- **Progres tidak pernah dipercaya mentah.** Semua jalur masuk (localStorage, kode progres, `sync.pull`, progres siswa yang dibaca guru) melewati `BA.sanitize` / `BA.parseState`: setiap field dipaksa ke tipe & rentang yang benar, kunci dibatasi regex `[A-Za-z0-9_:.-]`, teks dipotong. Ditambah `esc()` yang meng-escape `& < > " '` dan CSP tanpa skrip inline, XSS tersimpan dari siswa ke guru tertutup berlapis.
+- **Reset lintas perangkat:** reset menulis `resetAt`; saat `BA.merge`, data dari sebelum `resetAt` dibuang, sehingga perangkat lain tidak "menghidupkan kembali" progres lama.
+- **Sinkronisasi berurutan:** `sync.push` dirantai satu per satu (promise chain) dan mencatat versi terakhir per kursus, sehingga dua penyimpanan cepat tidak saling menimpa tidak berurutan.
+- **SRS:** interval maksimum 365 hari; soal/kartu yang sudah dihapus dari kursus diabaikan saat menghitung jatuh tempo.
+- **Runtutan (streak):** dihitung dari himpunan hari aktif, mundur per tanggal kalender (aman terhadap pergantian jam musim panas).
 
 ## Alur memuat kursus
 1. `NR.load(id)` membuat objek kosong, menjadikannya target `BC`, lalu memuat `courses/<id>/<file>` satu per satu dengan tag `<script>`.

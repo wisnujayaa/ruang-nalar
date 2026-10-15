@@ -1,0 +1,21 @@
+{
+  "name": "Ruang Nalar",
+  "short_name": "Ruang Nalar",
+  "description": "Belajar sedikit tiap hari, paham sampai ke akarnya. Materi interaktif, latihan bertingkat, review berjarak, kelas, dan forum.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F3F4F9",
+  "theme_color": "#3442E8",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Review harian", "url": "./#review", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Kelas", "url": "./#kelas", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
