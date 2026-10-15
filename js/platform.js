@@ -225,7 +225,7 @@
     if (tab === 'masuk') f += '<p class="small muted center">Belum punya akun? <button type="button" class="linkbtn" data-pact="ltab" data-t="daftar">Daftar gratis</button> · <button type="button" class="linkbtn" data-pact="ltab" data-t="lupa">Lupa sandi?</button></p>';
     if (tab === 'daftar') f += '<p class="muted small">Progres yang sudah ada di perangkat ini akan otomatis digabung ke akun barumu.</p>';
     f += '<p class="small muted center"><button type="button" class="linkbtn" data-pact="have-code" data-kind="' + (tab === 'lupa' ? 'recovery' : 'signup') + '">Sudah punya kode ' + (tab === 'lupa' ? 'atur ulang' : 'aktivasi') + ' dari email?</button></p>';
-    f += '<p class="small muted center"><button type="button" class="linkbtn" data-go="bantuan" data-topik="akun">Masalah dengan akun? Lihat bantuan</button></p></form>';
+    f += '<p class="small muted center"><button type="button" class="linkbtn" data-go="bantuan" data-topik="akun">Masalah dengan akun? Lihat bantuan</button> · <a href="privasi.html" target="_blank" rel="noopener">Kebijakan privasi</a></p></form>';
     view().innerHTML = page(tab === 'daftar' ? 'Buat akun' : tab === 'lupa' ? 'Atur ulang sandi' : 'Masuk', siteName(), f);
     const pw = $('#l-pass'), ph = $('#pw-h'); if (pw && ph) pw.addEventListener('input', () => { ph.textContent = pwHint(pw.value); });
     if (b.auth.providers && $('#g-box')) b.auth.providers().then(pr => { const g = $('#g-box'); if (g && pr.google) g.hidden = false; });

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kebijakan Privasi · Ruang Nalar</title>
+<meta name="description" content="Data apa yang disimpan Ruang Nalar, untuk apa, siapa yang bisa melihatnya, dan cara menghapusnya.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<style>
+  :root { --bg:#F3F4F9; --card:#fff; --ink:#12162B; --ink2:#434A68; --line:#DCDFEB; --acc:#3442E8; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0A0D1A; --card:#131930; --ink:#ECEEF9; --ink2:#B6BCD9; --line:#262E52; --acc:#8D97FF; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.7 "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:28px 16px 48px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 24px; }
+  h1 { font-size:1.7rem; line-height:1.25; margin:.2em 0 .1em; }
+  h2 { font-size:1.15rem; margin:1.6em 0 .4em; }
+  p, li { color:var(--ink2); } b { color:var(--ink); }
+  a { color:var(--acc); }
+  .top { display:flex; align-items:center; gap:10px; font-weight:800; text-decoration:none; color:var(--ink); margin-bottom:16px; }
+  .top img { width:32px; height:32px; border-radius:9px; }
+  .muted { font-size:.9rem; }
+  table { border-collapse:collapse; width:100%; font-size:.95rem; }
+  th, td { text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--ink); }
+  .wrap { overflow-x:auto; }
+</style>
+</head>
+<body>
+<main>
+  <a class="top" href="./"><img src="assets/icon-180.png" alt="">Ruang Nalar</a>
+  <div class="card">
+    <h1>Kebijakan Privasi</h1>
+    <p class="muted">Berlaku sejak 15 Oktober 2026</p>
+
+    <p>Ruang Nalar adalah situs belajar sumber terbuka. Kami hanya menyimpan data yang dibutuhkan supaya kamu bisa belajar, menyimpan progres, dan bergabung ke kelas. Kami <b>tidak menjual data</b>, <b>tidak menampilkan iklan</b>, dan <b>tidak memakai pelacak iklan</b>.</p>
+
+    <h2>Data yang disimpan</h2>
+    <div class="wrap"><table>
+      <tr><th>Data</th><th>Untuk apa</th></tr>
+      <tr><td><b>Email</b></td><td>Masuk ke akun, mengirim kode aktivasi dan kode atur ulang sandi.</td></tr>
+      <tr><td><b>Nama tampilan</b></td><td>Ditampilkan kepada guru dan teman sekelas. Bisa kamu ubah kapan saja.</td></tr>
+      <tr><td><b>Kata sandi</b> (bila daftar dengan email)</td><td>Disimpan dalam bentuk hash terenkripsi oleh Supabase. Pengelola situs tidak bisa melihatnya.</td></tr>
+      <tr><td><b>Progres belajar</b></td><td>Jawaban latihan, jadwal review, dan waktu belajar, supaya progresmu sama di semua perangkat.</td></tr>
+      <tr><td><b>Data kelas</b></td><td>Keanggotaan kelas, tugas, pesan, dan tulisan di forum kelas.</td></tr>
+      <tr><td><b>Laporan kendala</b></td><td>Isi laporan, halaman/soal tempat laporan dibuat, jenis browser, ukuran layar, dan pesan error teknis (untuk laporan bug), supaya masalahnya bisa diperbaiki.</td></tr>
+    </table></div>
+
+    <h2>Masuk dengan Google</h2>
+    <p>Bila kamu memilih <b>Masuk dengan Google</b>, Google memberi kami <b>nama, alamat email, dan foto profil</b>-mu. Kami hanya memakai email dan nama untuk akunmu. Kami <b>tidak</b> meminta akses ke Gmail, Drive, kontak, atau data Google lain, dan tidak pernah menerima kata sandi Google-mu.</p>
+
+    <h2>Siapa yang bisa melihat datamu</h2>
+    <ul>
+      <li><b>Kamu sendiri</b>: semua data akunmu.</li>
+      <li><b>Guru kelas yang kamu ikuti</b>: nama dan progres belajarmu untuk kursus kelas itu.</li>
+      <li><b>Teman sekelas</b>: nama tampilan dan tulisanmu di forum kelas.</li>
+      <li><b>Admin situs</b>: email dan nama untuk mengelola akun, serta laporan kendala.</li>
+    </ul>
+    <p>Pembatasan ini dijaga oleh aturan keamanan di database (Row Level Security), bukan sekadar disembunyikan di tampilan.</p>
+
+    <h2>Layanan pihak ketiga</h2>
+    <ul>
+      <li><b>Supabase</b>: database dan sistem akun.</li>
+      <li><b>Netlify</b>: hosting situs.</li>
+      <li><b>Google</b>: login dengan Google (bila kamu memilihnya), pengiriman email, dan huruf (Google Fonts).</li>
+      <li>Materi tertentu dapat menyematkan video atau alat dari <b>YouTube, Desmos, GeoGebra, atau PhET</b>; layanan itu tunduk pada kebijakan privasinya masing-masing.</li>
+    </ul>
+
+    <h2>Penyimpanan di perangkatmu</h2>
+    <p>Situs menyimpan progres dan pengaturan (misalnya tema gelap) di penyimpanan browser (localStorage) supaya tetap bisa dipakai tanpa akun dan saat offline. Kami tidak memakai cookie iklan.</p>
+
+    <h2>Menghapus data</h2>
+    <p>Kamu bisa menghapus progres sebuah kursus dari menu <b>Akun → Pengaturan → Hapus progres kursus ini</b>. Untuk menghapus akun beserta seluruh datanya, kirim permintaan lewat menu <b>Akun → Laporkan kendala</b> (pilih "Lainnya") dari akun tersebut. Kami akan memprosesnya paling lambat 14 hari.</p>
+
+    <h2>Anak-anak</h2>
+    <p>Ruang Nalar dipakai siswa sekolah. Bila kamu masih di bawah umur, gunakan situs ini dengan sepengetahuan orang tua atau guru.</p>
+
+    <h2>Perubahan</h2>
+    <p>Bila kebijakan ini berubah, tanggal di atas akan diperbarui. Pertanyaan? Sampaikan lewat menu <b>Akun → Laporkan kendala</b>.</p>
+  </div>
+</main>
+</body>
+</html>
