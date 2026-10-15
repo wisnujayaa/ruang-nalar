@@ -204,6 +204,8 @@
     return B;
   }
 
+  /* Alamat situs untuk tautan di email (tanpa #hash). Harus terdaftar di Supabase → Authentication → URL Configuration. */
+  const siteUrl = () => location.origin + location.pathname;
   /* =========================== SUPABASE =========================== */
   function SupabaseBackend() {
     const sb = G.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } });
@@ -232,15 +234,25 @@
       async init() {
         const { data } = await sb.auth.getSession();
         await setUser(data && data.session ? data.session.user : null);
-        sb.auth.onAuthStateChange((_ev, session) => { const u = session ? session.user : null; if ((u && u.id) !== (B.user && B.user.id)) setUser(u).then(() => G.BA && G.BA.emit && G.BA.emit('auth')); });
+        sb.auth.onAuthStateChange((ev, session) => {
+          const u = session ? session.user : null;
+          // Tautan "lupa sandi" membuka sesi khusus pemulihan: aplikasi harus menampilkan formulir sandi baru
+          if (ev === 'PASSWORD_RECOVERY') { B.recovery = true; try { G.dispatchEvent(new CustomEvent('nalar-auth', { detail: 'recovery' })); } catch (e) { } }
+          if ((u && u.id) !== (B.user && B.user.id)) setUser(u).then(() => G.BA && G.BA.emit && G.BA.emit('auth'));
+        });
         return B;
       },
       auth: {
         get needsLogin() { return !B.user; },
-        async signUp(email, password, name) { const r = await sb.auth.signUp({ email, password, options: { data: { display_name: name } } }); chk(r); return r.data; },
+        async signUp(email, password, name) { const r = await sb.auth.signUp({ email, password, options: { data: { display_name: name }, emailRedirectTo: siteUrl() } }); chk(r); return r.data; },
+        /* Kirim ulang email konfirmasi pendaftaran */
+        async resend(email) { chk(await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: siteUrl() } })); },
+        /* Ganti sandi (saat masuk, atau setelah membuka tautan "lupa sandi") */
+        async updatePassword(password) { chk(await sb.auth.updateUser({ password })); B.recovery = false; },
+        canEmail: true,
         async signIn(email, password) { chk(await sb.auth.signInWithPassword({ email, password })); },
         async signOut() { await sb.auth.signOut(); await setUser(null); },
-        async resetPassword(email) { chk(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('#')[0] })); }
+        async resetPassword(email) { chk(await sb.auth.resetPasswordForEmail(email, { redirectTo: siteUrl() })); }
       },
       admin: {
         async listUsers() { return chk(await sb.rpc('admin_list_users')).map(u => ({ id: u.id, name: u.display_name, email: u.email, role: u.role, created: Date.parse(u.created_at) })); },

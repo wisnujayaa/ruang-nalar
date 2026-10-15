@@ -11,7 +11,8 @@
     "test:rls": "bash tests/run-rls.sh",
     "test:flow": "node tests/supabase-flow.mjs",
     "test:editor": "node tests/editor-flow.mjs",
-    "test:csp": "node tests/csp.mjs"
+    "test:csp": "node tests/csp.mjs",
+    "test:auth": "node tests/auth-flow.mjs"
   },
   "devDependencies": {
     "playwright": "^1.47.0"

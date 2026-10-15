@@ -821,3 +821,17 @@ details.card[open]>summary{margin-bottom:6px}
 .trap .tw,.trap .tr,.trap .tt{overflow-x:auto;overflow-y:hidden;max-width:100%;scrollbar-width:thin}
 
 .cprog .kpis.small{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* Akun: kata sandi, cek email, sambutan */
+.pw{display:flex;gap:6px;align-items:stretch}
+.pw input{flex:1;min-width:0}
+.pw-eye{flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:var(--r-s);padding:0 12px;font-weight:600;cursor:pointer;font-size:.85rem}
+.center{text-align:center}
+.mailcard,.welcome{text-align:center}
+.mailcard .tips{text-align:left;margin:12px auto;max-width:460px;color:var(--ink-2);font-size:.92rem}
+.mailcard .row{justify-content:center}
+.lk-ic.warn{background:var(--warn-soft);color:var(--warn)}
+.welcome .big{font-family:var(--f-display);font-size:1.6rem;font-weight:800;margin:.2rem 0}
+.wsteps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.wstep{display:flex;gap:12px;align-items:flex-start;margin:0}
+.wstep h3{margin:0 0 4px}
+.ws-ic{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}

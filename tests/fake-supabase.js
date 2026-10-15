@@ -71,8 +71,12 @@
     auth: {
       getSession: async () => ({ data: { session } }),
       onAuthStateChange: (f) => { listeners.push(f); return { data: { subscription: { unsubscribe() {} } } }; },
-      signUp: async ({ email, password, options }) => { const db = load(); if (db.users.some(u => u.email === email)) return { error: { message: 'User already registered' } }; const u = { id: uuid(), email, password, user_metadata: options.data }; db.users.push(u); db.profiles.push({ id: u.id, display_name: options.data.display_name, role: 'student' }); save(db); setSession({ user: u }); return { data: { session: { user: u } }, error: null }; },
-      signInWithPassword: async ({ email, password }) => { const u = load().users.find(u => u.email === email && u.password === password); if (!u) return { error: { message: 'Invalid login credentials' } }; setSession({ user: u }); return { data: {}, error: null }; },
+      signUp: async ({ email, password, options }) => { const db = load(); if (db.users.some(u => u.email === email)) return { error: { message: 'User already registered' } }; const u = { id: uuid(), email, password, user_metadata: options.data, redirect: options.emailRedirectTo }; db.users.push(u); db.profiles.push({ id: u.id, display_name: options.data.display_name, role: 'student' }); save(db);
+        if (localStorage.getItem('FAKE_CONFIRM')) { u.unconfirmed = true; save(Object.assign(db, { users: db.users })); return { data: { session: null, user: u }, error: null }; }
+        setSession({ user: u }); return { data: { session: { user: u } }, error: null }; },
+      resend: async ({ type, email }) => { const d = load(); (d.resent = d.resent || []).push({ type, email }); save(d); return { data: {}, error: null }; },
+      updateUser: async ({ password }) => { if (!session) return { error: { message: 'Auth session missing!' } }; const d = load(); const u = d.users.find(x => x.id === session.user.id); if (u.password === password) return { error: { message: 'New password should be different from the old password.', code: 'same_password' } }; u.password = password; save(d); return { data: { user: u }, error: null }; },
+      signInWithPassword: async ({ email, password }) => { const u = load().users.find(u => u.email === email && u.password === password); if (!u) return { error: { message: 'Invalid login credentials' } }; if (u.unconfirmed) return { error: { message: 'Email not confirmed', code: 'email_not_confirmed' } }; setSession({ user: u }); return { data: {}, error: null }; },
       signOut: async () => setSession(null),
       resetPasswordForEmail: async () => ({ data: {}, error: null })
     }

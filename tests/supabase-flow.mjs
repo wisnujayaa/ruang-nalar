@@ -13,6 +13,7 @@ async function signup(p, name, email) {
   await p.goto(URL); await p.waitForSelector('.catalog'); if (!(await p.$('.nudge'))) throw new Error('nudge login tidak muncul');
   await p.click('.nudge [data-go="login"]'); await p.click('[data-pact="ltab"][data-t="daftar"]');
   await p.fill('#l-name', name); await p.fill('#l-email', email); await p.fill('#l-pass', 'rahasia123'); await p.click('#lform button[type=submit]');
+  await p.waitForSelector('.welcome'); await p.evaluate(() => BU.go('home'));
   await p.waitForFunction(n => document.querySelector('.hello h1') && document.querySelector('.hello h1').textContent.includes(n), name);
 }
 const T = await pg(); await signup(T, 'Bu Guru', 'guru@x.id');

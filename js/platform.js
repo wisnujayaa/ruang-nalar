@@ -132,7 +132,7 @@
     const b = bb(); const u = b.user; const name = A.displayName();
     const modeTxt = { local: 'Mode tanpa server · data di browser ini', claude: 'Akun Claude', supabase: u ? 'Akun ' + (u.email || '') : 'Belum masuk' }[b.mode];
     let h = '<div class="card acct"><span class="av big">' + esc((name || '?').slice(0, 1).toUpperCase()) + '</span><div><h2 class="nm"></h2><p class="muted small">' + esc(modeTxt) + '</p></div></div>';
-    h += '<div class="row wrap"><button class="btn" data-go="settings">Pengaturan</button>' + (b.mode === 'supabase' ? (u ? '<button class="btn ghost" data-pact="logout">' + ic('out') + ' Keluar</button>' : '<button class="btn primary" data-go="login">Masuk / daftar</button>') : '') + '</div>';
+    h += '<div class="row wrap"><button class="btn" data-go="settings">Pengaturan</button>' + (b.mode === 'supabase' ? (u ? '<button class="btn ghost" data-go="sandi">Ganti sandi</button><button class="btn ghost" data-pact="logout">' + ic('out') + ' Keluar</button>' : '<button class="btn primary" data-go="login">Masuk / daftar</button>') : '') + '</div>';
     const ROLE = { student: 'Siswa', teacher: 'Guru', admin: 'Admin' };
     if (u && b.mode !== 'local') h = h.replace('</p></div></div>', ' · <span class="chip role-' + esc(u.role || 'student') + '">' + ROLE[u.role || 'student'] + '</span></p></div></div>');
     if (b.admin && b.isAdmin) h += '<div class="card studio-cta"><div><h2>' + ic('users') + ' Kelola pengguna</h2><p class="muted small">Angkat akun menjadi guru supaya bisa membuat kursus, atau jadikan admin.</p></div><button class="btn" data-go="admin">Buka halaman admin</button></div>';
@@ -170,41 +170,120 @@
     });
   };
 
+  /* ============ Akun: masuk, daftar, lupa sandi ============ */
+  const pwField = (id, label, auto, ph) => '<label class="lbl" for="' + id + '">' + label + '</label><div class="pw"><input id="' + id + '" type="password" minlength="8" autocomplete="' + auto + '" required placeholder="' + ph + '"><button type="button" class="pw-eye" data-pact="pw-eye" data-for="' + id + '" aria-label="Tampilkan kata sandi" aria-pressed="false">Lihat</button></div>';
+  const pwHint = (pw) => { if (!pw) return ''; const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(r => r.test(pw)).length; if (pw.length < 8) return 'Terlalu pendek: minimal 8 karakter.'; if (pw.length >= 12 && kinds >= 3) return 'Kuat ✓'; if (kinds >= 2) return 'Cukup. Lebih kuat bila 12+ karakter dengan campuran huruf besar, angka, atau simbol.'; return 'Lemah: campurkan huruf dengan angka atau simbol.'; };
+  /* Kartu "cek emailmu" setelah daftar, lengkap dengan kirim ulang (jeda 60 detik) */
+  function checkEmailCard(email) {
+    return '<div class="card mailcard"><span class="lk-ic">' + ic('send') + '</span><h2>Cek emailmu</h2><p>Kami mengirim tautan aktivasi ke <b class="mono em"></b>. Buka email itu lalu klik <b>"Aktifkan akun saya"</b>. Setelah itu kamu langsung masuk.</p>' +
+      '<ul class="tips"><li>Belum ada setelah 2 menit? Cek folder <b>Spam</b>, <b>Promosi</b>, atau <b>Update</b>.</li><li>Pengirimnya bernama <b>Supabase Auth</b> atau Ruang Nalar.</li><li>Tautan hanya berlaku sebentar. Kalau kedaluwarsa, minta kirim ulang di bawah.</li></ul>' +
+      '<div class="row"><button class="btn" data-pact="resend" data-email="' + esc(email) + '">' + ic('send') + ' Kirim ulang email</button><button class="btn ghost" data-pact="ltab" data-t="daftar">Salah email? Daftar ulang</button></div><p class="small" id="resend-m" aria-live="polite"></p></div>';
+  }
   V.login = function (p) {
     const b = bb();
     if (b.mode !== 'supabase') { view().innerHTML = page('Akun', '', '<div class="card"><p>Situs ini belum terhubung ke server akun. Progres tersimpan di browser ini. Pemilik situs bisa mengaktifkan akun, kelas online, dan forum dengan Supabase (lihat <code>docs/SUPABASE.md</code>).</p></div>'); return; }
     if (b.user) { view().innerHTML = page('Akun', '', '<div class="card"><p>Kamu sudah masuk sebagai <b class="nm"></b>.</p><div class="row"><button class="btn primary" data-go="home">Ke beranda</button><button class="btn ghost" data-pact="logout">Keluar</button></div></div>'); $('.nm').textContent = b.user.name; return; }
     const tab = p.t || 'masuk';
+    if (p.sent) { view().innerHTML = page('Satu langkah lagi', siteName(), checkEmailCard(p.sent)); $('.mailcard .em').textContent = p.sent; return; }
     let f = '<div class="seg" role="tablist">' + [['masuk', 'Masuk'], ['daftar', 'Daftar'], ['lupa', 'Lupa sandi']].map(x => '<button role="tab" data-pact="ltab" data-t="' + x[0] + '" aria-checked="' + (tab === x[0]) + '">' + x[1] + '</button>').join('') + '</div><form class="card form" id="lform" novalidate>';
-    if (tab === 'daftar') f += '<label class="lbl" for="l-name">Nama yang ditampilkan</label><input id="l-name" maxlength="40" autocomplete="nickname" required placeholder="misalnya: Dika">';
-    f += '<label class="lbl" for="l-email">Email</label><input id="l-email" type="email" autocomplete="email" required placeholder="nama@contoh.com">';
-    if (tab !== 'lupa') f += '<label class="lbl" for="l-pass">Kata sandi</label><input id="l-pass" type="password" minlength="8" autocomplete="' + (tab === 'daftar' ? 'new-password' : 'current-password') + '" required placeholder="minimal 8 karakter">';
+    if (tab === 'daftar') f += '<p class="muted small">Akun membuat progresmu tersimpan di semua perangkat dan memungkinkanmu bergabung ke kelas. Gratis.</p><label class="lbl" for="l-name">Nama yang ditampilkan</label><input id="l-name" maxlength="40" autocomplete="nickname" required placeholder="misalnya: Dika">';
+    if (tab === 'lupa') f += '<p class="muted small">Tulis email akunmu. Kami kirim tautan untuk membuat kata sandi baru.</p>';
+    f += '<label class="lbl" for="l-email">Email</label><input id="l-email" type="email" autocomplete="email" required placeholder="nama@contoh.com" value="' + esc(p.email || '') + '">';
+    if (tab !== 'lupa') f += pwField('l-pass', 'Kata sandi', tab === 'daftar' ? 'new-password' : 'current-password', 'minimal 8 karakter');
+    if (tab === 'daftar') f += '<p class="small muted" id="pw-h" aria-live="polite"></p>';
     f += '<p class="err" role="alert" id="l-err"></p><p class="ok small" id="l-ok" aria-live="polite"></p><button class="btn primary wide" type="submit">' + ({ masuk: 'Masuk', daftar: 'Buat akun', lupa: 'Kirim tautan atur ulang' })[tab] + '</button>';
+    if (tab === 'masuk') f += '<p class="small muted center">Belum punya akun? <button type="button" class="linkbtn" data-pact="ltab" data-t="daftar">Daftar gratis</button> · <button type="button" class="linkbtn" data-pact="ltab" data-t="lupa">Lupa sandi?</button></p>';
     if (tab === 'daftar') f += '<p class="muted small">Progres yang sudah ada di perangkat ini akan otomatis digabung ke akun barumu.</p>';
-    f += '</form>';
+    f += '<p class="small muted center"><button type="button" class="linkbtn" data-go="bantuan" data-topik="akun">Masalah dengan akun? Lihat bantuan</button></p></form>';
     view().innerHTML = page(tab === 'daftar' ? 'Buat akun' : tab === 'lupa' ? 'Atur ulang sandi' : 'Masuk', siteName(), f);
+    const pw = $('#l-pass'), ph = $('#pw-h'); if (pw && ph) pw.addEventListener('input', () => { ph.textContent = pwHint(pw.value); });
     $('#lform').addEventListener('submit', async (e) => {
       e.preventDefault(); const er = $('#l-err'), ok = $('#l-ok'); er.textContent = ''; ok.textContent = '';
       const email = $('#l-email').value.trim(), pass = ($('#l-pass') || {}).value || '', nm = (($('#l-name') || {}).value || '').trim();
-      if (!/^\S+@\S+\.\S+$/.test(email)) { er.textContent = 'Tulis email yang valid.'; return; }
+      if (!/^\S+@\S+\.\S+$/.test(email)) { er.textContent = 'Tulis email yang valid, misalnya nama@gmail.com.'; return; }
       if (tab !== 'lupa' && pass.length < 8) { er.textContent = 'Kata sandi minimal 8 karakter.'; return; }
       if (tab === 'daftar' && !nm) { er.textContent = 'Tulis nama yang ingin ditampilkan.'; return; }
       const btn = $('#lform button[type=submit]'); btn.disabled = true;
       try {
         if (tab === 'masuk') { await b.auth.signIn(email, pass); go(p.next || 'home', {}, { replace: true }); }
-        else if (tab === 'daftar') { const r = await b.auth.signUp(email, pass, nm); A.set.name = nm; A.saveSettings(); if (r && r.session) go(p.next || 'home', {}, { replace: true }); else ok.textContent = 'Akun dibuat. Cek email untuk konfirmasi, lalu masuk.'; }
-        else { await b.auth.resetPassword(email); ok.textContent = 'Jika email terdaftar, tautan atur ulang sudah dikirim.'; }
-      } catch (err) { er.textContent = authMsg(err); }
+        else if (tab === 'daftar') { const r = await b.auth.signUp(email, pass, nm); A.set.name = nm; A.saveSettings(); if (r && r.session) go('selamat', { type: 'signup' }, { replace: true }); else go('login', { sent: email }, { replace: true }); }
+        else { await b.auth.resetPassword(email); ok.textContent = 'Kalau email itu terdaftar, tautan atur ulang sudah dikirim. Cek kotak masuk dan folder Spam, lalu klik tautannya untuk membuat sandi baru.'; }
+      } catch (err) {
+        er.textContent = authMsg(err);
+        if (/not confirmed/i.test((err && err.message) || '')) er.insertAdjacentHTML('beforeend', ' <button type="button" class="linkbtn" data-pact="resend" data-email="' + esc(email) + '">Kirim ulang email konfirmasi</button>');
+      }
       btn.disabled = false;
     });
   };
+  /* Formulir sandi baru: setelah membuka tautan "lupa sandi", atau ganti sandi dari menu Akun */
+  V.sandi = function (p) {
+    const b = bb();
+    if (b.mode !== 'supabase' || !b.auth.updatePassword) { view().innerHTML = page('Kata sandi', '', '<div class="card"><p>Fitur ini butuh akun online.</p></div>'); return; }
+    if (!b.user) { view().innerHTML = page('Buat sandi baru', siteName(), '<div class="card"><p>Tautan atur ulang sudah tidak berlaku atau kamu belum masuk.</p><p class="muted small">Minta tautan baru: tautan hanya bisa dipakai sekali dan berlaku terbatas.</p><button class="btn primary" data-pact="ltab" data-t="lupa">Minta tautan baru</button></div>'); return; }
+    const rec = p.recovery || b.recovery;
+    view().innerHTML = page(rec ? 'Buat sandi baru' : 'Ganti kata sandi', siteName(), '<form class="card form" id="pwf" novalidate>' + (rec ? '<p>Kamu masuk lewat tautan atur ulang. Buat kata sandi baru untuk <b class="mono em"></b>.</p>' : '<p class="muted small">Akun: <b class="mono em"></b></p>') +
+      pwField('pw1', 'Kata sandi baru', 'new-password', 'minimal 8 karakter') + '<p class="small muted" id="pw-h" aria-live="polite"></p>' + pwField('pw2', 'Ulangi kata sandi baru', 'new-password', 'ketik sekali lagi') +
+      '<p class="err" role="alert" id="pw-e"></p><button class="btn primary wide" type="submit">Simpan sandi baru</button></form>');
+    $('.em').textContent = b.user.email || '';
+    $('#pw1').addEventListener('input', () => { $('#pw-h').textContent = pwHint($('#pw1').value); });
+    $('#pwf').addEventListener('submit', async (e) => {
+      e.preventDefault(); const a1 = $('#pw1').value, a2 = $('#pw2').value, er = $('#pw-e'); er.textContent = '';
+      if (a1.length < 8) { er.textContent = 'Kata sandi minimal 8 karakter.'; return; }
+      if (a1 !== a2) { er.textContent = 'Kedua kata sandi belum sama.'; return; }
+      const btn = $('#pwf button[type=submit]'); btn.disabled = true;
+      try { await b.auth.updatePassword(a1); $('#pwf').outerHTML = '<div class="card rep-ok"><span class="lk-ic">' + ic('check') + '</span><h2>Sandi baru tersimpan</h2><p>Mulai sekarang, masuk dengan kata sandi baru ini di semua perangkat.</p><div class="row"><button class="btn primary" data-go="home">Ke beranda</button></div></div>'; }
+      catch (err) { er.textContent = authMsg(err); btn.disabled = false; }
+    });
+  };
+  /* Tautan email bermasalah (kedaluwarsa / sudah dipakai) */
+  V.authinfo = function (p) {
+    const code = String(p.code || ''); const expired = /otp_expired|expired|invalid/i.test(code + ' ' + (p.desc || ''));
+    let h = '<div class="card"><span class="lk-ic warn">' + ic('clock') + '</span><h2>' + (expired ? 'Tautan sudah tidak berlaku' : 'Tautan tidak bisa dipakai') + '</h2>' +
+      '<p>' + (expired ? 'Tautan di email hanya bisa dipakai <b>satu kali</b> dan berlaku <b>terbatas</b>. Biasanya ini terjadi karena tautannya sudah diklik sebelumnya (misalnya oleh pemindai keamanan email), sudah terlalu lama, atau kamu membuka email yang lebih lama.' : 'Ada yang tidak beres dengan tautan ini.') + '</p>' +
+      '<p class="muted small">Kalau akunmu sebenarnya sudah aktif, langsung saja <b>masuk</b>.</p>' +
+      '<div class="row"><button class="btn primary" data-go="login">Masuk</button><button class="btn" data-pact="go-resend">Kirim ulang email konfirmasi</button><button class="btn ghost" data-pact="ltab" data-t="lupa">Lupa sandi</button></div>' +
+      '<div id="resend-box" hidden><label class="lbl" for="rs-email">Email akunmu</label><div class="row"><input id="rs-email" type="email" autocomplete="email" placeholder="nama@contoh.com"><button class="btn primary" data-pact="resend-in">Kirim</button></div><p class="small" id="resend-m" aria-live="polite"></p></div>' +
+      (p.desc ? '<details class="small muted"><summary>Detail teknis</summary><p class="dsc"></p></details>' : '') + '</div>';
+    view().innerHTML = page('Ada kendala dengan tautan', siteName(), h);
+    const d = $('.dsc'); if (d) d.textContent = p.desc;
+  };
+  /* Sambutan setelah akun aktif */
+  V.selamat = function (p) {
+    const b = bb(); const name = (b.user && b.user.name) || A.displayName() || '';
+    const step = (icn, t, d, go_, label, extra) => '<div class="card wstep"><span class="ws-ic">' + ic(icn) + '</span><div><h3>' + t + '</h3><p class="muted small">' + d + '</p><button class="btn small" data-go="' + go_ + '"' + (extra || '') + '>' + label + '</button></div></div>';
+    view().innerHTML = page('Akunmu sudah aktif!', 'Selamat datang', '<div class="card welcome"><p class="big">Halo<span class="nm"></span>! 🎉</p><p>Mulai sekarang progresmu tersimpan di akun: buka dari HP, laptop, atau komputer sekolah, semuanya sama.</p></div>' +
+      '<h2 class="h1like">Tiga langkah pertama</h2><div class="wsteps">' +
+      step('map', 'Mulai belajar', 'Pilih kursus, lalu ikuti peta belajarnya dari Bagian 0. Setiap bagian: materi singkat, contoh, lalu latihan bertingkat.', 'home', 'Lihat kursus') +
+      step('users', 'Gabung ke kelas', 'Punya kode dari guru? Masukkan di menu Kelas supaya tugas dan forum kelasmu muncul.', 'kelas', 'Buka Kelas') +
+      '<div class="card wstep"><span class="ws-ic">' + ic('bulb') + '</span><div><h3>Kenali fiturnya</h3><p class="muted small">Tur singkat 1 menit tentang menu utama, Review harian, dan cara kerja level.</p><button class="btn small" data-pact="tour">Mulai tur</button></div></div>' + '</div>');
+    const nm = $('.welcome .nm'); if (nm) nm.textContent = name ? ', ' + name : '';
+  };
   function authMsg(e) {
-    const m = (e && e.message) || '';
-    if (/invalid login/i.test(m)) return 'Email atau kata sandi salah.';
-    if (/already registered/i.test(m)) return 'Email ini sudah terdaftar. Coba masuk.';
-    if (/email not confirmed/i.test(m)) return 'Email belum dikonfirmasi. Cek kotak masuk (dan folder spam).';
-    if (/rate limit/i.test(m)) return 'Terlalu banyak percobaan. Tunggu sebentar.';
+    const m = (e && e.message) || '', c = (e && e.code) || '';
+    if (/invalid login|invalid_credentials/i.test(m + c)) return 'Email atau kata sandi salah. Periksa huruf besar/kecil, atau pakai "Lupa sandi".';
+    if (/already registered|user_already_exists/i.test(m + c)) return 'Email ini sudah terdaftar. Silakan masuk, atau pakai "Lupa sandi" kalau lupa kata sandinya.';
+    if (/email not confirmed|email_not_confirmed/i.test(m + c)) return 'Email belum dikonfirmasi. Buka email aktivasi dari kami (cek juga folder Spam).';
+    const wait = /after (\d+) seconds?/i.exec(m); if (wait) return 'Demi keamanan, tunggu ' + wait[1] + ' detik sebelum mencoba lagi.';
+    if (/rate limit|too many|over_email_send_rate_limit|over_request_rate_limit/i.test(m + c)) return 'Terlalu banyak permintaan dalam waktu singkat. Tunggu beberapa menit, lalu coba lagi.';
+    if (/should be at least|weak_password|password is too weak/i.test(m + c)) return 'Kata sandi terlalu lemah atau pendek. Pakai minimal 8 karakter dan campurkan huruf dengan angka.';
+    if (/same_password|different from the old/i.test(m + c)) return 'Kata sandi baru harus berbeda dari yang lama.';
+    if (/invalid.*email|email_address_invalid/i.test(m + c)) return 'Alamat email tidak valid.';
+    if (/signups? not allowed|signup_disabled/i.test(m + c)) return 'Pendaftaran akun baru sedang ditutup oleh pengelola situs.';
+    if (/expired|otp_expired/i.test(m + c)) return 'Tautan sudah kedaluwarsa. Minta tautan baru.';
+    if (/fetch|network|Failed to/i.test(m)) return 'Tidak bisa terhubung ke server. Periksa koneksi internetmu, lalu coba lagi.';
     return m || 'Gagal. Coba lagi.';
+  }
+  /* Kirim ulang email konfirmasi, dengan jeda supaya tidak terkena batas kirim */
+  let resendAt = 0;
+  async function doResend(email, msgEl, btn) {
+    const b = bb(); if (!b.auth.resend) return;
+    const left = Math.ceil((resendAt - Date.now()) / 1000);
+    if (left > 0) { msgEl.textContent = 'Tunggu ' + left + ' detik sebelum mengirim ulang.'; msgEl.className = 'small muted'; return; }
+    if (!/^\S+@\S+\.\S+$/.test(email || '')) { msgEl.textContent = 'Tulis email yang valid.'; msgEl.className = 'small bad'; return; }
+    if (btn) btn.disabled = true;
+    try { await b.auth.resend(email); resendAt = Date.now() + 60000; msgEl.textContent = '✓ Email baru sudah dikirim. Pakai tautan di email yang paling baru.'; msgEl.className = 'small ok'; }
+    catch (err) { msgEl.textContent = authMsg(err); msgEl.className = 'small bad'; }
+    if (btn) btn.disabled = false;
   }
 
   /* ============ Daftar kelas ============ */
@@ -474,7 +553,12 @@
     try {
       switch (d.pact) {
         case 'retry': render(); break;
-        case 'ltab': go('login', { t: d.t, next: nav.cur.next }, { replace: true }); break;
+        case 'ltab': go('login', { t: d.t, next: nav.cur.next, email: ($('#l-email') || {}).value || nav.cur.email || '' }, { replace: nav.cur.v === 'login' }); break;
+        case 'pw-eye': { const inp = document.getElementById(d.for); if (!inp) break; const show = inp.type === 'password'; inp.type = show ? 'text' : 'password'; a.textContent = show ? 'Sembunyikan' : 'Lihat'; a.setAttribute('aria-pressed', String(show)); break; }
+        case 'resend': await doResend(d.email, $('#resend-m') || $('#l-err'), a); break;
+        case 'go-resend': { const bx = $('#resend-box'); if (bx) { bx.hidden = false; $('#rs-email').focus(); } break; }
+        case 'resend-in': await doResend($('#rs-email').value.trim(), $('#resend-m'), a); break;
+        case 'tour': go('home'); setTimeout(() => G.NalarHelp && G.NalarHelp.tour(), 250); break;
         case 'login-next': go('login', { next: 'kelas' }); if (d.join) P.pendingJoin = d.join; break;
         case 'logout': await b.auth.signOut(); P.classes = null; A.sync.status = 'lokal'; go('home'); break;
         case 'copy': { try { await navigator.clipboard.writeText(d.v); a.insertAdjacentHTML('afterend', '<span class="ok small tmp"> Tersalin</span>'); setTimeout(() => { const t = a.parentNode && a.parentNode.querySelector('.tmp'); if (t) t.remove(); }, 1500); } catch (err) { prompt('Salin teks ini:', d.v); } break; }

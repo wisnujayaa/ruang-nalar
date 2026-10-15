@@ -55,11 +55,11 @@
   const HIST = []; let pos = 0;
   const hasHist = !!(G.history && G.history.pushState);
   const cleanUrl = () => location.pathname + location.search;
-  function record(push) {
+  function record(push, keepUrl) {
     if (!hasHist) return;
     try {
       if (push) { pos++; HIST.length = pos; HIST[pos] = nav.cur; history.pushState({ rn: pos, sid: SID }, '', cleanUrl()); }
-      else { HIST[pos] = nav.cur; history.replaceState({ rn: pos, sid: SID }, '', cleanUrl()); }
+      else { HIST[pos] = nav.cur; history.replaceState({ rn: pos, sid: SID }, '', keepUrl ? location.href : cleanUrl()); }
     } catch (e) { /* mis. dalam iframe tanpa izin: tetap jalan tanpa riwayat */ }
   }
   function stopActive() { if (nav.active && nav.active.cleanup) nav.active.cleanup(); nav.active = null; }
@@ -81,6 +81,20 @@
   }
   /* Kembali ke halaman v: pakai riwayat bila halaman sebelumnya memang v, selain itu ganti halaman ini */
   function up(v, p) { if (hasHist && pos > 0 && HIST[pos - 1] && HIST[pos - 1].v === v) history.back(); else go(v, p, { replace: true }); }
+  /* Hasil membuka tautan dari email Supabase: #access_token=…&type=signup|recovery|… atau #error=…&error_code=otp_expired */
+  function authLanding(hash, search) {
+    const q = new URLSearchParams(String(hash || '').replace(/^#/, '')), s = new URLSearchParams(search || '');
+    const get = (k) => q.get(k) || s.get(k);
+    if (!q.has('access_token') && !get('error') && !get('error_code')) return null;
+    return { type: get('type'), error: get('error'), code: get('error_code'), desc: get('error_description') };
+  }
+  function handleLanding(l) {
+    try { history.replaceState(history.state, '', cleanUrl()); } catch (e) { }
+    const bb = G.BB || {};
+    if (l.error || l.code) return go('authinfo', { code: l.code || l.error, desc: l.desc }, { replace: true });
+    if (l.type === 'recovery' || bb.recovery) return go('sandi', { recovery: 1 }, { replace: true });
+    if (bb.user && ['signup', 'magiclink', 'invite', 'email_change'].includes(l.type)) return go('selamat', { type: l.type }, { replace: true });
+  }
   /* #gabung=KODE, #kursus=id, #bagian3 → buka halamannya; false bila hash tidak dikenali */
   function routeHash(hash) {
     const h = decodeURIComponent((hash || '').slice(1));
@@ -88,6 +102,7 @@
     if ((m = h.match(/^gabung=([A-Za-z0-9]{4,12})$/))) go('kelas', { join: m[1].toUpperCase() });
     else if ((m = h.match(/^kursus=([a-z0-9_-]+)$/)) && (G.NR.isDb(m[1]) || (G.NR.meta(m[1]) && !G.NR.meta(m[1]).soon))) go('course', { course: m[1] });
     else if ((m = h.match(/^bagian(\d{1,2})$/))) go('lesson', { sec: +m[1] });
+    else if ((m = h.match(/^bantuan(?:=([a-z0-9-]{1,40}))?$/))) go('bantuan', m[1] ? { topik: m[1] } : {});
     else return false;
     return true;
   }
@@ -105,7 +120,7 @@
     render();
   }
   const TAB = { home: 'home', course: 'course', map: 'course', intro: 'course', diag: 'course', prereq: 'course', lesson: 'course', summary: 'course', mixed: 'course', lintas: 'course', tryout: 'course', dump: 'course', traps: 'course',
-    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me', lapor: 'me', laporan: 'me' };
+    review: 'review', mistakes: 'review', cards: 'review', kelas: 'kelas', klas: 'kelas', thread: 'kelas', student: 'kelas', me: 'me', settings: 'me', stats: 'me', login: 'me', studio: 'me', editor: 'me', admin: 'me', lapor: 'me', laporan: 'me', sandi: 'me', authinfo: 'me', selamat: 'me', bantuan: 'me' };
   function tabOf(v) { return v === 'run' ? (nav.cur.tab === 'map' ? 'course' : nav.cur.tab || 'review') : TAB[v] || 'home'; }
   /* Kursus Studio yang tidak boleh kubuka (draf, khusus kelas, atau sudah dihapus) */
   function lockedHTML() {
@@ -763,7 +778,7 @@
   /* ======================== AKSI ======================== */
   document.addEventListener('click', async (e) => {
     const g = e.target.closest('[data-go]');
-    if (g && !g.disabled) { e.preventDefault(); A.tick(); const d = g.dataset; const v = d.go; const p = {}; if (d.sec) p.sec = +d.sec; if (d.id) p.id = d.id; if (d.course) p.course = d.course; if (d.tab) p.ktab = d.tab; if (d.f) p.f = d.f; if (v === 'lesson' && (!d.course || d.course === A.course)) p.i = A.secProgress(+d.sec).step; go(v, p); return; }
+    if (g && !g.disabled) { e.preventDefault(); A.tick(); const d = g.dataset; const v = d.go; const p = {}; if (d.sec) p.sec = +d.sec; if (d.id) p.id = d.id; if (d.course) p.course = d.course; if (d.tab) p.ktab = d.tab; if (d.f) p.f = d.f; if (d.topik) p.topik = d.topik; if (v === 'lesson' && (!d.course || d.course === A.course)) p.i = A.secProgress(+d.sec).step; go(v, p); return; }
     const a = e.target.closest('[data-act]'); if (!a || a.disabled) return;
     const d = a.dataset; A.tick();
     switch (d.act) {
@@ -824,7 +839,11 @@
   function boot() {
     applyTheme();
     const h0 = location.hash;
-    if (hasHist) { record(false); window.addEventListener('popstate', onPop); }
+    /* Tautan dari email (konfirmasi akun / lupa sandi) membawa token atau pesan error di #hash. Hash itu jangan
+       dihapus sebelum Supabase selesai membacanya; setelah itu baru dibersihkan dan pengguna diarahkan. */
+    const landing = authLanding(h0, location.search);
+    if (hasHist) { record(false, !!landing); window.addEventListener('popstate', onPop); }
+    window.addEventListener('nalar-auth', (e) => { if (e.detail === 'recovery' && nav.cur.v !== 'sandi') go('sandi', { recovery: 1 }, { replace: true }); });
     let lastUid = undefined;
     A.sync.on(() => {
       renderTop();
@@ -840,6 +859,7 @@
     });
     // Pilih backend: Supabase (bila dikonfigurasi) atau lokal; di claude.ai, tunggu runtime Artifact muncul
     const start = () => A.sync.init().catch(e => { console.error(e); A.sync.status = 'lokal'; renderTop(); })
+      .then(() => { if (landing) handleLanding(landing); })
       .then(() => G.NR.refreshRemote()).then(() => { if (['home', 'me', 'kelas', 'studio'].includes(nav.cur.v)) render(); });
     const cfg = G.NALAR_CONFIG || {};
     if (G.BB.mode === 'local' && !(cfg.supabaseUrl && cfg.supabaseAnonKey) && G.NALAR_makeClaude) {
