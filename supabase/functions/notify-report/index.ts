@@ -49,11 +49,23 @@ export function buildMessage(r: Record<string, any>, who: string, site: string) 
   return { subject, text: lines.join('\n') };
 }
 
+// Sembunyikan nilai secret dari pesan error/log (URL Telegram & CallMeBot memuat token/apikey)
+const SECRET_KEYS = ['RESEND_API_KEY', 'CALLMEBOT_APIKEY', 'FONNTE_TOKEN', 'TELEGRAM_BOT_TOKEN', 'SUPABASE_SERVICE_ROLE_KEY'];
+export function redact(env: Env, msg: string) {
+  let m = String(msg);
+  for (const k of SECRET_KEYS) { const v = env[k]; if (v && v.length >= 6) m = m.split(v).join('***').split(encodeURIComponent(v)).join('***'); }
+  return m.slice(0, 300);
+}
+
 async function sendAll(env: Env, f: Fetch, subject: string, text: string) {
   const out: Record<string, string> = {};
   const tryIt = async (name: string, ok: boolean, run: () => Promise<Response>) => {
     if (!ok) { out[name] = 'tidak diatur'; return; }
-    try { const r = await run(); out[name] = r.ok ? 'terkirim' : 'gagal ' + r.status; } catch (e) { out[name] = 'gagal: ' + (e as Error).message; }
+    try {
+      const r = await run();
+      if (r.ok) out[name] = 'terkirim';
+      else { let body = ''; try { body = await r.text(); } catch (_) { /* abaikan */ } out[name] = redact(env, 'gagal ' + r.status + (body ? ': ' + body.slice(0, 200) : '')); }
+    } catch (e) { out[name] = redact(env, 'gagal: ' + (e as Error).message); }
   };
   await Promise.all([
     tryIt('email', !!(env.RESEND_API_KEY && env.REPORT_EMAIL), () => f('https://api.resend.com/emails', {
@@ -74,7 +86,9 @@ async function sendAll(env: Env, f: Fetch, subject: string, text: string) {
   return out;
 }
 
-export async function handle(req: Request, env: Env, f: Fetch = fetch): Promise<Response> {
+export async function handle(req: Request, rawEnv: Env, f: Fetch = fetch): Promise<Response> {
+  // Secret yang ditempel sering ikut spasi/baris baru di ujungnya; rapikan dulu
+  const env: Env = {}; for (const [k, v] of Object.entries(rawEnv)) env[k] = typeof v === 'string' ? v.trim() : v;
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'Gunakan POST' }, 405);
   let id = '';
@@ -103,6 +117,7 @@ export async function handle(req: Request, env: Env, f: Fetch = fetch): Promise<
   }
   const { subject, text } = buildMessage(r, who, env.SITE_URL || 'https://ruang-nalar.netlify.app');
   const channels = await sendAll(env, f, subject, text);
+  console.log('notify-report', id.slice(0, 8), JSON.stringify(channels));   // terlihat di Supabase → Edge Functions → Logs
   return json({ ok: true, sent: true, channels });
 }
 
