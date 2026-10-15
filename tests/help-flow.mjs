@@ -24,7 +24,7 @@ for (const [w, h] of [[390, 844], [1280, 860]]) {
   // tombol ? → pusat bantuan, pencarian & topik
   await p.click('.helpbtn'); await p.waitForSelector('#h-q');
   const nAll = await p.$$eval('.hart', l => l.length); if (nAll < 30) fail('artikel kurang: ' + nAll);
-  await p.fill('#h-q', 'email konfirmasi'); await p.waitForFunction(() => document.querySelector('.hart summary') && /Email konfirmasi/.test(document.querySelector('.hart summary').textContent));
+  await p.fill('#h-q', 'email konfirmasi'); await p.waitForFunction(() => document.querySelector('.hart summary') && /email konfirmasi/i.test(document.querySelector('.hart summary').textContent));
   await p.fill('#h-q', 'KODE kélas'); await p.waitForFunction(() => /kelas/i.test(document.querySelector('.hart summary').textContent));
   await p.fill('#h-q', 'zzqqxx'); await p.waitForSelector('.empty');
   await p.fill('#h-q', ''); await p.click('[data-hact="topik"][data-t="guru"]'); const g = await p.$$eval('.hart', l => l.length); if (g < 3 || g > 6) fail('filter topik guru: ' + g);
