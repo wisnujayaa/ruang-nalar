@@ -53,5 +53,17 @@ await T.evaluate(() => BU.go('kelas')); await T.waitForSelector('#newc'); await 
 await T.waitForSelector('.codebox .code'); const code2 = await T.$eval('.codebox .code', e => e.textContent);
 await S.evaluate(() => BU.go('kelas')); await S.waitForSelector('#jcode'); await S.fill('#jcode', code2); await S.click('#joinf button[type=submit]'); await S.waitForSelector('.asgs, .empty');
 await S.evaluate((id) => BU.go('course', { course: id }), gcid); await S.waitForSelector('.path .sec'); console.log('siswa membuka kursus guru:', await S.$eval('.hello h1', e => e.textContent));
+// Guru mengelola kelas: ganti nama, kode baru, hapus
+await T.evaluate(() => BU.go('kelas')); await T.waitForSelector('.klas-card');
+const cards = await T.$$('.klas-card'); for (const cd of cards) { if ((await cd.innerText()).includes('Kelas kursus guru')) { await cd.click(); break; } }
+await T.waitForSelector('[data-tab="atur"]'); await T.click('[data-tab="atur"]'); await T.waitForSelector('#k-name');
+await T.fill('#k-name', 'Kelas Guru v2'); await T.click('[data-pact="k-rename"]'); await T.waitForFunction(() => /Tersimpan/.test(document.querySelector('#k-name-m').textContent));
+if (await T.$eval('.cn', e => e.textContent) !== 'Kelas Guru v2') throw new Error('ganti nama'); console.log('ganti nama kelas OK');
+const oldCode = code2; await T.click('[data-pact="k-code1"]'); await T.click('[data-pact="k-code2"]'); await T.waitForFunction((o) => { const e = document.querySelector('.codebox .code'); return e && e.textContent !== o; }, oldCode, { timeout: 8000 }).catch(() => {});
+const newCode = await T.$eval('.codebox .code', e => e.textContent); if (newCode === oldCode) throw new Error('kode baru'); console.log('kode baru:', oldCode, '→', newCode);
+await T.click('[data-tab="atur"]'); await T.waitForSelector('[data-pact="k-del1"]'); await T.click('[data-pact="k-del1"]');
+await T.fill('#k-del-n', 'salah'); await T.click('[data-pact="k-del2"]'); if (!/tidak cocok/.test(await T.$eval('#k-del-e', e => e.textContent))) throw new Error('konfirmasi hapus');
+await T.fill('#k-del-n', 'Kelas Guru v2'); await T.click('[data-pact="k-del2"]'); await T.waitForSelector('#clist .clist, #clist .empty');
+const left = await T.$$eval('.klas-card .cn', l => l.map(x => x.textContent)); if (left.includes('Kelas Guru v2')) throw new Error('kelas tidak terhapus'); console.log('hapus kelas OK, sisa:', left.join(', '));
 await S.evaluate(() => BU.go('me')); await S.click('[data-pact="logout"]'); await S.waitForSelector('.nudge'); console.log('keluar OK');
 if (errs.length) { console.error('GAGAL, error konsol:', errs); process.exitCode = 1; } else console.log('Alur Supabase OK, tanpa error konsol.'); await b.close();

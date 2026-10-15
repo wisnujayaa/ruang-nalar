@@ -38,7 +38,8 @@
         canCreate: true, usesCode: false, manual: true,
         async mine() { return ls.get(K.cls, []).map(c => Object.assign({ isOwner: true, ownerId: me.id }, c)); },
         async create(c) { const all = ls.get(K.cls, []); const n = { id: 'c' + uid8(), name: c.name, course: c.course, members: [], t: now() }; all.push(n); ls.set(K.cls, all); return n; },
-        async remove(id) { ls.set(K.cls, ls.get(K.cls, []).filter(c => c.id !== id)); },
+        async remove(id) { ls.set(K.cls, ls.get(K.cls, []).filter(c => c.id !== id)); ls.set(K.asg, ls.get(K.asg, []).filter(a => a.classId !== id)); const th = ls.get(K.thr, []); const gone = th.filter(t => t.classId === id).map(t => t.id); ls.set(K.thr, th.filter(t => t.classId !== id)); ls.set(K.pst, ls.get(K.pst, []).filter(p => !gone.includes(p.tid))); },
+        async update(id, patch) { const all = ls.get(K.cls, []); const c = all.find(x => x.id === id); if (c) { if (patch.name) c.name = String(patch.name).slice(0, 60); if (patch.course) c.course = patch.course; } ls.set(K.cls, all); },
         async setMembers(id, ids) { const all = ls.get(K.cls, []); const c = all.find(x => x.id === id); if (c) c.members = ids; ls.set(K.cls, all); },
         async candidates() { return B.students().map(s => ({ id: s.id, name: s.name })); },
         async members(id) { const c = ls.get(K.cls, []).find(x => x.id === id); const st = B.students(); return (c ? c.members : []).map(m => { const s = st.find(x => x.id === m); return s ? { id: s.id, name: s.name } : null; }).filter(Boolean); },
@@ -115,6 +116,7 @@
         },
         async create(c) { const id = 'k' + uid8(); await db.doc('kelas/' + id).set({ name: c.name, course: c.course, members: [], t: now() }); return { id }; },
         async remove(id) { await db.doc('kelas/' + id).delete(); },
+        async update(id, patch) { const sn = await db.doc('kelas/' + id).get(); const d = sn.exists ? sn.data() : {}; const p = {}; if (patch.name) p.name = String(patch.name).slice(0, 60); if (patch.course) p.course = patch.course; await db.doc('kelas/' + id).set(Object.assign({}, d, p)); },
         async setMembers(id, ids) { const sn = await db.doc('kelas/' + id).get(); const d = sn.exists ? sn.data() : {}; await db.doc('kelas/' + id).set(Object.assign({}, d, { members: ids })); },
         async candidates() { const q = await db.collection('progress').limit(200).get(); const ids = q.docs.map(d => d.id); const names = await B.profiles(ids, q.docs); return ids.map(id => ({ id, name: names[id] })); },
         async members(id) { const sn = await db.doc('kelas/' + id).get(); const ids = sn.exists ? (sn.data().members || []) : []; const names = await B.profiles(ids); return ids.map(i => ({ id: i, name: names[i] })); },
@@ -220,6 +222,17 @@
         async create(c) { const r = chk(await sb.from('classes').insert({ name: c.name, course_id: c.course, owner_id: B.user.id }).select().single()); return { id: r.id, code: r.join_code }; },
         async join(code) { return chk(await sb.rpc('join_class', { p_code: code })); },
         async remove(id) { chk(await sb.from('classes').delete().eq('id', id)); },
+        async update(id, patch) { const p = {}; if (patch.name) p.name = String(patch.name).slice(0, 60); if (patch.course) p.course_id = patch.course; chk(await sb.from('classes').update(p).eq('id', id)); },
+        /* Kode baru: tautan/kode lama tidak berlaku lagi (anggota yang sudah masuk tetap) */
+        async newCode(id) {
+          const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+          for (let i = 0; i < 5; i++) {
+            const code = Array.from(crypto.getRandomValues(new Uint32Array(6)), n => A[n % 32]).join('');
+            const r = await sb.from('classes').update({ join_code: code }).eq('id', id);
+            if (!r.error) return code; if (r.error.code !== '23505') chk(r);
+          }
+          throw err('Gagal membuat kode baru. Coba lagi.');
+        },
         async leave(id) { chk(await sb.from('class_members').delete().eq('class_id', id).eq('user_id', B.user.id)); },
         async members(id) { const r = chk(await sb.from('class_members').select('user_id, joined_at, profiles(display_name)').eq('class_id', id)); return r.map(m => ({ id: m.user_id, name: (m.profiles && m.profiles.display_name) || 'Anggota', joined: m.joined_at })); },
         async kick(id, sid) { chk(await sb.from('class_members').delete().eq('class_id', id).eq('user_id', sid)); },

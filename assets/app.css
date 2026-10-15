@@ -730,3 +730,8 @@ details.card[open]>summary{margin-bottom:6px}
 .ed-var input[type=number]{-moz-appearance:textfield;appearance:textfield;padding:6px 4px;text-align:center;font-family:var(--f-mono);font-size:.9rem}
 .ed-var input::-webkit-inner-spin-button,.ed-var input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 @media (max-width:480px){.ed-var{grid-template-columns:36px repeat(4,minmax(0,1fr)) 34px;gap:4px}.ed-var .btn{padding:4px;min-width:0}}
+.tabs3{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:1fr}
+.inline-f{display:flex;gap:8px;align-items:center}
+.inline-f input{flex:1;min-width:0}
+.danger-zone{border-color:var(--bad-soft)}
+.danger-zone h2{color:var(--bad)}

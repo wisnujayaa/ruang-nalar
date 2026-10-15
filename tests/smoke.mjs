@@ -96,6 +96,12 @@ await page.click('[data-act="back"]');
 await page.click('[data-tab="tugas"]'); await page.waitForSelector('.asg-st');
 const stx = await page.$eval('.asg .chip', e => e.textContent); console.log('Status tugas per siswa: ' + stx); if (stx !== '1/1 selesai') fail('status tugas seharusnya 1/1 (4 dari 5 benar)');
 if (await overflow(page) > 1) fail('overflow horizontal di halaman kelas');
+// kelola kelas (mode lokal): ganti nama lalu hapus
+await page.click('[data-tab="atur"]'); await page.waitForSelector('#k-name'); await page.fill('#k-name', 'Kelas Uji 2'); await page.click('[data-pact="k-rename"]');
+await page.waitForFunction(() => /Tersimpan/.test(document.querySelector('#k-name-m').textContent));
+await page.click('[data-pact="k-del1"]'); await page.fill('#k-del-n', 'Kelas Uji 2'); await page.click('[data-pact="k-del2"]'); await page.waitForSelector('#clist');
+await page.waitForFunction(() => !document.querySelector('.loading'));
+if ((await page.$$('.klas-card')).length) fail('kelas lokal tidak terhapus'); else console.log('Kelola kelas lokal (ganti nama, hapus) OK');
 // kursus templat
 await page.click('.tabs a[data-go="home"]');
 await page.click('.ccard[data-course="contoh-kursus"]');

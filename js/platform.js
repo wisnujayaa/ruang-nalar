@@ -244,17 +244,28 @@
       const tab = p.ktab || 'tugas';
       let h = '<section class="page wide"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">' + esc(courseTitle(c.course)) + ' · ' + (c.isOwner ? 'Kamu guru' : 'Kamu siswa') + '</p><h1 class="cn"></h1></div></header>';
       if (c.isOwner && c.code) h += '<div class="card codebox' + (p.fresh ? ' hi' : '') + '"><div><p class="eyebrow">Kode kelas</p><p class="code mono">' + esc(c.code) + '</p><p class="muted small">Bagikan kode ini atau tautannya ke siswa. Siswa masuk/daftar, lalu menekan Gabung.</p></div><div class="row"><button class="btn small" data-pact="copy" data-v="' + esc(c.code) + '">' + ic('copy') + ' Salin kode</button><button class="btn small" data-pact="copy" data-v="' + esc(joinLink(c.code)) + '">' + ic('copy') + ' Salin tautan</button></div></div>';
-      h += '<div class="seg tabs3" role="tablist">' + [['tugas', 'Tugas', 'task'], ['forum', 'Forum', 'chat'], ['anggota', c.isOwner ? 'Progres' : 'Anggota', 'users']].map(x => '<button role="tab" data-go="klas" data-id="' + esc(c.id) + '" data-tab="' + x[0] + '" aria-checked="' + (tab === x[0]) + '">' + ic(x[2]) + ' ' + x[1] + '</button>').join('') + '</div><div id="kbody">' + loading + '</div></section>';
+      h += '<div class="seg tabs3" role="tablist">' + [['tugas', 'Tugas', 'task'], ['forum', 'Forum', 'chat'], ['anggota', c.isOwner ? 'Progres' : 'Anggota', 'users']].concat(c.isOwner ? [['atur', 'Atur', 'grid']] : []).map(x => '<button role="tab" data-go="klas" data-id="' + esc(c.id) + '" data-tab="' + x[0] + '" aria-checked="' + (tab === x[0]) + '">' + ic(x[2]) + ' ' + x[1] + '</button>').join('') + '</div><div id="kbody">' + loading + '</div></section>';
       view().innerHTML = h; $('.cn').textContent = c.name;
       const body = $('#kbody');
       try {
         if (tab === 'tugas') await tabTugas(body, c);
         else if (tab === 'forum') await tabForum(body, c);
+        else if (tab === 'atur' && c.isOwner) tabAtur(body, c);
         else await tabAnggota(body, c);
       } catch (e) { if (P.tok === tok) body.innerHTML = fail(e); console.error(e); }
     })().catch(e => { view().innerHTML = fail(e); });
   };
   const joinLink = (code) => location.origin + location.pathname + '#gabung=' + code;
+
+  /* ---------- Tab Atur (khusus guru pemilik kelas) ---------- */
+  function tabAtur(body, c) {
+    const b = bb();
+    let h = '<div class="card form"><h2>Nama kelas</h2><div class="inline-f"><input id="k-name" maxlength="60" value="' + esc(c.name) + '"><button class="btn primary" data-pact="k-rename">Simpan</button></div><p class="small" id="k-name-m" aria-live="polite"></p></div>';
+    h += '<div class="card form"><h2>Kursus kelas</h2><select id="k-course">' + openCourses().map(x => '<option value="' + esc(x.id) + '"' + (x.id === c.course ? ' selected' : '') + '>' + esc(x.title) + '</option>').join('') + (NR.meta(c.course) ? '' : '<option value="' + esc(c.course) + '" selected>' + esc(courseTitle(c.course)) + '</option>') + '</select><p class="muted small">Progres siswa tersimpan per kursus, jadi tidak ada yang hilang. Tapi laporan progres dan status tugas akan membaca kursus yang baru, dan tugas lama bisa merujuk bagian yang tidak ada di kursus baru.</p><div class="row"><button class="btn" data-pact="k-course">Ganti kursus</button></div><p class="small" id="k-course-m" aria-live="polite"></p></div>';
+    if (b.classes.usesCode && b.classes.newCode) h += '<div class="card"><h2>Kode gabung</h2><p>Kode saat ini: <b class="mono">' + esc(c.code || '') + '</b></p><p class="muted small">Buat kode baru kalau kode lama tersebar ke orang yang tidak seharusnya. Kode dan tautan lama langsung tidak berlaku; anggota yang sudah bergabung tetap di kelas.</p><span id="k-code"><button class="btn" data-pact="k-code1">Buat kode baru</button></span></div>';
+    h += '<div class="card danger-zone"><h2>Hapus kelas</h2><p class="muted small">Menghapus kelas beserta <b>semua tugas, diskusi forum, dan daftar anggotanya</b>. Progres belajar siswa <b>tidak</b> ikut terhapus. Tindakan ini tidak bisa dibatalkan.</p><span id="k-del"><button class="btn danger" data-pact="k-del1">Hapus kelas ini…</button></span></div>';
+    body.innerHTML = h;
+  }
 
   /* ---------- Tab Tugas ---------- */
   async function tabTugas(body, c) {
@@ -453,6 +464,18 @@
         case 'asg-go': {
           let as = P.cache.asg && P.cache.asg.find(x => x.id === d.aid); if (!as && P.cache.homeRows) { const r = P.cache.homeRows.find(x => x.a.id === d.aid); as = r && r.a; }
           const c = await findClass(d.cls); if (as && c) await doTargetIn(c.course, as.target || {}); break; }
+        case 'k-rename': {
+          const n = $('#k-name').value.trim(); const m = $('#k-name-m'); if (!n) { m.textContent = 'Nama tidak boleh kosong.'; m.className = 'small bad'; return; }
+          a.disabled = true; await b.classes.update(P.cur.id, { name: n }); P.cur.name = n; P.classes = null; $('.cn').textContent = n; m.textContent = '✓ Tersimpan'; m.className = 'small ok'; a.disabled = false; break; }
+        case 'k-course': {
+          const id = $('#k-course').value; if (id === P.cur.course) return; a.disabled = true;
+          await b.classes.update(P.cur.id, { course: id }); P.cur.course = id; P.classes = null; render(); break; }
+        case 'k-code1': $('#k-code').innerHTML = '<span class="bad small">Kode lama tidak bisa dipakai lagi. Lanjut?</span> <button class="btn small danger" data-pact="k-code2">Ya, buat kode baru</button>'; break;
+        case 'k-code2': { a.disabled = true; const code = await b.classes.newCode(P.cur.id); P.cur.code = code; P.classes = null; render(); break; }
+        case 'k-del1': $('#k-del').innerHTML = '<p class="small">Ketik nama kelas <b class="mono"></b> untuk konfirmasi:</p><div class="inline-f"><input id="k-del-n" autocomplete="off"><button class="btn danger" data-pact="k-del2">Hapus permanen</button></div><p class="err" id="k-del-e"></p>'; $('#k-del .mono').textContent = P.cur.name; break;
+        case 'k-del2': {
+          if ($('#k-del-n').value.trim() !== P.cur.name) { $('#k-del-e').textContent = 'Nama tidak cocok.'; return; }
+          a.disabled = true; await b.classes.remove(P.cur.id); P.classes = null; P.cur = null; go('kelas'); break; }
         case 'asg-del1': $('#adel-' + d.k).innerHTML = '<span class="bad small">Hapus tugas ini?</span> <button class="btn small danger" data-pact="asg-del2" data-aid="' + esc(d.aid) + '">Ya, hapus</button>'; break;
         case 'asg-del2': await b.assign.remove(P.cur.id, d.aid); render(); break;
         case 't-prev': case 'r-prev': { const src = $(d.pact === 't-prev' ? '#t-body' : '#r-body').value; const pv = $(d.pact === 't-prev' ? '#t-prev' : '#r-prev'); pv.hidden = false; pv.innerHTML = src.trim() ? safeRich(src) : '<span class="muted">Belum ada isi.</span>'; break; }
