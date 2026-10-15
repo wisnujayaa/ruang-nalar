@@ -564,6 +564,9 @@ code{font-family:var(--f-mono);font-size:.88em;background:var(--surface-2);paddi
 .brand .site{font-size:1.15rem}
 .course-chip{border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;font-weight:700;font-size:.8rem;color:var(--ink-2);cursor:pointer;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .course-chip:hover{border-color:var(--accent);color:var(--accent)}
+.course-chip .cc-g{font-family:var(--f-mono);font-weight:700}
+.course-chip.has-g .cc-g+.cc-t{margin-left:6px}
+@media (max-width:480px){.course-chip.has-g .cc-t{display:none}}
 @media (max-width:520px){.top .sync span{display:none}}
 .loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:48px 0}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
@@ -639,7 +642,7 @@ details.card[open]>summary{margin-bottom:6px}
 .traplist>*{min-width:0}.trap .tw,.trap .tr{flex-wrap:wrap;overflow-wrap:anywhere}
 [hidden]{display:none!important}
 .brand{white-space:nowrap}
-.top .course-chip{flex:none}
+.top .course-chip{flex:0 1 auto;min-width:0}
 @media (min-width:860px){.top .wrapx{max-width:1040px}}
 .asg-h .chip{white-space:nowrap;flex:none}
 .tabs3{display:grid;grid-template-columns:repeat(3,1fr)}

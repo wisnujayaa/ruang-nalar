@@ -1,6 +1,6 @@
 /* Ruang Nalar — problem reports: a form for every user, an inbox for admins.
-   Reports are stored through G.BB.reports (local / Claude / Supabase). In Supabase mode, the
-   notify-report Edge Function forwards them to the admin by email / WhatsApp / Telegram (see docs/REPORTS.md). */
+   Reports are stored through G.BB.reports (local / Supabase). In Supabase mode, the
+   notify-report Edge Function emails them to the admin (see docs/REPORTS.md). */
 (function (G) {
   'use strict';
   /* Keep the last few errors so bug reports are easier to trace (no personal data) */
@@ -75,10 +75,7 @@
       const context = autoContext(kind, p.ctx);
       const id = await b.reports.send({ kind, body, contact, context });
       const sent = b.reports.canNotify ? b.reports.notify(id) : null;   // not awaited: the report is already saved
-      const wa = String((G.NALAR_CONFIG || {}).reportWhatsApp || '').replace(/\D/g, '');
-      const waText = '[Laporan Ruang Nalar · ' + KIND_LABEL[kind] + ']\n' + body + (ctxLine(context) ? '\n(' + ctxLine(context) + ')' : '') + '\nNo. laporan: ' + id.slice(0, 8);
       $('#repf').outerHTML = '<div class="card rep-ok"><span class="lk-ic">' + ic('check') + '</span><h2>Terima kasih!</h2><p>Laporanmu sudah masuk dengan nomor <b class="mono">' + esc(id.slice(0, 8)) + '</b>. Pengelola akan memeriksanya' + (contact ? ' dan mengabarimu' : '') + '.</p>' +
-        (wa ? '<p class="muted small">Butuh cepat? Kirim juga lewat WhatsApp:</p><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(waText) + '">' + ic('send') + ' Kirim lewat WhatsApp</a>' : '') +
         '<div class="row"><button class="btn primary" data-act="back">Kembali</button><button class="btn ghost" data-go="lapor">Laporkan hal lain</button></div></div>';
       if (sent) sent.then(r => { if (r && r.channels) console.info('Notifikasi laporan:', r.channels); });
       drawMine();
@@ -91,7 +88,7 @@
     if (!b.reports || !b.isAdmin) { view().innerHTML = page('Laporan masuk', 'Admin', '<div class="card"><p>Halaman ini hanya untuk admin.</p></div>'); return; }
     const f = p.f || 'aktif';
     view().innerHTML = page('Laporan masuk', 'Admin', '<div class="seg" role="radiogroup">' + [['aktif', 'Perlu ditangani'], ['selesai', 'Selesai'], ['semua', 'Semua']].map(x => '<button role="radio" data-go="laporan" data-f="' + x[0] + '" aria-checked="' + (f === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' +
-      (b.reports.canNotify ? '<p class="muted small">Laporan baru juga dikirim ke email/WA-mu bila notifikasi sudah diatur (docs/REPORTS.md).</p>' : '') + '<div id="rep-in"><div class="loading"><span class="spin"></span></div></div>');
+      (b.reports.canNotify ? '<p class="muted small">Laporan baru juga dikirim ke emailmu bila notifikasi sudah diatur.</p>' : '') + '<div id="rep-in"><div class="loading"><span class="spin"></span></div></div>');
     b.reports.all().then(all => {
       const list = all.filter(r => f === 'semua' || (f === 'selesai' ? r.status === 'selesai' : r.status !== 'selesai'));
       const box = $('#rep-in'); if (!box) return;

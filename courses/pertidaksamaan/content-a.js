@@ -3,7 +3,11 @@
   'use strict';
   const C = G.BC = G.BC || {};
 
-  /* ---------------- Section map ---------------- */
+  /* ---------------- Learning tracks & section map ---------------- */
+  C.TRACKS = {
+    list: [{ id: 'sekolah', label: 'Jalur sekolah' }, { id: 'ujian', label: 'Jalur ujian PT' }],
+    note: 'Jalur sekolah: materi yang umumnya ada di kelas X. Jalur ujian PT: materi tambahan yang sering keluar di UTBK dan ujian mandiri.'
+  };
   C.SECTIONS = [
     { id: 1, short: 'Konsep & sifat', title: 'Konsep dasar, sifat, dan notasi interval', jalur: 'sekolah', glyph: 'a<b', concepts: ['sifat-dasar', 'notasi-interval'] },
     { id: 2, short: 'Linear', title: 'Pertidaksamaan linear dan bentuk berantai', jalur: 'sekolah', glyph: 'ax+b', concepts: ['linear', 'berantai', 'soal-cerita'] },
@@ -12,7 +16,7 @@
     { id: 5, short: 'Rasional', title: 'Pertidaksamaan rasional (pecahan)', jalur: 'ujian', glyph: 'p/q', concepts: ['rasional', 'syarat-penyebut'] },
     { id: 6, short: 'Irasional', title: 'Pertidaksamaan irasional (bentuk akar)', jalur: 'ujian', glyph: '√', concepts: ['irasional', 'syarat-akar'] },
     { id: 7, short: 'Nilai mutlak', title: 'Pertidaksamaan nilai mutlak', jalur: 'ujian', glyph: '|x|', concepts: ['mutlak'] },
-    { id: 8, short: 'Eksponen & log', title: 'Pertidaksamaan eksponen dan logaritma', jalur: 'campuran', glyph: 'aˣ', concepts: ['eksponen', 'logaritma'] },
+    { id: 8, short: 'Eksponen & log', title: 'Pertidaksamaan eksponen dan logaritma', jalur: ['sekolah', 'ujian'], jalurLabel: 'Eksponen: sekolah · Log: ujian PT', glyph: 'aˣ', concepts: ['eksponen', 'logaritma'] },
     { id: 9, short: 'SPtLDV', title: 'Sistem pertidaksamaan linear dua variabel', jalur: 'sekolah', glyph: 'x,y', concepts: ['sptldv'] }
   ];
 
@@ -120,7 +124,7 @@ $$\\frac{1}{x}-\\frac{2}{x+1}=\\frac{(x+1)-2x}{x(x+1)}=\\frac{1-x}{x(x+1)}$$
   C.INTRO = [
     { k: 'text', tag: 'Mulai di sini', title: 'Dunia jarang bertanya "berapa tepatnya?"', html: `<p>Persamaan menjawab pertanyaan "berapa <b>tepatnya</b>?" Jawabannya biasanya satu titik: $x=4$.</p>
 <p>Tapi hidup lebih sering bertanya "berapa <b>batasnya</b>?" Berapa paling banyak yang bisa kubeli? Berapa paling sedikit nilai yang kubutuhkan? Sampai jarak berapa tarif ini lebih murah? Jawabannya bukan satu titik, melainkan <b>satu wilayah</b> yang aman.</p>
-<p>Itulah pertidaksamaan: <b>matematika tentang batas</b>. Makanya web ini bernama Batas.</p>` },
+<p>Itulah pertidaksamaan: <b>matematika tentang batas</b>.</p>` },
     { k: 'widget', id: 'jajan', title: 'Coba dulu: uang jajan seminggu', tag: 'Eksperimen',
       predict: { q: 'Uang jajan Rp50.000 seminggu. Satu gelas es kopi Rp12.000. Paling banyak berapa gelas yang bisa dibeli?', opts: ['3 gelas', '4 gelas', '5 gelas'], ans: 1, after: 'Geser slider di bawah dan lihat kapan uangmu "jebol".' } },
     { k: 'text', tag: 'Intuisi', title: 'Persamaan vs pertidaksamaan', html: `<p>Kalau ditulis matematis, masalah tadi adalah $12.000\\,x\\le 50.000$. Hasilnya $x\\le 4{,}16\\ldots$, dan karena gelas harus bulat, paling banyak <b>4 gelas</b>.</p>

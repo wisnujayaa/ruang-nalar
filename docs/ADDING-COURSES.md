@@ -34,7 +34,7 @@ A course is a folder in `courses/` containing plain JavaScript files that fill t
 1. Copy `courses/contoh-kursus/` to `courses/<course-id>/` (lowercase letters, digits, `-`).
 2. Register it in `courses/index.js`:
    ```js
-   { id: 'fungsi-kuadrat', title: 'Fungsi kuadrat', brand: 'Parabola', subject: 'Matematika',
+   { id: 'fungsi-kuadrat', title: 'Fungsi kuadrat', subject: 'Matematika',
      level: 'SMA kelas X', blurb: 'One sentence that makes people want to start.', glyph: 'x²', color: 'sol',
      files: ['course.js'] }
    ```
@@ -45,7 +45,8 @@ A course is a folder in `courses/` containing plain JavaScript files that fill t
 ### Course fields
 | Field | Required | Contents |
 |---|---|---|
-| `SECTIONS` | yes | `[{id, short, title, glyph, concepts:[…], jalur?}]`; `jalur` (track) is optional: `sekolah`/`ujian`/`campuran`/`tantangan` |
+| `SECTIONS` | yes | `[{id, short, title, glyph, concepts:[…], jalur?, jalurLabel?}]`; `jalur` = a track id or an array of ids from `TRACKS` (omit = every track); `jalurLabel` overrides the badge text |
+| `TRACKS` | optional | `{ list: [{id, label}], note? }`: learning tracks shown as a filter on the learning map when there are 2 or more (e.g. school vs. entrance-exam track) |
 | `LESSONS` | yes | `{ [sectionId]: [block, …] }` |
 | `BANK` | yes | `{ [questionId]: question }` |
 | `CONCEPTS` | recommended | `{ key: 'Concept name' }` for the mastery map |

@@ -1,8 +1,7 @@
 /* Ruang Nalar — backend layer.
-   One interface, three implementations:
-   - supabase : used when config.js has supabaseUrl & supabaseAnonKey (any static host)
-   - claude   : used when the page runs as an Artifact on claude.ai
-   - local    : fallback; all data stays in this browser (demo mode / no accounts)
+   One interface, two implementations:
+   - supabase : used when config.js has supabaseUrl & supabaseAnonKey
+   - local    : fallback; all data stays in this browser (serverless mode / no accounts)
    Interface used by the UI:
      init(), mode, online, user {id,name,email}, isAdmin, auth.{signUp,signIn,signOut,needsLogin}
      progress.{load,save,watch}, classes.{mine,create,join,remove,leave,members,kick,memberProgress,setMembers,candidates,canCreate,usesCode}
@@ -97,109 +96,6 @@
         async notify() { return null; }
       },
       async profiles(ids) { const st = B.students(); const o = {}; ids.forEach(i => { const s = st.find(x => x.id === i); o[i] = i === me.id ? me.name : s ? s.name : 'Anggota'; }); return o; }
-    };
-    return B;
-  }
-
-  /* =========================== CLAUDE ARTIFACT =========================== */
-  function ClaudeBackend() {
-    let db = null, user = null; const subs = {};
-    const B = {
-      mode: 'claude', online: false, isAdmin: false, user: null,
-      async init() {
-        try {
-          [db, user] = await Promise.all([G.claude.use('db'), G.claude.use('user')]);
-          const id = user ? await user.id() : null;
-          B.isAdmin = user ? await user.isOwner() : false;
-          if (db && id) { const nm = user ? (await user.me()).name : ''; B.user = { id, name: nm || 'Kamu', role: B.isAdmin ? 'admin' : 'student' }; B.online = true; }
-        } catch (e) { B.online = false; }
-        return B;
-      },
-      auth: { needsLogin: false, async signOut() { } },
-      progress: {
-        async load(course) {
-          const ref = db.doc('progress/' + B.user.id + '/kursus/' + course); let sn = await ref.get();
-          if (!sn.exists && course === 'pertidaksamaan') { const old = await db.doc('progress/' + B.user.id).get(); if (old.exists && old.data().s) return old.data().s; }
-          if (subs.p) subs.p();
-          subs.p = ref.onSnapshot(x => { if (x.exists && !x.metadata.hasPendingWrites && subs.cb) subs.cb(course, x.data().s); }, () => { });
-          return sn.exists ? sn.data().s : null;
-        },
-        async save(course, s) {
-          try {
-            await db.doc('progress/' + B.user.id + '/kursus/' + course).set({ s, u: now() });
-            const nick = (G.BA && G.BA.S && G.BA.S.nick) || '';
-            await db.doc('progress/' + B.user.id).set({ u: now(), nick, last: course });
-          } catch (e) { throw err(e.message || 'gagal', e.code === 'invalid_argument' ? 'readonly' : e.code); }
-        },
-        watch(cb) { subs.cb = cb; }
-      },
-      classes: {
-        get canCreate() { return B.isAdmin; }, usesCode: false, manual: true,
-        async mine() {
-          const q = await db.collection('kelas').limit(100).get();
-          return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(c => B.isAdmin || (c.members || []).includes(B.user.id)).map(c => ({ id: c.id, name: c.name, course: c.course || 'pertidaksamaan', members: c.members || [], isOwner: B.isAdmin, ownerId: null }));
-        },
-        async create(c) { const id = 'k' + uid8(); await db.doc('kelas/' + id).set({ name: c.name, course: c.course, members: [], t: now() }); return { id }; },
-        async remove(id) { await db.doc('kelas/' + id).delete(); },
-        async update(id, patch) { const sn = await db.doc('kelas/' + id).get(); const d = sn.exists ? sn.data() : {}; const p = {}; if (patch.name) p.name = String(patch.name).slice(0, 60); if (patch.course) p.course = patch.course; await db.doc('kelas/' + id).set(Object.assign({}, d, p)); },
-        async setMembers(id, ids) { const sn = await db.doc('kelas/' + id).get(); const d = sn.exists ? sn.data() : {}; await db.doc('kelas/' + id).set(Object.assign({}, d, { members: ids })); },
-        async candidates() { const q = await db.collection('progress').limit(200).get(); const ids = q.docs.map(d => d.id); const names = await B.profiles(ids, q.docs); return ids.map(id => ({ id, name: names[id] })); },
-        async members(id) { const sn = await db.doc('kelas/' + id).get(); const ids = sn.exists ? (sn.data().members || []) : []; const names = await B.profiles(ids); return ids.map(i => ({ id: i, name: names[i] })); },
-        async memberProgress(id, course) {
-          const ms = await B.classes.members(id); const out = [];
-          for (const m of ms) {
-            let sn = await db.doc('progress/' + m.id + '/kursus/' + course).get(); let s = sn.exists ? sn.data().s : null; let u = sn.exists ? sn.data().u : null;
-            if (!s && course === 'pertidaksamaan') { const o = await db.doc('progress/' + m.id).get(); if (o.exists && o.data().s) { s = o.data().s; u = o.data().u; } }
-            if (s) { try { out.push({ id: m.id, name: m.name, state: JSON.parse(s), u }); } catch (e) { } }
-          }
-          return out;
-        },
-        async kick(id, sid) { const sn = await db.doc('kelas/' + id).get(); if (sn.exists) await B.classes.setMembers(id, (sn.data().members || []).filter(m => m !== sid)); }
-      },
-      assign: {
-        async list(cid) { const q = await db.collection('kelas/' + cid + '/tugas').limit(200).get(); return q.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.due || 9e15) - (b.due || 9e15)); },
-        async create(cid, a) { const id = 'a' + uid8(); await db.doc('kelas/' + cid + '/tugas/' + id).set(Object.assign({ t: now() }, a)); return { id }; },
-        async remove(cid, id) { await db.doc('kelas/' + cid + '/tugas/' + id).delete(); }
-      },
-      forum: {
-        async threads(cid) { const q = await db.collection('forum').where('cls', '==', cid).limit(300).get(); const list = q.docs.map(d => Object.assign({ id: d.id }, d.data())); const names = await B.profiles(list.map(t => t.a)); return list.map(t => ({ id: t.id, classId: t.cls, title: t.title, body: t.body, a: t.a, authorName: names[t.a], t: t.t, la: t.la || t.t, pin: t.pin ? 1 : 0, solved: t.solved ? 1 : 0, n: t.n || 0 })).sort((a, b) => (b.pin - a.pin) || (b.la - a.la)); },
-        async create(cid, t) { const id = 't' + uid8(); await db.doc('forum/' + id).set({ cls: cid, title: t.title, body: t.body, a: B.user.id, t: now(), la: now(), pin: false, solved: false, n: 0 }); return { id }; },
-        async posts(tid) { const q = await db.collection('forum/' + tid + '/posts').limit(500).get(); const list = q.docs.map(d => Object.assign({ id: d.id }, d.data())); const names = await B.profiles(list.map(p => p.a)); return list.map(p => Object.assign(p, { authorName: names[p.a] })).sort((a, b) => a.t - b.t); },
-        async reply(tid, body) { await db.doc('forum/' + tid + '/posts/p' + uid8()).set({ a: B.user.id, body, t: now() }); const sn = await db.doc('forum/' + tid).get(); if (sn.exists) await db.doc('forum/' + tid).update({ la: now(), n: (sn.data().n || 0) + 1 }); },
-        async update(tid, patch) { const p = {}; if ('pin' in patch) p.pin = !!patch.pin; if ('solved' in patch) p.solved = !!patch.solved; if ('title' in patch) p.title = patch.title; if ('body' in patch) p.body = patch.body; await db.doc('forum/' + tid).update(p); },
-        async remove(tid) { await db.doc('forum/' + tid).delete(); },
-        async removePost(tid, pid) { await db.doc('forum/' + tid + '/posts/' + pid).delete(); }
-      },
-      notes: {
-        watch(cb) { if (!B.online) return cb([]); db.doc('pesan/' + B.user.id).onSnapshot(sn => cb(sn.exists ? (sn.data().items || []) : []), () => cb([])); },
-        async history(sid) { const sn = await db.doc('pesan/' + sid).get(); return sn.exists ? (sn.data().items || []) : []; },
-        async send(sid, text, link) { const ref = db.doc('pesan/' + sid); const sn = await ref.get(); const items = (sn.exists ? (sn.data().items || []) : []).slice(-19); items.push({ id: 'n' + now(), t: now(), text: String(text).slice(0, 600), link: link || null }); await ref.set({ items }); }
-      },
-      courses: {
-        get canEdit() { return B.online && B.isAdmin; },
-        async list() { if (!db) return []; const q = await db.collection('kursus').limit(200).get(); const me = B.user && B.user.id; return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(c => ['unlisted', 'public'].includes(c.visibility) || c.owner === me).map(c => courseMeta(c, me)); },
-        async get(id) { if (!db) return null; const sn = await db.doc('kursus/' + id).get(); if (!sn.exists) return null; const d = Object.assign({ id }, sn.data()); let content = null; try { content = JSON.parse(d.content || 'null'); } catch (e) { } return { meta: courseMeta(d, B.user && B.user.id), content }; },
-        async save(id, m, content) { id = id || newCourseId(); const s = JSON.stringify(content); if (s.length > 900000) throw err('Kursus terlalu besar untuk disimpan di mode ini.'); await db.doc('kursus/' + id).set(Object.assign(pickMeta(m), { owner: B.user.id, content: s, u: now() })); return id; },
-        async remove(id) { await db.doc('kursus/' + id).delete(); },
-        async setVisibility(id, v) { if (!VIS.includes(v)) throw err('Visibilitas tidak dikenal.'); await db.doc('kursus/' + id).update({ visibility: v, u: now() }); }
-      },
-      reports: {
-        canNotify: false,
-        async send(r) { const id = uuid(); await db.doc('laporan/' + id).set(Object.assign(cleanReport(r), { a: B.user ? B.user.id : null, status: 'baru', note: '', t: now() })); return id; },
-        async mine() { if (!db || !B.user) return []; const q = await db.collection('laporan').where('a', '==', B.user.id).limit(50).get(); return q.docs.map(d => repRow(Object.assign({ id: d.id }, d.data()), B.user.name)).sort((x, y) => y.t - x.t); },
-        async all() { if (!db) return []; const q = await db.collection('laporan').limit(300).get(); const list = q.docs.map(d => Object.assign({ id: d.id }, d.data())); const names = await B.profiles(list.map(x => x.a)); return list.map(x => repRow(x, names[x.a] || 'Pengguna')).sort((x, y) => y.t - x.t); },
-        async setStatus(id, status, note) { if (!REPORT_STATUS.includes(status)) throw err('Status tidak dikenal.'); const p = { status }; if (note != null) p.note = String(note).slice(0, 1000); await db.doc('laporan/' + id).update(p); },
-        async remove(id) { await db.doc('laporan/' + id).delete(); },
-        async notify() { return null; }
-      },
-      async profiles(ids, progDocs) {
-        const out = {}; ids = Array.from(new Set(ids.filter(Boolean)));
-        try { const ps = user ? await user.profiles(ids) : {}; ids.forEach(i => { out[i] = (ps[i] && ps[i].name) || ''; }); } catch (e) { }
-        const miss = ids.filter(i => !out[i]);
-        for (const i of miss) { try { const d = progDocs ? progDocs.find(x => x.id === i) : null; const data = d ? d.data() : ((await db.doc('progress/' + i).get()).data() || {}); out[i] = data.nick || 'Anggota'; } catch (e) { out[i] = 'Anggota'; } }
-        if (B.user) out[B.user.id] = out[B.user.id] || B.user.name;
-        return out;
-      }
     };
     return B;
   }
@@ -378,8 +274,7 @@
       const md = u.user_metadata || {};
       let name = md.display_name || md.full_name || md.name || (u.email || '').split('@')[0], role = 'student';
       try {
-        let r = await sb.from('profiles').select('display_name, role').eq('id', u.id).maybeSingle();
-        if (r.error) r = await sb.from('profiles').select('display_name').eq('id', u.id).maybeSingle();   // older schema without the role column
+        const r = await sb.from('profiles').select('display_name, role').eq('id', u.id).maybeSingle();
         if (r.data) { name = r.data.display_name; role = r.data.role || 'student'; }
       } catch (e) { }
       B.user = { id: u.id, name, email: u.email, role, created: Date.parse(u.created_at) || 0 }; B.isAdmin = role === 'admin'; B.online = true; pollNotes();
@@ -390,10 +285,6 @@
   /* Pick the backend */
   let chosen;
   if (CFG.supabaseUrl && CFG.supabaseAnonKey && G.supabase && G.supabase.createClient) chosen = SupabaseBackend();
-  else if (G.claude && G.claude.use) chosen = ClaudeBackend();
   else chosen = LocalBackend();
   G.BB = chosen;
-  G.BB_LOCAL = chosen.mode === 'local' ? chosen : null;
-  G.NALAR_makeLocal = LocalBackend;
-  G.NALAR_makeClaude = ClaudeBackend;
 })(window);

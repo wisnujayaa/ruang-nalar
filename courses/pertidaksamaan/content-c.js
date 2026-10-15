@@ -172,7 +172,7 @@ $$\\frac{x+1}{x-2}>1 \\;\\Rightarrow\\; (x+1)(x-2)>(x-2)^2$$
   ]);
 
   /* ================= SECTION 10: CHALLENGE ================= */
-  C.SECTIONS.push({ id: 10, short: 'Tantangan', title: 'Tantangan: ketaksamaan klasik (olimpiade & kuliah)', jalur: 'tantangan', glyph: 'AM≥GM', concepts: ['amgm', 'ketaksamaan-klasik', 'pembuktian'] });
+  C.SECTIONS.push({ id: 10, short: 'Tantangan', title: 'Tantangan: ketaksamaan klasik (olimpiade & kuliah)', jalur: ['ujian'], jalurLabel: 'Tantangan: olimpiade & kuliah', glyph: 'AM≥GM', concepts: ['amgm', 'ketaksamaan-klasik', 'pembuktian'] });
   Object.assign(C.CONCEPTS, { 'amgm': 'AM-GM & rata-rata', 'ketaksamaan-klasik': 'Cauchy, segitiga, Bernoulli', 'pembuktian': 'Penalaran & pembuktian', 'lintas': 'Soal lintas bab' });
   L[10] = [
     { k: 'retrieval' },

@@ -62,7 +62,6 @@
   function readState(id) {
     try {
       let raw = lsGet(keyOf(id));
-      if (!raw && id === 'pertidaksamaan') raw = lsGet('batas-state-v1'); // migrate from the old version
       const j = JSON.parse(raw || 'null'); if (j && j.v === 1) return A.sanitize(j);
     } catch (e) { }
     return fresh();
@@ -75,7 +74,7 @@
     if (A.course) { A.flush(); A.sync.push(A.course, A.S); }
     A.course = id; A.S = readState(id); A.sync.pull();
   };
-  A.set = (() => { try { return Object.assign({ theme: 'system', recallAll: false, checklist: true, radar: true, jalur: 'semua', goal: 20 }, JSON.parse(lsGet(SKEY) || lsGet('batas-settings-v1') || '{}')); } catch (e) { return { theme: 'system', recallAll: false, checklist: true, radar: true, jalur: 'semua', goal: 20 }; } })();
+  A.set = (() => { try { return Object.assign({ theme: 'system', recallAll: false, checklist: true, radar: true, jalur: 'semua', goal: 20 }, JSON.parse(lsGet(SKEY) || '{}')); } catch (e) { return { theme: 'system', recallAll: false, checklist: true, radar: true, jalur: 'semua', goal: 20 }; } })();
   A.saveSettings = () => lsSet(SKEY, JSON.stringify(A.set));
   let saveT = null;
   A.save = function () {
@@ -199,9 +198,10 @@
   };
 
   /* ---------- export / import ---------- */
-  A.exportCode = function () { const j = JSON.stringify(A.S); return 'BATAS1.' + btoa(unescape(encodeURIComponent(j))); };
+  /* Progress code = "NALAR1." + base64(JSON). Codes made before the rename start with "BATAS1." and are still accepted. */
+  A.exportCode = function () { const j = JSON.stringify(A.S); return 'NALAR1.' + btoa(unescape(encodeURIComponent(j))); };
   A.decodeCode = function (code) {
-    code = String(code || '').trim(); if (!code.startsWith('BATAS1.')) throw new Error('Kode tidak dikenali. Kode diawali dengan BATAS1.');
+    code = String(code || '').trim(); if (!/^(NALAR1|BATAS1)\./.test(code)) throw new Error('Kode tidak dikenali. Kode progres diawali dengan NALAR1.');
     let j; try { j = JSON.parse(decodeURIComponent(escape(atob(code.slice(7).replace(/\s+/g, ''))))); } catch (e) { throw new Error('Kode rusak atau terpotong. Salin ulang seluruh kode.'); }
     if (!j || j.v !== 1) throw new Error('Isi kode rusak.'); return A.sanitize(j);
   };
@@ -246,7 +246,7 @@
     return o;
   };
 
-  /* ---------- sync through the backend (local / Claude / Supabase) ---------- */
+  /* ---------- sync through the backend (local / Supabase) ---------- */
   const sync = A.sync = { status: 'lokal', busy: false, pending: false, timer: null, listeners: [], lastPushed: '', notes: [] };
   const pushed = {};          // last successfully pushed text, per course
   let chain = Promise.resolve();   // pushes are queued in order, so nothing is lost when switching courses

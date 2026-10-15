@@ -3,7 +3,7 @@
 ## Principles
 - **No build step.** Every JS file is a plain IIFE attached to `window`. Easy to read, easy to fork, runs on any static host.
 - **Courses are data.** The core code knows nothing about inequalities; all lessons, questions, widgets, and traps live in `courses/<id>/`.
-- **One backend interface.** The UI never calls Supabase/Claude directly; it always goes through `window.BB`.
+- **One backend interface.** The UI never calls Supabase directly; it always goes through `window.BB`.
 - **Code in English, product in Indonesian.** Identifiers, comments, docs, and tests are English. User-facing text (UI strings, course content, emails, help articles) is Indonesian. Route names that appear in shared URLs (`#gabung=`, `#kursus=`, `#bantuan=`) and stored data keys are kept stable on purpose.
 
 ## Globals
@@ -12,7 +12,7 @@
 | `BM` | `js/math.js` | interval sets `{a,b,ca,cb}`, `parseAnswer`, `solve`, `tex/rich` (mini-TeX), `numberLine` |
 | `NR` | `js/registry.js` | course list & loader |
 | `BC` | `js/registry.js` | **Proxy** to the active course object. Course files write `BC.BANK = …` etc. |
-| `BB` | `js/backend.js` | active backend: local / Claude / Supabase |
+| `BB` | `js/backend.js` | active backend: local or Supabase |
 | `BA` | `js/core.js` | active course progress (`BA.S`), answer recording, review schedule, stats, sync |
 | `BU` | `js/ui.js` | router & UI components used by `platform.js` |
 | `BP` | `js/platform.js` | class page cache |
@@ -61,7 +61,7 @@ An assignment `target` is data, e.g. `{kind:'practice', sec:5, lvl:3}`. `statusO
 - The URL hash from email/OAuth redirects is kept until Supabase has read it, then cleaned before routing.
 
 ## Backend
-`backend.js` picks an adapter on load; `ui.js` switches to the Claude adapter if the Artifact runtime appears later. The interface:
+`backend.js` picks an adapter on load: Supabase when `config.js` has credentials, otherwise local. The interface:
 
 ```
 init(), mode, online, user, isAdmin

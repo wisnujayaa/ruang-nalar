@@ -1,5 +1,5 @@
 /* Ruang Nalar — platform pages: catalog home, account, classes, assignments, discussion forum, student reports.
-   All data goes through G.BB (backend.js), so these pages work the same in local, Claude and Supabase modes. */
+   All data goes through G.BB (backend.js), so these pages work the same in local and Supabase modes. */
 (function (G) {
   'use strict';
   const A = G.BA, C = G.BC, U = G.BU, NR = G.NR;
@@ -75,10 +75,10 @@
     return 'Tenggat ' + (n === 0 ? 'hari ini' : n === 1 ? 'besok' : n + ' hari lagi') + ' · ' + when;
   }
   async function doTargetIn(course, target) { await openCourse(course); U.doTarget(target); }
-  /* Message link: "k:<course>|<target>" or the legacy formats "lesson:3" / "review" */
+  /* Message link: "k:<course>|<target>", e.g. "k:pertidaksamaan|lesson:3" */
   function parseLink(l) {
-    if (!l) return null; let course = A.set.lastCourse || 'pertidaksamaan', rest = l;
-    const m = l.match(/^k:([a-z0-9_-]+)\|(.*)$/); if (m) { course = m[1]; rest = m[2]; }
+    const m = String(l || '').match(/^k:([a-z0-9_-]+)\|(.+)$/); if (!m) return null;
+    const course = m[1], rest = m[2];
     if (rest.startsWith('lesson:')) return { course, target: { kind: 'lesson', sec: +rest.slice(7) } };
     if (rest.startsWith('practice:')) { const [s, l2] = rest.slice(9).split(':'); return { course, target: { kind: 'practice', sec: +s, lvl: +l2 } }; }
     return { course, target: { kind: rest } };
@@ -92,7 +92,7 @@
     h += '<div class="hello"><div><p class="eyebrow">' + greet() + '</p><h1>' + (name ? 'Hai, ' + esc(name) : 'Hai!') + '</h1><p class="muted small">' + esc((G.NALAR_CONFIG || {}).tagline || 'Belajar sedikit tiap hari, paham sampai ke akarnya.') + '</p></div></div>';
     if (bb().mode === 'supabase' && needLogin()) h += '<div class="card nudge"><p><b>Masuk atau daftar</b> supaya progresmu tersimpan di akun, bisa dibuka dari HP maupun laptop, dan kamu bisa bergabung ke kelas.</p><div class="row"><button class="btn primary" data-go="login">Masuk / daftar</button></div></div>';
     if (G.NalarHelp) h += G.NalarHelp.welcomeCard();
-    if (notes.length) h += '<div class="note-k">' + ic('send') + '<div><p class="eyebrow">Pesan dari guru/kakak' + (notes.length > 1 ? ' · ' + notes.length + ' baru' : '') + '</p><p class="note-txt"></p><div class="row">' + (notes[0].link ? '<button class="btn small" data-pact="note-open" data-id="' + esc(notes[0].id) + '">Kerjakan</button>' : '') + '<button class="btn small ghost" data-pact="note-read" data-id="' + esc(notes[0].id) + '">Sudah dibaca</button></div></div></div>';
+    if (notes.length) h += '<div class="note-k">' + ic('send') + '<div><p class="eyebrow">Pesan dari guru' + (notes.length > 1 ? ' · ' + notes.length + ' baru' : '') + '</p><p class="note-txt"></p><div class="row">' + (notes[0].link ? '<button class="btn small" data-pact="note-open" data-id="' + esc(notes[0].id) + '">Kerjakan</button>' : '') + '<button class="btn small ghost" data-pact="note-read" data-id="' + esc(notes[0].id) + '">Sudah dibaca</button></div></div></div>';
     const last = A.set.lastCourse && NR.meta(A.set.lastCourse);
     if (last && !last.soon) {
       const S = stateFor(last.id); const done = Object.values(S.sections || {}).filter(x => x.done).length;
@@ -131,7 +131,7 @@
   /* ============ Account ============ */
   V.me = function () {
     const b = bb(); const u = b.user; const name = A.displayName();
-    const modeTxt = { local: 'Mode tanpa server · data di browser ini', claude: 'Akun Claude', supabase: u ? 'Akun ' + (u.email || '') : 'Belum masuk' }[b.mode];
+    const modeTxt = { local: 'Mode tanpa server · data di browser ini', supabase: u ? 'Akun ' + (u.email || '') : 'Belum masuk' }[b.mode];
     let h = '<div class="card acct"><span class="av big">' + esc((name || '?').slice(0, 1).toUpperCase()) + '</span><div><h2 class="nm"></h2><p class="muted small">' + esc(modeTxt) + '</p></div></div>';
     h += '<div class="row wrap"><button class="btn" data-go="settings">Pengaturan</button>' + (b.mode === 'supabase' ? (u ? '<button class="btn ghost" data-go="sandi">Ganti sandi</button><button class="btn ghost" data-pact="logout">' + ic('out') + ' Keluar</button>' : '<button class="btn primary" data-go="login">Masuk / daftar</button>') : '') + '</div>';
     const ROLE = { student: 'Siswa', teacher: 'Guru', admin: 'Admin' };
@@ -552,11 +552,11 @@
   function linkSelect(id, course) {
     return '<label class="lbl" for="' + id + '">Tautkan ke</label><select id="' + id + '"><option value="">(tidak ada)</option><option value="k:' + course + '|review">Review harian</option><option value="k:' + course + '|mistakes">Buku kesalahan</option><option value="k:' + course + '|tryout">Tryout</option>' + ((C.SECTIONS || []).map(x => '<option value="k:' + course + '|lesson:' + x.id + '">Bagian ' + x.id + ': ' + esc(x.short) + '</option>').join('')) + '</select>';
   }
-  /* Local/Claude mode: the teacher picks members (students from progress codes / users who opened the site) */
+  /* Local mode: the teacher picks members (students added via progress codes) */
   function manageMembers(c, members) {
     const b = bb();
     return '<details class="card" id="mman"><summary><b>' + ic('users') + ' Atur anggota</b></summary><div id="mcand"><p class="muted">Memuat daftar…</p></div>' +
-      (b.mode === 'local' ? '<div class="form"><h3>Tambah siswa dari kode progres</h3><p class="muted small">Siswa membuat kode di menu Akun → Pengaturan → Kode progres, lalu mengirimnya ke kamu. Kirim ulang kode untuk memperbarui datanya.</p><label class="lbl" for="dname">Nama siswa</label><input id="dname" maxlength="30" placeholder="misalnya: Dika"><label class="lbl" for="dcode">Kode</label><textarea id="dcode" rows="3" class="mono small" placeholder="Tempel kode BATAS1…"></textarea><p class="err" role="alert" id="dcode-e"></p><button class="btn" data-pact="add-code">Tambahkan ke kelas</button></div>' : '<p class="muted small">Daftar berisi semua orang yang pernah menyimpan progres di situs ini.</p>') + '</details>';
+      (b.mode === 'local' ? '<div class="form"><h3>Tambah siswa dari kode progres</h3><p class="muted small">Siswa membuat kode di menu Akun → Pengaturan → Kode progres, lalu mengirimnya ke kamu. Kirim ulang kode untuk memperbarui datanya.</p><label class="lbl" for="dname">Nama siswa</label><input id="dname" maxlength="30" placeholder="misalnya: Dika"><label class="lbl" for="dcode">Kode</label><textarea id="dcode" rows="3" class="mono small" placeholder="Tempel kode NALAR1…"></textarea><p class="err" role="alert" id="dcode-e"></p><button class="btn" data-pact="add-code">Tambahkan ke kelas</button></div>' : '<p class="muted small">Daftar berisi semua orang yang pernah menyimpan progres di situs ini.</p>') + '</details>';
   }
   async function bindManage(c) {
     const box = $('#mcand'); if (!box) return;

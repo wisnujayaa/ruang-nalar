@@ -8,7 +8,7 @@ The first course is **Pertidaksamaan** (inequalities): from Indonesian high-scho
 
 > The app's interface and course content are in **Indonesian**, because the learners are Indonesian. The code, comments, docs, and tests are in English.
 
-> Pure static site: plain HTML + CSS + JavaScript, **no build step**. It runs on any static host (Cloudflare Pages, Netlify, GitHub Pages).
+> Pure static site: plain HTML + CSS + JavaScript, **no build step**. It runs on any static host; the live site uses Cloudflare Pages.
 
 ## Features
 
@@ -40,13 +40,12 @@ The first course is **Pertidaksamaan** (inequalities): from Indonesian high-scho
 - All progress from the server or progress codes passes through a sanitizer (`BA.sanitize`) before use, so student data can't inject scripts into a teacher's screen
 - Supabase email templates (code-only, in Indonesian) in `supabase/email-templates/` (guide: [docs/EMAIL.md](docs/EMAIL.md))
 
-## Three storage modes
+## Two storage modes
 
 | Mode | When | Accounts | Classes & forums |
 |---|---|---|---|
 | **Serverless** | `config.js` empty (default) | – | Only in that browser (good for trying it out; teachers can follow students via *progress codes*) |
 | **Supabase** | `config.js` has the URL & anon key | Google, or email + password | Online, multi-device, protected by Row Level Security |
-| **Claude Artifact** | Opened as an artifact on claude.ai | Claude account | Online inside claude.ai |
 
 ## Quick start
 
@@ -69,8 +68,6 @@ It must be served (not opened as a `file://`), because courses are loaded dynami
 5. When the site address changes, update **Supabase → Authentication → URL Configuration** (Site URL + Redirect URLs)
    and, if you use Google sign-in, the **Authorized JavaScript origins** in Google Cloud (see [docs/EMAIL.md](docs/EMAIL.md)).
 
-Netlify works too (same `_headers` format), but Netlify's newer free plan charges credits per deploy.
-
 ## Enable accounts, online classes, and forums (Supabase, free)
 
 In short: create a Supabase project → run `supabase/schema.sql`, `courses.sql`, `roles.sql`, `course-access.sql`, `reports.sql`, then `hardening.sql` in the SQL Editor → make your account admin → put the Project URL and **anon** key in `config.js` → set the Site URL. Step by step: [docs/SUPABASE.md](docs/SUPABASE.md).
@@ -85,13 +82,13 @@ Without code: **Account → Course Studio**. With code (custom widgets & questio
 index.html              page shell
 privasi.html            privacy policy (Indonesian, linked from sign-in and Google OAuth)
 config.js               site configuration (Supabase optional; public anon key only)
-_headers                security headers & CSP (Cloudflare Pages / Netlify)
+_headers                security headers & CSP (Cloudflare Pages)
 manifest.webmanifest    PWA manifest
 assets/                 CSS & icons
 js/
   math.js               interval engine, answer parser, mini-TeX, number line
   registry.js           course loader (window.BC = active course)
-  backend.js            storage adapters: local / Claude / Supabase
+  backend.js            storage adapters: local / Supabase
   core.js               per-course progress, spaced repetition, stats, sync, sanitizer
   ui.js                 learning pages: lessons, questions, review, flashcards, routing
   platform.js           catalog home, account, classes, assignments, forum, reports

@@ -63,7 +63,7 @@
       { k: 'recap', title: 'Rangkuman mini', items: ['$p\\%=\\frac p{100}$.', '"$p\\%$ dari $N$" = $\\frac p{100}\\times N$.', '"$a$ itu berapa persen dari $b$" = $\\frac ab\\times100\\%$.'] },
       { k: 'practice' },
       { k: 'res' },
-      { k: 'exit', qs: ['p1-1', 'p1-3', 'p1-5'], prompt: 'Jelaskan arti "25% dari 80" kepada adik kelas.', points: ['Menyebut "per seratus"', 'Menyebut perkalian dengan 25/100', 'Hasilnya 20'] }
+      { k: 'exit', qs: ['p1-1', 'p1-3', 'p1-5'], prompt: 'Jelaskan arti "25% dari 80" kepada temanmu.', points: ['Menyebut "per seratus"', 'Menyebut perkalian dengan 25/100', 'Hasilnya 20'] }
     ],
     2: [
       { k: 'retrieval' },

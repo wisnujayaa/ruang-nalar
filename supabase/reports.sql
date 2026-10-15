@@ -3,7 +3,7 @@
 -- Run AFTER schema.sql and roles.sql. Safe to re-run.
 --   - Anyone may report (including signed-out visitors), with an hourly limit.
 --   - Reporters only see their own reports; admins see & manage all of them.
---   - Email/WhatsApp notifications are sent by the Edge Function supabase/functions/notify-report.
+--   - Email notifications are sent by the Edge Function supabase/functions/notify-report.
 -- =====================================================================
 create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),

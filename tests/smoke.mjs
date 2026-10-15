@@ -98,7 +98,7 @@ console.log('Forum: thread, reply, pin, answered OK');
 await page.click('[data-tab="anggota"]');
 await page.waitForSelector('#mman');
 // add a student via progress code
-const code = await page.evaluate(() => { const S = BA.fresh(); S.nick = 'Dika'; for (let i = 0; i < 5; i++) S.attempts.push({ t: Date.now() + i, i: 's5-l3-' + i, s: 5, l: 3, ok: i ? 1 : 0, c: 3, ms: 1000, k: ['rasional'], src: 'latihan' }); return 'BATAS1.' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))); });
+const code = await page.evaluate(() => { const S = BA.fresh(); S.nick = 'Dika'; for (let i = 0; i < 5; i++) S.attempts.push({ t: Date.now() + i, i: 's5-l3-' + i, s: 5, l: 3, ok: i ? 1 : 0, c: 3, ms: 1000, k: ['rasional'], src: 'latihan' }); return 'NALAR1.' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))); });
 await page.click('#mman summary');
 await page.fill('#dname', 'Dika'); await page.fill('#dcode', code);
 await page.click('[data-pact="add-code"]');

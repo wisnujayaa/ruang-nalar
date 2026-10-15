@@ -171,7 +171,7 @@
     const lab = { 'lokal': bb.mode === 'supabase' ? 'Belum masuk: progres tersimpan di perangkat ini' : 'Tersimpan di perangkat ini', 'tersinkron': 'Tersinkron', 'menyimpan': 'Menyimpan…', 'gagal': 'Gagal sinkron, tersimpan lokal', 'hanya-baca': 'Hanya-baca, tersimpan lokal' }[st] || st;
     const sy = $('#sync'); if (sy) { sy.className = 'sync s-' + st; sy.title = lab; $('#sync-t').textContent = lab; }
     const sk = $('#streak'); if (sk) { sk.innerHTML = ic('flame') + '<b>' + (A.course ? A.streak() : 0) + '</b>'; sk.title = 'Hari beruntun belajar' + (A.course ? ' di kursus ini' : ''); sk.hidden = !A.course; }
-    const cc = $('#course-chip'); if (cc) { const m = A.course && G.NR.meta(A.course); cc.hidden = !m; if (m) { cc.textContent = m.brand || m.title; cc.title = 'Kursus aktif: ' + m.title; } }
+    const cc = $('#course-chip'); if (cc) { const m = A.course && G.NR.meta(A.course); cc.hidden = !m; if (m) { cc.innerHTML = (m.glyph ? '<span class="cc-g"></span>' : '') + '<span class="cc-t"></span>'; if (m.glyph) cc.querySelector('.cc-g').textContent = m.glyph; cc.querySelector('.cc-t').textContent = m.title; cc.classList.toggle('has-g', !!m.glyph); cc.title = 'Kursus aktif: ' + m.title; cc.setAttribute('aria-label', 'Kursus aktif: ' + m.title); } }
   }
 
   /* ======================== QUESTION COMPONENT ======================== */
@@ -491,12 +491,18 @@
     if (weak) return { t: 'Latih prasyarat ' + weak.id, d: weak.title, go: ['prereq', { id: weak.id }] };
     const cur = C.SECTIONS.find(s => { const pr = A.secProgress(s.id); return pr.started && !pr.done; });
     if (cur) return { t: 'Lanjutkan Bagian ' + cur.id, d: cur.title, go: ['lesson', { sec: cur.id, i: A.secProgress(cur.id).step }] };
-    const nx = C.SECTIONS.find(s => !A.secProgress(s.id).done && (A.set.jalur === 'semua' || !s.jalur || s.jalur === A.set.jalur || s.jalur === 'campuran'));
+    const nx = C.SECTIONS.find(s => !A.secProgress(s.id).done && inTrack(s, curTrack()));
     if (nx) return { t: 'Mulai Bagian ' + nx.id, d: nx.title, go: ['lesson', { sec: nx.id, i: 0 }] };
     return { t: 'Tryout', d: 'Semua bagian selesai. Uji dirimu dengan waktu.', go: ['tryout'] };
   }
   /* Course page: continue + practice tools + learning map */
-  const JALUR = { sekolah: 'Jalur sekolah', ujian: 'Jalur ujian PT', campuran: 'Eksponen: sekolah · Log: ujian PT', tantangan: 'Tantangan: olimpiade & kuliah' };
+  /* Optional learning tracks, defined by the course: C.TRACKS = { list: [{id, label}], note }.
+     A section's `jalur` is a track id or an array of ids (no `jalur` = in every track); `jalurLabel` overrides its badge. */
+  const trackList = () => (C.TRACKS && Array.isArray(C.TRACKS.list)) ? C.TRACKS.list : [];
+  const curTrack = () => trackList().some(t => t.id === A.set.jalur) ? A.set.jalur : 'semua';
+  const tracksOf = (s) => s.jalur ? [].concat(s.jalur) : [];
+  const inTrack = (s, j) => j === 'semua' || !s.jalur || tracksOf(s).includes(j);
+  const trackLabel = (s) => s.jalurLabel || (trackList().find(t => t.id === tracksOf(s)[0]) || {}).label || '';
   V.course = function () {
     const S = A.S, ns = nextStep(), due = A.dueItems().length, dc = A.dueCards(A.cardPool()).length, mk = Object.values(S.mistakes).filter(m => !m.fx).length;
     const min = A.minutesToday(), goal = A.set.goal || 20, pct = Math.min(1, min / goal);
@@ -522,12 +528,11 @@
   function glyphLine() { return '<svg viewBox="0 0 120 24"><line x1="4" y1="12" x2="116" y2="12"/><circle cx="34" cy="12" r="5" class="h"/><line x1="34" y1="12" x2="88" y2="12" class="s"/><circle cx="88" cy="12" r="5" class="f"/></svg>'; }
 
   function mapHTML() {
-    const S = A.S, jal = A.set.jalur;
-    const jalurs = Array.from(new Set(C.SECTIONS.map(s => s.jalur).filter(Boolean)));
+    const S = A.S, jal = curTrack(), tl = trackList();
     let h = '<section class="map" id="peta"><h2 class="h1like">Peta belajar</h2>';
-    if (jalurs.includes('sekolah') && jalurs.includes('ujian')) {
-      h += '<div class="seg" role="radiogroup" aria-label="Jalur">' + [['semua', 'Semua'], ['sekolah', 'Jalur sekolah'], ['ujian', 'Jalur ujian PT']].map(j => '<button role="radio" data-act="jalur" data-j="' + j[0] + '" aria-checked="' + (jal === j[0]) + '">' + j[1] + '</button>').join('') + '</div>';
-      h += '<p class="muted small">Jalur sekolah: materi yang umumnya ada di kelas X. Jalur ujian PT: materi tambahan yang sering keluar di UTBK dan ujian mandiri.</p>';
+    if (tl.length >= 2) {
+      h += '<div class="seg" role="radiogroup" aria-label="Jalur">' + [{ id: 'semua', label: 'Semua' }].concat(tl).map(j => '<button role="radio" data-act="jalur" data-j="' + esc(j.id) + '" aria-checked="' + (jal === j.id) + '">' + esc(j.label) + '</button>').join('') + '</div>';
+      if (C.TRACKS.note) h += '<p class="muted small">' + esc(C.TRACKS.note) + '</p>';
     }
     h += '<ol class="path">';
     if (C.INTRO.length) h += pathItem('intro', 0, info().introTitle || 'Pengantar', S.intro ? 'done' : 'now', '0');
@@ -535,10 +540,10 @@
     if (C.PREREQ.length) h += '<li class="pre"><p class="eyebrow">Prasyarat</p><div class="pregrid">' + C.PREREQ.map(p => { const s = A.prereqStatus(p.id); return '<button class="pre-b s-' + s + '" data-go="prereq" data-id="' + p.id + '"><b>' + p.id + '</b><span>' + esc(p.title) + '</span><em>' + ({ lulus: 'lulus', latih: 'perlu latihan', belum: 'belum dites' })[s] + '</em></button>'; }).join('') + '</div></li>';
     const st = A.stats();
     C.SECTIONS.forEach(s => {
-      if (jal !== 'semua' && s.jalur && s.jalur !== jal && s.jalur !== 'campuran' && !(jal === 'ujian' && s.jalur === 'tantangan')) return;
+      if (!inTrack(s, jal)) return;
       const pr = A.secProgress(s.id);
       const ms = (s.concepts || []).map(k => st.conc[k]).filter(Boolean); const m = ms.length ? ms.reduce((a, c) => a + c.m, 0) / ms.length : null;
-      h += '<li class="sec ' + (pr.done ? 'done' : pr.started ? 'now' : '') + '"><button data-go="lesson" data-sec="' + s.id + '"><span class="num">' + s.id + '</span><span class="sec-g" aria-hidden="true">' + esc(s.glyph || '') + '</span><span class="sec-t"><b>' + esc(s.title) + '</b><small>' + (s.jalur && JALUR[s.jalur] ? JALUR[s.jalur] + ' · ' : '') + (C.LESSONS[s.id] || []).length + ' subbab</small></span><span class="sec-p"><i style="width:' + (pr.done ? 100 : Math.round(pr.step / Math.max(1, pr.total - 1) * 100)) + '%"></i></span>' + (m != null ? '<span class="mast" title="Penguasaan">' + Math.round(m * 100) + '%</span>' : '') + '</button></li>';
+      h += '<li class="sec ' + (pr.done ? 'done' : pr.started ? 'now' : '') + '"><button data-go="lesson" data-sec="' + s.id + '"><span class="num">' + s.id + '</span><span class="sec-g" aria-hidden="true">' + esc(s.glyph || '') + '</span><span class="sec-t"><b>' + esc(s.title) + '</b><small>' + (trackLabel(s) ? esc(trackLabel(s)) + ' · ' : '') + (C.LESSONS[s.id] || []).length + ' subbab</small></span><span class="sec-p"><i style="width:' + (pr.done ? 100 : Math.round(pr.step / Math.max(1, pr.total - 1) * 100)) + '%"></i></span>' + (m != null ? '<span class="mast" title="Penguasaan">' + Math.round(m * 100) + '%</span>' : '') + '</button></li>';
     });
     const nL = Object.values(C.BANK).filter(q => q.lintas).length;
     h += '<li class="end"><p class="eyebrow">Penutup</p><div class="tiles">' + (C.SUMMARY ? tile('summary', 'Ringkasan', 'Isi dulu, baru buka') : '') + tile('mixed', 'Latihan campuran', '12 soal acak dari banyak bab') + (nL ? tile('lintas', 'Soal lintas bab', nL + ' soal gabungan beberapa bab') : '') + tile('tryout', 'Tryout', 'Berwaktu, level ujian') + (C.SUMMARY ? tile('dump', 'Brain dump', 'Tulis semua yang kamu ingat') : '') + (Object.keys(C.TRAPS).length ? tile('traps', 'Katalog jebakan', Object.keys(C.TRAPS).length + ' jebakan umum') : '') + '</div></li>';
@@ -782,7 +787,7 @@
   V.settings = function () {
     const s = A.set; const sy = A.sync; const bb = G.BB || {};
     const syncTxt = {
-      'lokal': bb.mode === 'supabase' ? 'Kamu belum masuk. Progres tersimpan di perangkat ini dan otomatis digabung ke akunmu setelah masuk.' : bb.mode === 'claude' ? 'Progres tersimpan di perangkat ini saja.' : 'Mode tanpa server: progres tersimpan di browser ini saja. Pemilik situs bisa menghubungkan Supabase (lihat README) supaya akun, kelas, dan forum bisa dipakai bersama.',
+      'lokal': bb.mode === 'supabase' ? 'Kamu belum masuk. Progres tersimpan di perangkat ini dan otomatis digabung ke akunmu setelah masuk.' : 'Mode tanpa server: progres tersimpan di browser ini saja. Pemilik situs bisa menghubungkan Supabase (lihat README) supaya akun, kelas, dan forum bisa dipakai bersama.',
       'tersinkron': 'Tersinkron ke akunmu. Perangkat lain yang masuk dengan akun yang sama memakai progres yang sama.', 'menyimpan': 'Sedang menyimpan…',
       'gagal': 'Sinkronisasi gagal sementara. Progres aman di perangkat ini dan akan dicoba lagi.', 'hanya-baca': 'Akunmu hanya bisa melihat, belum bisa menyimpan.' }[sy.status];
     const meta = A.course && G.NR.meta(A.course);
@@ -794,7 +799,7 @@
       '<label class="tog"><input type="checkbox" id="checklist"' + (s.checklist ? ' checked' : '') + '> <span><b>Cek 5 detik</b> sebelum mengirim jawaban</span></label>' +
       '<label class="tog"><input type="checkbox" id="radar"' + (s.radar ? ' checked' : '') + '> <span><b>Radar jebakan</b> (memudar otomatis setelah dikuasai)</span></label><button class="btn primary" data-act="set-save">Simpan</button><p class="ok small" id="set-ok" aria-live="polite"></p></div>' +
       '<div class="card"><h2>Sinkronisasi</h2><p><span class="sync s-' + sy.status + '"><i></i></span> ' + esc(syncTxt) + '</p></div>' +
-      (meta ? '<div class="card"><h2>Kode progres · ' + esc(meta.title) + '</h2><p class="muted">Cadangan manual, atau kirim ke guru/kakak lewat WhatsApp kalau belum memakai akun. Tempelkan kode di perangkat lain untuk menggabungkan progres.</p><div class="row"><button class="btn" data-act="exp">Buat kode</button></div><textarea id="code" rows="3" class="mono small" placeholder="Tempel kode BATAS1… di sini untuk impor"></textarea><div class="row"><button class="btn" data-act="copy">Salin</button><button class="btn" data-act="imp">Impor & gabungkan</button></div><p class="small" id="code-m" aria-live="polite"></p></div>' +
+      (meta ? '<div class="card"><h2>Kode progres · ' + esc(meta.title) + '</h2><p class="muted">Cadangan manual, atau kirim ke gurumu kalau belum memakai akun. Tempelkan kode di perangkat lain untuk menggabungkan progres.</p><div class="row"><button class="btn" data-act="exp">Buat kode</button></div><textarea id="code" rows="3" class="mono small" placeholder="Tempel kode NALAR1… di sini untuk impor"></textarea><div class="row"><button class="btn" data-act="copy">Salin</button><button class="btn" data-act="imp">Impor & gabungkan</button></div><p class="small" id="code-m" aria-live="polite"></p></div>' +
       '<div class="card"><h2>Mulai dari awal</h2><p class="muted">Menghapus semua progres kursus <b>' + esc(meta.title) + '</b> di perangkat ini' + (sy.online ? ' dan di akunmu' : '') + '.</p><div id="rst"><button class="btn danger" data-act="reset1">Hapus progres kursus ini</button></div></div>' : '<p class="muted small">Buka salah satu kursus untuk melihat kode progres dan opsi hapus progres.</p>') + '</section>';
   };
   /* ======================== AKSI ======================== */
@@ -835,7 +840,7 @@
       case 'dump-save': { const sec = +d.s; A.S.dumps['s' + sec] = { t: Date.now(), text: $('#dump-t').value.slice(0, 2000), got: $$('#dump-p [data-pt]:checked').length }; A.save(); render(); break; }
       case 'theme': A.set.theme = d.t; A.saveSettings(); applyTheme(); render(); break;
       case 'set-save': { const n = $('#nick').value.trim().slice(0, 40); if (n !== A.set.name) { A.set.name = n; if (G.BB && G.BB.setName && n) { try { await G.BB.setName(n); } catch (err) { } } } if (A.course && n !== A.S.nick) { A.S.nick = n; A.S.nickT = Date.now(); } A.set.goal = Math.max(5, Math.min(120, +$('#goal').value || 20)); A.set.recallAll = $('#recallAll').checked; A.set.checklist = $('#checklist').checked; A.set.radar = $('#radar').checked; A.saveSettings(); A.save(); $('#set-ok').textContent = 'Tersimpan.'; break; }
-      case 'exp': $('#code').value = A.exportCode(); $('#code-m').textContent = 'Kode dibuat. Salin dan simpan atau kirim ke kakak.'; break;
+      case 'exp': $('#code').value = A.exportCode(); $('#code-m').textContent = 'Kode dibuat. Salin dan simpan, atau kirim ke gurumu.'; break;
       case 'copy': { const v = $('#code').value; try { await navigator.clipboard.writeText(v); $('#code-m').textContent = 'Tersalin.'; } catch (err) { $('#code').select(); $('#code-m').textContent = 'Tekan salin (Ctrl+C) untuk menyalin teks yang terpilih.'; } break; }
       case 'imp': { try { const st = A.decodeCode($('#code').value); A.S = A.merge(A.S, st); A.save(); $('#code-m').textContent = 'Berhasil digabungkan: ' + st.attempts.length + ' jawaban dari kode.'; } catch (err) { $('#code-m').textContent = err.message; } break; }
       case 'reset1': $('#rst').innerHTML = '<p class="bad">Yakin? Semua progres akan hilang dan tidak bisa dikembalikan.</p><div class="row"><button class="btn danger" data-act="reset2">Ya, hapus semua</button><button class="btn" data-act="reset0">Batal</button></div>'; break;
@@ -879,19 +884,11 @@
       }
       if (nav.cur.v === 'home' || nav.cur.v === 'settings') render();
     });
-    // Pick the backend: Supabase (if configured) or local; on claude.ai, wait for the Artifact runtime
+    // Start syncing with the backend chosen in backend.js (Supabase if configured, otherwise local)
     const start = () => A.sync.init().catch(e => { console.error(e); A.sync.status = 'lokal'; renderTop(); })
       .then(() => { if (landing) handleLanding(landing); })
       .then(() => G.NR.refreshRemote()).then(() => { if (['home', 'me', 'kelas', 'studio'].includes(nav.cur.v)) render(); });
-    const cfg = G.NALAR_CONFIG || {};
-    if (G.BB.mode === 'local' && !(cfg.supabaseUrl && cfg.supabaseAnonKey) && G.NALAR_makeClaude) {
-      const tryClaude = (n) => {
-        if (G.claude && G.claude.use) { G.BB = G.NALAR_makeClaude(); start(); }
-        else if (n < 5) setTimeout(() => tryClaude(n + 1), 300 * (n + 1));
-        else start();
-      };
-      tryClaude(0);
-    } else start();
+    start();
     window.addEventListener('pagehide', A.flush);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { A.flush(); A.sync.push(); } });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.cur.v !== 'home') { const t = e.target; if (!t.matches || !t.matches('input,textarea,select')) back(); } });

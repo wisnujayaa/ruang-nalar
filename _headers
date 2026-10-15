@@ -1,4 +1,4 @@
-# Security headers (the _headers format is understood by Cloudflare Pages and Netlify; applies to every page).
+# Security headers for Cloudflare Pages (applies to every page).
 # - Content-Security-Policy: only this site's own scripts may run (no inline scripts / eval),
 #   connections only to Supabase, iframes only from the embed services the widgets allow.
 #   *.supabase.co keeps working if you move to another Supabase project.

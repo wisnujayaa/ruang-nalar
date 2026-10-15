@@ -49,7 +49,7 @@
     const b = bb(); const can = b.courses && b.courses.canEdit;
     let h = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><p class="eyebrow">Untuk guru</p><h1>Studio kursus</h1></div></header>';
     if (!can) {
-      h += '<div class="card"><p>' + (b.mode === 'supabase' && b.user ? 'Studio hanya untuk akun <b>guru</b>. Akunmu saat ini berperan siswa. Minta admin situs mengubah akunmu menjadi guru di halaman admin.' : b.mode === 'supabase' ? 'Masuk dulu untuk membuat kursus.' : b.mode === 'claude' ? 'Di versi Claude, hanya pemilik halaman yang bisa membuat kursus.' : 'Editor kursus belum tersedia.') + '</p>' + (b.mode === 'supabase' && !b.user ? '<button class="btn primary" data-go="login">Masuk / daftar</button>' : '') + '</div></section>';
+      h += '<div class="card"><p>' + (b.mode === 'supabase' && b.user ? 'Studio hanya untuk akun <b>guru</b>. Akunmu saat ini berperan siswa. Minta admin situs mengubah akunmu menjadi guru di halaman admin.' : b.mode === 'supabase' ? 'Masuk dulu untuk membuat kursus.' : 'Editor kursus belum tersedia.') + '</p>' + (b.mode === 'supabase' && !b.user ? '<button class="btn primary" data-go="login">Masuk / daftar</button>' : '') + '</div></section>';
       view().innerHTML = h; return;
     }
     h += '<div class="card nudge"><p><b>Buat kursus tanpa menulis kode.</b> Susun bagian materi, contoh bertahap, soal 6 tipe, flashcard, dan jebakan umum. Semua fitur platform (review berjarak, buku kesalahan, kelas, tugas, laporan guru) langsung berlaku untuk kursusmu.</p>' + btn('new', ic('plus') + ' Buat kursus baru', '', 'btn primary') + '</div>';
@@ -59,7 +59,7 @@
     const files = NR.list().filter(c => !c.db && !c.soon);
     if (files.length && b.isAdmin) {
       const repo = String((G.NALAR_CONFIG || {}).repoUrl || '').replace(/\/$/, '');
-      h += '<h2 class="h1like">Kursus berkas (kode)</h2><div class="card"><p class="muted small">Kursus ini ditulis sebagai kode di folder <code>courses/</code>, karena memakai widget interaktif dan generator soal buatan sendiri yang tidak bisa dibuat lewat formulir. Mengeditnya lewat GitHub: ubah file, lalu Netlify memperbarui situs otomatis dalam ~1 menit. Panduan: <code>docs/ADDING-COURSES.md</code>.</p><ul class="file-courses">' +
+      h += '<h2 class="h1like">Kursus berkas (kode)</h2><div class="card"><p class="muted small">Kursus ini ditulis sebagai kode di folder <code>courses/</code>, karena memakai widget interaktif dan generator soal buatan sendiri yang tidak bisa dibuat lewat formulir. Mengeditnya lewat GitHub: ubah file, lalu situs diperbarui otomatis dalam ~1 menit. Panduan: <code>docs/ADDING-COURSES.md</code>.</p><ul class="file-courses">' +
         files.map(c => '<li><b>' + escA(c.title) + '</b> <span class="muted small mono">courses/' + escA(c.id) + '/</span>' + (c.hidden ? ' <span class="chip">tersembunyi</span>' : '') + (repo ? ' <a class="btn small" target="_blank" rel="noopener" href="' + escA(repo) + '/tree/main/courses/' + encodeURIComponent(c.id) + '">Buka di GitHub</a>' : '') + '</li>').join('') + '</ul></div>';
     }
     h += '</section>';

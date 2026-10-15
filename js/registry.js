@@ -14,7 +14,7 @@
     getOwnPropertyDescriptor: (_, k) => { const d = Object.getOwnPropertyDescriptor(holder.cur, k); if (d) d.configurable = true; return d; }
   });
   /* Two course sources:
-     - file  : courses/index.js (written in code, e.g. Pertidaksamaan)
+     - file  : courses/index.js (written in code)
      - db    : created by teachers in the web editor (id starts with "c-"), loaded from the backend */
   const R = G.NR = {
     remote: [],
@@ -79,7 +79,7 @@
     o.CARDS = o.CARDS || []; o.TRAPS = o.TRAPS || {}; o.PREREQ = o.PREREQ || []; o.INTRO = o.INTRO || [];
     o.CONCEPTS = o.CONCEPTS || {}; o.RES = o.RES || {}; o.RES_GENERAL = o.RES_GENERAL || [];
     o.GEN_BY_SEC = o.GEN_BY_SEC || {}; o.GEN_BY_PRE = o.GEN_BY_PRE || {};
-    o.SUMMARY = o.SUMMARY || null; o.CHECK = o.CHECK || null;
+    o.SUMMARY = o.SUMMARY || null; o.CHECK = o.CHECK || null; o.TRACKS = o.TRACKS || null;
     if (!o.makeGen) o.makeGen = (name, seed) => { const g = o.GEN[name]; if (!g) return null; try { return g.make(seed >>> 0); } catch (e) { console.error(e); return null; } };
   };
 })(window);

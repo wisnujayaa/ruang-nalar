@@ -5,7 +5,6 @@ window.NALAR_COURSES = [
   {
     id: 'pertidaksamaan',
     title: 'Pertidaksamaan',
-    brand: 'Batas',
     subject: 'Matematika',
     level: 'SMA kelas X · UTBK · olimpiade',
     blurb: 'Dari intuisi jungkat-jungkit sampai ketaksamaan klasik olimpiade. 10 bab, 25 widget interaktif, 250+ soal bertingkat.',
@@ -16,7 +15,6 @@ window.NALAR_COURSES = [
   {
     id: 'contoh-kursus',
     title: 'Contoh kursus (templat)',
-    brand: 'Templat',
     subject: 'Panduan',
     level: 'Untuk pembuat materi',
     blurb: 'Kursus mini yang menunjukkan semua jenis blok dan soal. Salin foldernya untuk membuat kursus baru.',

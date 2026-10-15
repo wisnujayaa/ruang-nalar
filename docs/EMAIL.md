@@ -47,7 +47,7 @@ Authentication → **URL Configuration**:
 - **Redirect URLs**: `https://ruang-nalar.pages.dev/**`
 
 The app asks Supabase to redirect to the address currently open (`emailRedirectTo`), and that address must be listed.
-**Only list addresses you own.** If you stop using a host (e.g. an old `*.netlify.app` site), remove it here and in
+**Only list addresses you own.** If you stop using a host address, remove it here and in
 Google Cloud: someone else could claim that subdomain and receive your users' login tokens.
 
 ## Recommended (Authentication → Sign In / Providers)

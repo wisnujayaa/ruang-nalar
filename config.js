@@ -4,8 +4,6 @@
    NEVER put a service_role / secret key here. */
 window.NALAR_CONFIG = {
   siteName: 'Ruang Nalar',
-  // WhatsApp number for the "Send via WhatsApp" button after reporting (optional, PUBLICLY VISIBLE). Example: '62812xxxxxxx'
-  reportWhatsApp: '',
   // Source repository (for the "Open on GitHub" links in the Studio). Leave empty to hide them.
   repoUrl: 'https://github.com/wisnujayaa/ruang-nalar',
   tagline: 'Belajar sedikit tiap hari, paham sampai ke akarnya.',

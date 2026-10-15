@@ -115,7 +115,8 @@ ok(JSON.stringify(A.dueItems().sort()) === JSON.stringify(['b1', 'g:lin']), 'due
 A.S = A.fresh(); A.S.attempts.push({ t: 1700000000000, i: 'b1', s: 1, l: 1, ok: 1, c: 2, ms: 1, k: [], src: 'latihan' });
 const code = A.exportCode(); const back = A.decodeCode(code + '\n');
 ok(back.attempts.length === 1, 'progress code round-trip');
-let msg = ''; try { A.decodeCode('BATAS1.@@@'); } catch (e) { msg = e.message; } ok(/rusak|terpotong/.test(msg), 'broken code → clear message: ' + msg);
+ok(code.startsWith('NALAR1.') && A.decodeCode('BATAS1.' + code.slice(7)).attempts.length === 1, 'new NALAR1 prefix; old BATAS1 codes still import');
+let msg = ''; try { A.decodeCode('NALAR1.@@@'); } catch (e) { msg = e.message; } ok(/rusak|terpotong/.test(msg), 'broken code → clear message: ' + msg);
 
 /* 8) sync: switching courses while a push is in flight loses no changes */
 (async () => {
