@@ -57,7 +57,8 @@ Pengirim bawaan Supabase hanya untuk uji coba. Menurut dokumentasi resmi Supabas
 - tanpa jaminan terkirim.
 
 Solusi gratis tanpa domain: **SMTP Gmail** (± 500 email/hari).
-1. Buat akun Gmail khusus situs (misalnya `ruangnalar.app@gmail.com`), supaya email pribadimu tidak menjadi pengirim.
+1. Pakai Gmail yang sudah ada, atau buat akun khusus situs kalau tidak ingin alamat pribadimu terlihat sebagai pengirim.
+   (Nama pengirim tetap tampil "Ruang Nalar"; alamatnya terlihat kalau penerima membuka detail email.)
 2. Di akun itu nyalakan **Verifikasi 2 Langkah**, lalu buat **Sandi Aplikasi** di https://myaccount.google.com/apppasswords
    (16 huruf). Sandi ini hanya ditempel di Supabase, jangan disimpan di repo.
 3. Supabase → Authentication → Emails → **SMTP Settings** → Enable custom SMTP:
