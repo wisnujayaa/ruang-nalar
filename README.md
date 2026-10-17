@@ -123,6 +123,7 @@ npm run test:editor  # a teacher builds a course in the Studio → a student wor
 npm run test:auth    # sign-up, activation code, resend, password reset & change, Google sign-in
 npm run test:help    # help center, search, guided tour
 npm run test:csp     # the _headers CSP is applied and injected scripts are blocked
+npm run test:answers # answers every question through the real UI under the CSP (right and wrong answers)
 PGHOST=localhost PGUSER=postgres npm run test:rls   # security policy tests on a LOCAL Postgres
 ```
 
