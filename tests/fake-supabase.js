@@ -26,7 +26,12 @@
       single() { st.single = true; return q; }, maybeSingle() { st.maybe = true; return q; },
       insert(o) { st.op = 'insert'; st.payload = o; return q; }, upsert(o) { st.op = 'upsert'; st.payload = o; return q; },
       update(o) { st.op = 'update'; st.payload = o; return q; }, delete() { st.op = 'delete'; return q; },
-      then(res, rej) { return Promise.resolve().then(run).then(res, rej); }
+      then(res, rej) {
+        /* Test hooks: window.__FAKE_DELAY = ms of latency for progress reads; window.__FAKE_HANG = number of progress writes that never answer */
+        if (table === 'progress' && st.op === 'upsert' && window.__FAKE_HANG > 0) { window.__FAKE_HANG--; return new Promise(() => { }); }
+        const wait = table === 'progress' && st.op === 'select' && window.__FAKE_DELAY ? new Promise(r => setTimeout(r, window.__FAKE_DELAY)) : 0;
+        return Promise.resolve(wait).then(run).then(res, rej);
+      }
     };
     /* Course RLS emulation (see supabase/course-access.sql) */
     const canRead = (db, k) => ['unlisted', 'public'].includes(k.visibility) || k.owner_id === me() ||

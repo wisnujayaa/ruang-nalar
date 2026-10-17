@@ -247,7 +247,19 @@
   };
 
   /* ---------- sync through the backend (local / Supabase) ---------- */
-  const sync = A.sync = { status: 'lokal', busy: false, pending: false, timer: null, listeners: [], lastPushed: '', notes: [] };
+  const sync = A.sync = { status: 'lokal', busy: false, pending: false, timer: null, listeners: [], lastPushed: '', notes: [],
+    err: '',                 // last failure message (shown in Settings)
+    rev: 0,                  // +1 every time progress from another device was merged in, so the screen can redraw
+    fails: 0,                // consecutive failures, for the retry back-off
+    retryMs: null,           // fixed retry delay (tests); null = back-off 6 s, 12 s, 24 s … 1 min
+    timeoutMs: 20000,        // a request that does not answer within this time is treated as failed
+    minPullGap: 15000,       // at most one automatic pull per this many ms (refresh() when the tab returns)
+    lastPull: 0 };
+  /* A request that never answers must not freeze syncing: give up after timeoutMs (the late answer is ignored) */
+  const within = (p) => new Promise((res, rej) => {
+    const t = setTimeout(() => rej(Object.assign(new Error('Server tidak menjawab (waktu habis).'), { code: 'timeout' })), sync.timeoutMs);
+    Promise.resolve(p).then(v => { clearTimeout(t); res(v); }, e => { clearTimeout(t); rej(e); });
+  });
   const pushed = {};          // last successfully pushed text, per course
   let chain = Promise.resolve();   // pushes are queued in order, so nothing is lost when switching courses
   const BB = () => G.BB;
@@ -267,7 +279,17 @@
     if (!sync.online || !A.course) return;
     sync.pending = true; clearTimeout(sync.timer); sync.timer = setTimeout(sync.push, 2500);
   };
-  /* Push progress for a course (default: the active one). State & course are captured at call time, then queued. */
+  /* Merge progress that arrived from the server into the active course and tell the UI to redraw */
+  function applyRemote(course, r) {
+    if (course !== A.course || !r) return false;
+    const m = A.merge(A.S, r);
+    if (packState(m) === packState(A.S)) return false;
+    A.S = m; A.flush(); sync.rev++;
+    return true;
+  }
+  /* Push progress for a course (default: the active one). State & course are captured at call time, then queued.
+     Read-merge-write: the server copy is read and merged first, so a device that is behind never overwrites
+     what another device saved (a plain upsert is "last writer wins" and silently loses the other device's answers). */
   sync.push = function (course, src) {
     course = typeof course === 'string' ? course : A.course; src = src || (course === A.course ? A.S : null);
     if (!sync.online || !course || !src) return chain;
@@ -277,8 +299,23 @@
     chain = chain.then(async () => {
       if (s === pushed[course]) return;
       sync.busy = true; sync.status = 'menyimpan'; emit();
-      try { await BB().progress.save(course, s); pushed[course] = s; sync.lastPushed = s; if (course === A.course) sync.pending = false; sync.status = 'tersinkron'; }
-      catch (e) { sync.status = (e && e.code === 'readonly') ? 'hanya-baca' : 'gagal'; setTimeout(() => sync.pending && sync.push(), 6000 + Math.random() * 4000); }
+      try {
+        const remote = await within(BB().progress.load(course));
+        const r = remote ? A.parseState(remote) : null;
+        let out = s;
+        if (r) {
+          if (applyRemote(course, r)) emit();
+          const merged = A.merge(A.sanitize(JSON.parse(s)), r);
+          out = packState(merged);
+          if (out === packState(r)) { pushed[course] = s; sync.lastPushed = s; if (course === A.course) sync.pending = false; sync.status = 'tersinkron'; sync.fails = 0; sync.err = ''; sync.busy = false; emit(); return; }   // server already has everything
+        }
+        await within(BB().progress.save(course, out));
+        pushed[course] = s; sync.lastPushed = s; if (course === A.course) sync.pending = false; sync.status = 'tersinkron'; sync.fails = 0; sync.err = '';
+      } catch (e) {
+        sync.status = (e && e.code === 'readonly') ? 'hanya-baca' : 'gagal'; sync.err = (e && e.message) || 'Gagal'; sync.fails++;
+        const wait = Math.min(60000, 6000 * Math.pow(2, Math.min(sync.fails - 1, 4))) + Math.random() * 4000;   // 6 s, 12 s, 24 s … max 1 min
+        setTimeout(() => { if (sync.pending || course !== A.course) sync.push(course, course === A.course ? A.S : A.readState(course)); }, sync.retryMs != null ? sync.retryMs : wait);
+      }
       sync.busy = false; emit();
     });
     return chain;
@@ -286,14 +323,20 @@
   /* Pull progress from the server and merge it with what's on this device */
   sync.pull = async function () {
     if (!sync.online || !A.course) { sync.status = sync.online ? 'tersinkron' : 'lokal'; emit(); return; }
-    const course = A.course;
+    const course = A.course; sync.lastPull = Date.now();
     try {
-      const remote = await BB().progress.load(course);
+      const remote = await within(BB().progress.load(course));
       if (course !== A.course) return;
       const r = remote ? A.parseState(remote) : null;
-      if (r) { A.S = A.merge(A.S, r); A.flush(); }
-      sync.status = 'tersinkron'; emit(); sync.queue();
-    } catch (e) { sync.status = 'gagal'; emit(); }
+      if (r) applyRemote(course, r);
+      sync.status = 'tersinkron'; sync.err = ''; emit(); sync.queue();
+    } catch (e) { sync.status = 'gagal'; sync.err = (e && e.message) || 'Gagal'; emit(); }
+  };
+  /* Catch up with other devices (tab brought to the front, network back, every minute while visible). force skips the throttle. */
+  sync.refresh = function (force) {
+    if (!sync.online || !A.course || sync.busy) return Promise.resolve();
+    if (!force && Date.now() - sync.lastPull < sync.minPullGap) return Promise.resolve();
+    return sync.pull();
   };
   sync.init = async function () {
     const b = BB(); if (!b) return;
@@ -302,7 +345,7 @@
     if (b.notes && b.notes.watch) b.notes.watch(list => { sync.notes = list || []; emit(); });
     if (b.progress && b.progress.watch) b.progress.watch((course, remote) => {
       if (course !== A.course || !remote) return;
-      try { const r = A.parseState(remote); if (!r) return; const m = A.merge(A.S, r); if (m.attempts.length !== A.S.attempts.length || (m.updated || 0) > (A.S.updated || 0)) { A.S = m; A.flush(); emit(); } } catch (e) { }
+      try { const r = A.parseState(remote); if (r && applyRemote(course, r)) emit(); } catch (e) { }
     });
     emit(); sync.pull();
   };

@@ -104,7 +104,10 @@
   const siteUrl = () => location.origin + location.pathname;
   /* =========================== SUPABASE =========================== */
   function SupabaseBackend() {
-    const sb = G.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } });
+    /* keepalive lets a save that was just sent survive the tab being closed or sent to the background (phones do this
+       all the time). Browsers cap keepalive bodies at 64 KB, so only small requests get it. */
+    const keepFetch = (url, opt) => { opt = opt || {}; const small = !opt.body || (typeof opt.body === 'string' && opt.body.length < 60000); return fetch(url, small ? Object.assign({}, opt, { keepalive: true }) : opt); };
+    const sb = G.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true }, global: { fetch: keepFetch } });
     /* If the server denies permission while the UI believes the user is signed in, the session token
        was not sent (session lost/expired). Re-check, then ask the user to sign in again. */
     let rechecking = false;

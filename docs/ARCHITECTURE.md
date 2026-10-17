@@ -34,6 +34,16 @@
 
 Views that need a course (`COURSE_VIEWS` in `ui.js`) automatically load the last course when none is active.
 
+## Keeping devices in sync (`BA.sync` in `core.js`)
+One account can be open on several devices (laptop + phone), so syncing follows these rules. Each one exists because its absence once lost progress:
+- **Read-merge-write.** Every save first reads the server copy and merges it (`BA.merge`) with the local one; only then is it written. A plain upsert is "last writer wins" and would silently erase what another device saved.
+- **Pull on return.** An already-open device does not hear about changes, so it pulls when the tab comes to the front, on `focus`, when the network returns, and every minute while visible (`sync.refresh`, throttled by `sync.minPullGap`).
+- **Redraw.** When a pull brings in new data `sync.rev` is incremented, and `boot()` in `ui.js` redraws the current screen if it is a progress screen (`REFRESHABLE`; never a question, lesson or timed test). Without this, the merged progress was in memory but invisible.
+- **Timeouts.** Every request is limited to `sync.timeoutMs`. A request that never answers used to block the queue of saves forever. Failures retry with back-off (6 s … 1 min) and the reason is shown in Settings, next to a "Sinkronkan sekarang" (sync now) button.
+- **`keepalive`.** Small requests are sent with `keepalive`, so a save made just before the tab is closed or backgrounded can still finish.
+- Still possible: two devices saving at the very same moment (a few milliseconds apart) can race between the read and the write. The next pull on either device merges the difference back, because merging only ever adds data.
+- Tested by `tests/sync-flow.mjs` (two browsers, one shared fake server).
+
 ## Teacher-made courses (Studio)
 - Stored in the backend (`BB.courses`) with ids like `c-xxxxxxxxxx`. `NR.refreshRemote()` fetches public courses plus your own; `NR.load('c-…')` fetches the content.
 - Course content is user data, so it **always** goes through `NalarSafe.compile()` (`js/course-safe.js`): only safe block & question types, escaped text, math stripped of `< > &`, https-only links. The output has the same format as file-based courses, so `ui.js` treats both the same.

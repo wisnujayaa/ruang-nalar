@@ -147,7 +147,7 @@
     if (!el) { el = document.createElement('div'); el.id = 'netbar'; el.setAttribute('role', 'status'); el.textContent = 'Kamu sedang offline. Progres tetap tersimpan di perangkat ini dan akan disinkronkan saat koneksi kembali.'; document.body.appendChild(el); }
   }
   window.addEventListener('offline', netBanner);
-  window.addEventListener('online', () => { netBanner(); try { A.sync.push(); } catch (e) { } });
+  window.addEventListener('online', () => { netBanner(); try { A.sync.push(); A.sync.refresh(true); } catch (e) { } });
   let loadingCourse = false;
   function render() {
     const v = nav.cur.v;
@@ -789,7 +789,7 @@
     const syncTxt = {
       'lokal': bb.mode === 'supabase' ? 'Kamu belum masuk. Progres tersimpan di perangkat ini dan otomatis digabung ke akunmu setelah masuk.' : 'Mode tanpa server: progres tersimpan di browser ini saja. Pemilik situs bisa menghubungkan Supabase (lihat README) supaya akun, kelas, dan forum bisa dipakai bersama.',
       'tersinkron': 'Tersinkron ke akunmu. Perangkat lain yang masuk dengan akun yang sama memakai progres yang sama.', 'menyimpan': 'Sedang menyimpan…',
-      'gagal': 'Sinkronisasi gagal sementara. Progres aman di perangkat ini dan akan dicoba lagi.', 'hanya-baca': 'Akunmu hanya bisa melihat, belum bisa menyimpan.' }[sy.status];
+      'gagal': 'Sinkronisasi gagal sementara. Progres aman di perangkat ini dan akan dicoba lagi otomatis.' + (sy.err ? ' Penyebab: ' + sy.err : ''), 'hanya-baca': 'Akunmu hanya bisa melihat, belum bisa menyimpan.' }[sy.status];
     const meta = A.course && G.NR.meta(A.course);
     view().innerHTML = '<section class="page"><header class="les-h"><button class="iconbtn" data-act="back" aria-label="Kembali">' + ic('back') + '</button><div><h1>Pengaturan</h1></div></header>' +
       '<div class="card form"><label class="lbl" for="nick">Nama yang ditampilkan</label><input id="nick" value="' + esc(A.displayName()) + '" maxlength="40" placeholder="misalnya: Dika">' +
@@ -798,7 +798,8 @@
       '<label class="tog"><input type="checkbox" id="recallAll"' + (s.recallAll ? ' checked' : '') + '> <span><b>Jawab dulu, pilihan belakangan</b> untuk semua soal pilihan ganda</span></label>' +
       '<label class="tog"><input type="checkbox" id="checklist"' + (s.checklist ? ' checked' : '') + '> <span><b>Cek 5 detik</b> sebelum mengirim jawaban</span></label>' +
       '<label class="tog"><input type="checkbox" id="radar"' + (s.radar ? ' checked' : '') + '> <span><b>Radar jebakan</b> (memudar otomatis setelah dikuasai)</span></label><button class="btn primary" data-act="set-save">Simpan</button><p class="ok small" id="set-ok" aria-live="polite"></p></div>' +
-      '<div class="card"><h2>Sinkronisasi</h2><p><span class="sync s-' + sy.status + '"><i></i></span> ' + esc(syncTxt) + '</p></div>' +
+      '<div class="card"><h2>Sinkronisasi</h2><p><span class="sync s-' + sy.status + '"><i></i></span> ' + esc(syncTxt) + '</p>' +
+      (sy.online ? '<button class="btn" data-act="sync-now">Sinkronkan sekarang</button> <span class="small muted" id="sync-m" aria-live="polite"></span>' : '') + '</div>' +
       (meta ? '<div class="card"><h2>Kode progres · ' + esc(meta.title) + '</h2><p class="muted">Cadangan manual, atau kirim ke gurumu kalau belum memakai akun. Tempelkan kode di perangkat lain untuk menggabungkan progres.</p><div class="row"><button class="btn" data-act="exp">Buat kode</button></div><textarea id="code" rows="3" class="mono small" placeholder="Tempel kode NALAR1… di sini untuk impor"></textarea><div class="row"><button class="btn" data-act="copy">Salin</button><button class="btn" data-act="imp">Impor & gabungkan</button></div><p class="small" id="code-m" aria-live="polite"></p></div>' +
       '<div class="card"><h2>Mulai dari awal</h2><p class="muted">Menghapus semua progres kursus <b>' + esc(meta.title) + '</b> di perangkat ini' + (sy.online ? ' dan di akunmu' : '') + '.</p><div id="rst"><button class="btn danger" data-act="reset1">Hapus progres kursus ini</button></div></div>' : '<p class="muted small">Buka salah satu kursus untuk melihat kode progres dan opsi hapus progres.</p>') + '</section>';
   };
@@ -839,6 +840,12 @@
       case 'dump-cmp': { const t = $('#dump-t').value.trim(); if (t.length < 10) { $('.err').textContent = 'Tulis dulu apa yang kamu ingat, minimal satu kalimat.'; return; } $('.err').textContent = ''; $('#dump-p').hidden = false; break; }
       case 'dump-save': { const sec = +d.s; A.S.dumps['s' + sec] = { t: Date.now(), text: $('#dump-t').value.slice(0, 2000), got: $$('#dump-p [data-pt]:checked').length }; A.save(); render(); break; }
       case 'theme': A.set.theme = d.t; A.saveSettings(); applyTheme(); render(); break;
+      case 'sync-now': {
+        const m = $('#sync-m'); a.disabled = true; if (m) m.textContent = 'Menyinkronkan…';
+        await A.sync.pull(); await A.sync.push();
+        a.disabled = false; if (m) m.textContent = A.sync.status === 'tersinkron' ? 'Selesai. Progres di perangkat ini dan di akunmu sudah sama.' : 'Belum berhasil' + (A.sync.err ? ': ' + A.sync.err : '') + '. Progres tetap aman di perangkat ini.';
+        break;
+      }
       case 'set-save': { const n = $('#nick').value.trim().slice(0, 40); if (n !== A.set.name) { A.set.name = n; if (G.BB && G.BB.setName && n) { try { await G.BB.setName(n); } catch (err) { } } } if (A.course && n !== A.S.nick) { A.S.nick = n; A.S.nickT = Date.now(); } A.set.goal = Math.max(5, Math.min(120, +$('#goal').value || 20)); A.set.recallAll = $('#recallAll').checked; A.set.checklist = $('#checklist').checked; A.set.radar = $('#radar').checked; A.saveSettings(); A.save(); $('#set-ok').textContent = 'Tersimpan.'; break; }
       case 'exp': $('#code').value = A.exportCode(); $('#code-m').textContent = 'Kode dibuat. Salin dan simpan, atau kirim ke gurumu.'; break;
       case 'copy': { const v = $('#code').value; try { await navigator.clipboard.writeText(v); $('#code-m').textContent = 'Tersalin.'; } catch (err) { $('#code').select(); $('#code-m').textContent = 'Tekan salin (Ctrl+C) untuk menyalin teks yang terpilih.'; } break; }
@@ -871,9 +878,13 @@
     const landing = authLanding(h0, location.search);
     if (hasHist) { record(false, !!landing); window.addEventListener('popstate', onPop); }
     window.addEventListener('nalar-auth', (e) => { if (e.detail === 'recovery' && nav.cur.v !== 'sandi') go('sandi', { recovery: 1 }, { replace: true }); });
-    let lastUid = undefined;
+    let lastUid = undefined, lastRev = A.sync.rev;
+    /* Screens that show progress and are safe to redraw when another device's progress arrives
+       (never the ones where the student is answering, typing or on a timer) */
+    const REFRESHABLE = new Set(['home', 'course', 'map', 'review', 'cards', 'mistakes', 'summary', 'traps', 'stats', 'me']);
     A.sync.on(() => {
       renderTop();
+      if (A.sync.rev !== lastRev) { lastRev = A.sync.rev; if (REFRESHABLE.has(nav.cur.v)) render(); }
       const uid = A.sync.uid;
       if (uid !== lastUid) {
         const first = lastUid === undefined; lastUid = uid;
@@ -890,7 +901,10 @@
       .then(() => G.NR.refreshRemote()).then(() => { if (['home', 'me', 'kelas', 'studio'].includes(nav.cur.v)) render(); });
     start();
     window.addEventListener('pagehide', A.flush);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { A.flush(); A.sync.push(); } });
+    // Save when the tab goes to the background; catch up with other devices when it comes back
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { A.flush(); A.sync.push(); } else A.sync.refresh(); });
+    window.addEventListener('focus', () => A.sync.refresh());
+    setInterval(() => { if (document.visibilityState !== 'hidden') A.sync.refresh(); }, 60000);
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.cur.v !== 'home') { const t = e.target; if (!t.matches || !t.matches('input,textarea,select')) back(); } });
     // Deep links: #gabung=CODE, #kursus=id, #bagian3 (hash is read before history clears it from the URL)
     if (!routeHash(h0)) render();
