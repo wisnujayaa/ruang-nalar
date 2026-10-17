@@ -16,6 +16,12 @@ await p.goto(URL + '#kursus=pertidaksamaan'); await p.waitForSelector('.path .se
 for (const v of ['home', 'course', 'review', 'cards', 'mistakes', 'stats', 'me', 'settings', 'kelas', 'lapor', 'studio', 'traps', 'tryout', 'summary']) { await p.evaluate(v => BU.go(v), v); await p.waitForTimeout(150); }
 await p.evaluate(() => BU.go('lesson', { sec: 1, i: 3 })); await p.waitForTimeout(300);
 for (let i = 0; i < 12; i++) { await p.evaluate(i => BU.go('lesson', { sec: 1, i }), i); await p.waitForTimeout(80); }   // widget interaktif
+// Numeric answers must be readable under the CSP: a blocked Function() once made every number "unreadable".
+// Important: page.evaluate() bypasses the CSP eval check, so the call must start from the page's own timer.
+await p.evaluate(() => { window.__nums = null; setTimeout(() => { window.__nums = ['5', '-3', '3/2', '0.5', '√2', '2^3'].map(s => [s, BM.evalNum(s)]); }, 0); });
+await p.waitForFunction(() => window.__nums);
+const badNum = (await p.evaluate(() => window.__nums)).filter(([, v]) => Number.isNaN(v));
+if (badNum.length) bad.push('evalNum returns NaN under CSP for: ' + badNum.map(x => x[0]).join(', ')); else console.log('Numeric answers parse under CSP');
 await p.evaluate(() => BU.go('editor', { id: 'new' })); await p.waitForTimeout(300);
 // Simulated XSS hole: injected scripts must be blocked by the browser
 await p.evaluate(() => { document.body.insertAdjacentHTML('beforeend', '<img src="x:y" onerror="window.__pwn=1"><a id="jsl" href="javascript:window.__pwn2=1">x</a>'); document.getElementById('jsl').click(); });

@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "serve": "python3 -m http.server 8765",
-    "test": "node tests/verify-keys.js && node tests/verify-safe.js && node tests/verify-expr.js && node tests/verify-core.js && node tests/verify-fuzz.js && node tests/verify-gen.js && node --no-warnings --experimental-strip-types tests/verify-notify.mjs",
+    "test": "node tests/verify-keys.js && node tests/verify-safe.js && node tests/verify-expr.js && node tests/verify-numparse.js && node tests/verify-core.js && node tests/verify-fuzz.js && node tests/verify-gen.js && node --no-warnings --experimental-strip-types tests/verify-notify.mjs",
     "test:ui": "node tests/smoke.mjs",
     "test:rls": "bash tests/run-rls.sh",
     "test:flow": "node tests/supabase-flow.mjs",

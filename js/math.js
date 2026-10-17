@@ -146,9 +146,46 @@
     if (t === 'i' || t === '+i' || t === 'I' || t === '+I') return Infinity;
     if (t === '-i' || t === '-I') return -Infinity;
     if (!/^[-+0-9./*()√sqrt^ ]+$/.test(t)) return NaN;
-    t = t.replace(/√\(?([0-9.]+)\)?/g, 'Math.sqrt($1)').replace(/(^|[^.])sqrt\(([^)]+)\)/g, '$1Math.sqrt($2)').replace(/\^/g, '**');
-    if (/[a-ln-z]/i.test(t.replace(/Math\.sqrt/g, ''))) return NaN;
-    try { const v = Function('"use strict";return (' + t + ')')(); return typeof v === 'number' && !isNaN(v) ? v : NaN; } catch (e) { return NaN; }
+    // Tiny recursive-descent parser. Never use eval/Function here: the site's CSP forbids them,
+    // and a failed Function() silently turned every answer into "not a number".
+    const tk = t.match(/\d+\.?\d*|\.\d+|sqrt|√|[-+*/^()]/g);
+    if (!tk || tk.join('') !== t) return NaN;
+    let p = 0;
+    const fail = () => { throw new Error('parse'); };
+    const isNum = (s) => s !== undefined && /^[\d.]/.test(s);
+    function expr() {
+      let v = term();
+      while (tk[p] === '+' || tk[p] === '-') { const o = tk[p++]; const r = term(); v = o === '+' ? v + r : v - r; }
+      return v;
+    }
+    function term() {
+      let v = unary();
+      for (;;) {
+        const s = tk[p];
+        if (s === '*' || s === '/') { p++; const r = unary(); v = s === '*' ? v * r : v / r; }
+        else if (s === '(' || s === '√' || s === 'sqrt') v *= power();   // implicit product: 2√3, 3(4+1)
+        else break;
+      }
+      return v;
+    }
+    function unary() {
+      if (tk[p] === '-') { p++; return -unary(); }
+      if (tk[p] === '+') { p++; return unary(); }
+      return power();
+    }
+    function power() {
+      const b = atom();
+      if (tk[p] === '^') { p++; return Math.pow(b, unary()); }
+      return b;
+    }
+    function atom() {
+      const s = tk[p++];
+      if (isNum(s)) { if (!/^(\d*\.\d+|\d+\.?)$/.test(s)) fail(); return parseFloat(s); }
+      if (s === '(') { const v = expr(); if (tk[p++] !== ')') fail(); return v; }
+      if (s === '√' || s === 'sqrt') { const x = atom(); return Math.sqrt(x); }
+      return fail();
+    }
+    try { const v = expr(); return p === tk.length && typeof v === 'number' && !isNaN(v) ? v : NaN; } catch (e) { return NaN; }
   }
 
   /* ---------- student answer parser ----------
